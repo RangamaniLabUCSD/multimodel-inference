@@ -122,7 +122,7 @@ class levchenko_2000(eqx.Module):
                 d_C4, d_C5, d_C6, d_C7, d_C8, d_C9)
     
 
-def get_levchenko_2000_nominals():
+def get_nominal_params():
     # values come from Ferrell 1996 - trends biochem sci
     #   and Bray and Lay 1997 - PNAS 
     return {
@@ -168,7 +168,7 @@ def get_levchenko_2000_nominals():
         'MAPKPase': 0.3, #uM
     }
 
-def get_levchenko_2000_nominal_initials():
+def get_initial_conditions():
     # values come from Ferrell 1996 - trends biochem sci
     #   and Bray and Lay 1997 - PNAS 
     return {

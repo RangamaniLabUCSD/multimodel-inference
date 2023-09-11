@@ -4,18 +4,19 @@ import jax.numpy as jnp
 class birtwistle_2007(eqx.Module):
     def __call__(self, t, y, args):
         # unpack state
-        E1, E2, E3, E4, E_E1, H_E3, H_E4, E11, E12, E23, E34, E24, E44, E11P, \
-        E12P, E23P, E34P, E24P, E44P, G, S, I, R, O, A, E11G, E11S, E11R, E12G, \
-        E12S, E12R, E23G, E23S, E23I, E23R, E34G, E34S, E34I, E34R, E24G, E24S, \
-        E24I, E24R, E44G, E44S, E44I, E44R, SigG, SigS, SigI, SigR, SigA, SigSP, \
-        SigAP, SigG_O, SigG_A, SigSP_G, SigAP_S, SigAP_I, SigAP_R, Empty, P3_A, \
-        P2, P3, Akt, RsD, RsT, SigRP, Raf, Rafstar, MEK, MEKstar, ERK, ERKstar, \
-        OP, AP, A_SigG_O, SigA_G, SigA_G_O, SigO, E13, E14, E13P, E14P, E13G, \
-        E13S, E13I, E13R, E14G, E14S, E14I, E14R, T, E11T, E12T, E23T, E34T, \
-        E24T, E44T, E13T, E14T, SigT, E1_PT, E2_PT, E4_PT, E_E1_PT, H_E4_PT, \
-        Aktstar, SigAP_T, E, H, fint, pERK, ERK_MEKstar, pERK_MEKstar, \
-        pERK_ERKpase, ERKpase, ERKstar_ERKpase = y
-    
+        E, H, E1, E2, E3, E4, E_E1, H_E3, H_E4, E11, E12, E23, E34, E24, E44, \
+            E11P, E12P, E23P, E34P, E24P, E44P, G, S, I, R, O, A, E11G, E11S, \
+            E11R, E12G, E12S, E12R, E23G, E23S, E23I, E23R, E34G, E34S, E34I, \
+            E34R, E24G, E24S, E24I, E24R, E44G, E44S, E44I, E44R, SigG, SigS, \
+            SigI, SigR, SigA, SigSP, SigAP, SigG_O, SigG_A, SigSP_G, SigAP_S, \
+            SigAP_I, SigAP_R, P3_A, P2, P3, Akt, Aktstar, RsD, RsT, SigRP, Raf, \
+            Rafstar, MEK, MEKstar, ERK, ERKstar, OP, AP, A_SigG_O, SigA_G, \
+            SigA_G_O, SigO, E13, E14, E13P, E14P, E13G, E13S, E13I, E13R, E14G, \
+            E14S, E14I, E14R, fint, T, E11T, E12T, E23T, E34T, E24T, E44T, \
+            E13T, E14T, SigAP_T, SigT, E1_PT, E2_PT, E4_PT, E_E1_PT, H_E4_PT, \
+            pERK, ERK_MEKstar, pERK_MEKstar, ERKpase, ERKstar_ERKpase, \
+            pERK_ERKpase = y
+
         # unpack parameters
         VmaxPY, KmPY, kdeg, \
         kf47, Vmaxr47, Kmf47, Kmr47, kf48, Kmf48, Kmr48, PTEN, kf49, kr49, \
@@ -114,7 +115,7 @@ class birtwistle_2007(eqx.Module):
         J68 = (((((kf49 * SigO * RsD) / (Kmf49 + RsD)) - ((kr49 * SigR * RsT) / (Kmr49 + RsT))) - ((kr49b * SigRP * RsT) / (Kmr49b + RsT))) - (kcon49 * RsT))
         J69 = ((3.0 * kon80 * E14P * T) - (koff80 * E14T))
         J70 = (((kf14 * E24) - ((VmaxPY * E24P) / (KmPY + E24P))) - (kPTP14 * SigT * E24P))
-        J71 = ((kon1 * E * E1) - (EGF_off * E_E1))
+        J71 = ((kon1 * E * E1) - (EGF_off * E_E1))/ VeVc
         J72 = ((8.0 * kon17 * E11P * S) - (koff17 * (SigS / (SigS + SigSP + SigSP_G + eps)) * E11S))
         J73 = ((kon57 * P3_A * G) - (koff57 * SigA_G))
         J74 = (((kf54 * O * ERKstar) / (Kmf54 + O)) - ((Vmaxr54 * OP) / (Kmr54 + OP)))
@@ -146,146 +147,149 @@ class birtwistle_2007(eqx.Module):
         J100 = (((kf39 * SigA * (E11P + E12P + E23P + E24P + E34P + E44P + E13P + E14P)) - ((VmaxPY * SigAP) / (KmPY + SigAP))) - (kPTP39 * SigT * SigAP))
         J101 = ((2.0 * kon78 * E44P * T) - (koff78 * E44T))
         
-        d_E14R = (J8 )    
-        d_MEKstar = ((J97 ) - (J7 ) + (J24 ) - (J23 ) + (J51 ))    
-        d_S = ( - (J72 ) - (J29 ) - (J12 ) - (J55 ) - (J4 ) - (J75 ) - (J48 ) - (J35 ) - (J86 ) + (J67 ))    
-        d_SigSP_G = (J27 )    
-        d_T = ( - (J37 ) - (J43 ) - (J60 ) - (J98 ) - (J49 ) - (J101 ) - (J52 ) - (J69 ) - (J38 ) + (J62 ))    
-        d_E11R = ((J65 ) - (J9 ))    
-        d_P3_A = ((J16 ) - (J73 ))    
-        d_ERKstar_ERKpase = ((J59 ) - (J61 ))    
-        d_E23P = ((J80 ) - (J50 ) - (J12 ) - (J66 ) - (J17 ) - (J60 ))    
-        d_E24P = ((J70 ) - (J47 ) - (J4 ) - (J21 ) - (J87 ) - (J49 ))    
-        d_SigT = ((J37 ) + (J43 ) + (J60 ) + (J98 ) + (J49 ) + (J101 ) + (J52 ) + (J69 ) + (J38 ) - (J62 ))    
-        d_E24I = (J21 )    
-        d_E34P = ((J81 ) - (J6 ) - (J55 ) - (J57 ) - (J33 ) - (J98 ))    
-        d_E14P = ((J44 ) - (J45 ) - (J86 ) - (J14 ) - (J8 ) - (J69 ))    
-        d_E44T = (J101 )    
-        d_E12 = ((J53 ) - (J63 ))    
-        d_Aktstar = (J22 )    
-        d_SigS = ((J72 ) + (J29 ) + (J12 ) + (J55 ) + (J4 ) + (J75 ) - (J76 ) + (J48 ) + (J35 ) + (J86 ) - (J67 ))    
-        d_E23R = (J17 )    
-        d_E24T = (J49 )    
-        d_Rafstar = (J94 )    
-        d_SigO = ((J15 ) + (J28 ) + (J85 ))    
-        d_E44P = ((J82 ) - (J88 ) - (J75 ) - (J11 ) - (J13 ) - (J101 ))    
-        d_OP = (J74 )    
+        
+        d_E = -J32 
+        d_H = -J19
+        d_E1 = -J71 -J89
+        d_E2 = -J53 -J93 -J10 -J41
+        d_E3 = -J56
+        d_E4 = -J25 -J46
+        d_E_E1 = ((J71 ) - (2.0 * J99 ) - (J53 ) - (J84 ) - (J58 ) - (J3 ))
+        d_H_E3 = ((J56 ) - (J93 ) - (J42 ) - (J84 ))
+        d_H_E4 = ((J25 ) - (J42 ) - (J10 ) - (2.0 * J20 ) - (J58 ) - (J5 ))
+        d_E11 = ((J99 ) - (J1 ))
+        d_E12 = ((J53 ) - (J63 ))
+        d_E23 = ((J93 ) - (J80 ))
         d_E34 = ((J42 ) - (J81 ))    
-        d_E12T = (J43 )    
-        d_E13 = ((J84 ) - (J31 ))    
-        d_E4_PT = ((J46 ) - (J18 ))    
-        d_E1 = ( - (J71 ) - (J89 ))    
-        d_E2_PT = (J41 )    
-        d_E44S = (J75 )    
-        d_RsT = (J68 )    
-        d_E14S = (J86 )    
-        d_E13S = (J35 )    
-        d_RsD = - (J68 )    
-        d_SigAP_R = (J95 )    
-        d_pERK = ((J24 ) - (J23 ) + (J61 ) - (J90 ))    
-        d_E13I = (J91 )    
-        d_E12G = (J40 )    
-        d_E44I = (J11 )    
-        d_H_E3 = ((J56 ) - (J93 ) - (J42 ) - (J84 ))    
-        d_Akt = - (J22 )    
-        d_E_E1 = ((J71 ) - (2.0 * J99 ) - (J53 ) - (J84 ) - (J58 ) - (J3 ))    
-        d_E23T = (J60 )    
-        d_P3 = ( - (J16 ) + (J92 ))    
-        d_E12P = ((J63 ) - (J40 ) - (J29 ) - (J39 ) - (J43 ))    
-        d_E14I = (J14 )    
-        d_E24S = (J4 )    
-        d_SigG = ((J36 ) + (J40 ) + (J50 ) + (J6 ) + (J47 ) + (J88 ) - (J15 ) - (J83 ) + (J27 ) + (J96 ) + (J45 ) - (J78 ))    
-        d_ERKstar = ((J51 ) - (J59 ))    
-        d_E23G = (J50 )    
-        d_SigR = ((J65 ) + (J39 ) + (J17 ) + (J33 ) + (J87 ) + (J13 ) + (J95 ) - (J79 ) + (J0 ) + (J8 ) - (J9 ))    
-        d_G = ( - (J36 ) - (J40 ) - (J50 ) - (J6 ) - (J47 ) - (J88 ) - (J27 ) - (J73 ) - (J96 ) - (J45 ) + (J78 ))    
-        d_E13T = (J52 )    
-        d_SigAP = ((J100 ) - (J48 ) - (J26 ) - (J95 ) - (J38 ))    
-        d_ERK_MEKstar = ((J7 ) - (J24 ))    
-        d_SigSP = ((J76 ) - (J27 ))    
-        d_E13G = (J96 )    
-        d_E4 = ( - (J25 ) - (J46 ))    
-        d_I = ( - (J66 ) - (J57 ) - (J21 ) - (J11 ) - (J26 ) - (J91 ) - (J14 ))    
-        d_MEK = - (J97 )    
-        d_ERKpase = ( - (J59 ) + (J61 ) - (J90 ) + (J77 ))    
-        d_SigG_A = ((J83 ) - (J85 ))    
-        d_ERK = ( - (J7 ) + (J77 ))    
-        d_SigAP_I = (J26 )    
-        d_E34T = (J98 )    
-        d_E_E1_PT = ((J3 ) + (J64 ))    
-        d_AP = (J2 )    
-        d_Raf = - (J94 )    
-        d_E34S = (J55 )    
-        d_E12S = (J29 )    
-        d_E14G = (J45 )    
-        d_P2 = - (J92 )    
-        d_E11T = ((J37 ) - (J62 ))    
         d_E24 = ((J10 ) - (J70 ))    
-        d_pERK_ERKpase = ((J90 ) - (J77 ))    
-        d_A_SigG_O = ((J54 ) + (J85 ))    
-        d_E34G = (J6 )    
-        d_SigG_O = ((J15 ) - (J54 ))    
-        d_E23S = (J12 )    
-        d_H_E4 = ((J25 ) - (J42 ) - (J10 ) - (2.0 * J20 ) - (J58 ) - (J5 ))    
-        d_SigRP = (J79 )    
-        d_E24G = (J47 )    
-        d_E12R = (J39 )    
-        d_E1_PT = ((J89 ) - (J64 ))    
-        d_pERK_MEKstar = ((J23 ) - (J51 ))    
-        d_E11S = ((J72 ) - (J67 ))    
-        d_Empty = ((J34 ) - (J30 ) + (J32 ) + (J19 ))    
-        d_SigA_G_O = (J28 )    
-        d_H = - (J19 )    
-        d_E44R = (J13 )    
-        d_E14 = ((J58 ) - (J44 ))    
-        d_E = - (J32 )    
-        d_SigAP_T = (J38 )    
-        d_E11 = ((J99 ) - (J1 ))    
-        d_E13R = (J0 )    
-        d_E3 = - (J56 )    
-        d_E11P = ((J1 ) - (J36 ) - (J72 ) - (J65 ) - (J37 ) - (J34 ))    
-        d_E11G = ((J36 ) - (J78 ))    
-        d_E14T = (J69 )    
-        d_fint = (J30 )    
-        d_H_E4_PT = ((J5 ) + (J18 ))    
-        d_E44G = (J88 )    
-        d_SigI = ((J66 ) + (J57 ) + (J21 ) + (J11 ) + (J26 ) + (J91 ) + (J14 ))    
-        d_E13P = ((J31 ) - (J96 ) - (J35 ) - (J91 ) - (J0 ) - (J52 ))    
-        d_SigA = ( - (J100 ) + (J83 ) + (J16 ) + (J54 ))    
         d_E44 = ((J20 ) - (J82 ))    
-        d_E23I = (J66 )    
-        d_E34R = (J33 )    
+        d_E11P = ((J1 ) - (J36 ) - (J72 ) - (J65 ) - (J37 ) - (J34 ))    
+        d_E12P = ((J63 ) - (J40 ) - (J29 ) - (J39 ) - (J43 ))    
+        d_E23P = ((J80 ) - (J50 ) - (J12 ) - (J66 ) - (J17 ) - (J60 ))    
+        d_E34P = ((J81 ) - (J6 ) - (J55 ) - (J57 ) - (J33 ) - (J98 ))    
+        d_E24P = ((J70 ) - (J47 ) - (J4 ) - (J21 ) - (J87 ) - (J49 ))    
+        d_E44P = ((J82 ) - (J88 ) - (J75 ) - (J11 ) - (J13 ) - (J101 ))    
+        d_G = ( - (J36 ) - (J40 ) - (J50 ) - (J6 ) - (J47 ) - (J88 ) - (J27 ) - (J73 ) - (J96 ) - (J45 ) + (J78 ))    
+        d_S = ( - (J72 ) - (J29 ) - (J12 ) - (J55 ) - (J4 ) - (J75 ) - (J48 ) - (J35 ) - (J86 ) + (J67 ))    
+        d_I = ( - (J66 ) - (J57 ) - (J21 ) - (J11 ) - (J26 ) - (J91 ) - (J14 ))    
+        d_R = ( - (J65 ) - (J39 ) - (J17 ) - (J33 ) - (J87 ) - (J13 ) - (J95 ) - (J0 ) - (J8 ) + (J9 ))    
         d_O = ( - (J15 ) - (J74 ) - (J28 ) - (J85 ))    
         d_A = ( - (J83 ) - (J16 ) - (J2 ) - (J54 ))    
-        d_R = ( - (J65 ) - (J39 ) - (J17 ) - (J33 ) - (J87 ) - (J13 ) - (J95 ) - (J0 ) - (J8 ) + (J9 ))    
-        d_SigAP_S = (J48 )    
-        d_SigA_G = ((J73 ) - (J28 ))    
+        d_E11G = ((J36 ) - (J78 ))    
+        d_E11S = ((J72 ) - (J67 ))    
+        d_E11R = ((J65 ) - (J9 ))    
+        d_E12G = (J40 )    
+        d_E12S = (J29 )    
+        d_E12R = (J39 )    
+        d_E23G = (J50 )    
+        d_E23S = (J12 )    
+        d_E23I = (J66 )    
+        d_E23R = (J17 )    
+        d_E34G = (J6 )    
+        d_E34S = (J55 )    
         d_E34I = (J57 )    
-        d_E2 = ( - (J53 ) - (J93 ) - (J10 ) - (J41 ))    
-        d_E23 = ((J93 ) - (J80 ))    
+        d_E34R = (J33 )    
+        d_E24G = (J47 )    
+        d_E24S = (J4 )    
+        d_E24I = (J21 )    
         d_E24R = (J87 )    
+        d_E44G = (J88 )    
+        d_E44S = (J75 )    
+        d_E44I = (J11 )    
+        d_E44R = (J13 )    
+        d_SigG = ((J36 ) + (J40 ) + (J50 ) + (J6 ) + (J47 ) + (J88 ) - (J15 ) - (J83 ) + (J27 ) + (J96 ) + (J45 ) - (J78 ))    
+        d_SigS = ((J72 ) + (J29 ) + (J12 ) + (J55 ) + (J4 ) + (J75 ) - (J76 ) + (J48 ) + (J35 ) + (J86 ) - (J67 ))    
+        d_SigI = ((J66 ) + (J57 ) + (J21 ) + (J11 ) + (J26 ) + (J91 ) + (J14 ))    
+        d_SigR = ((J65 ) + (J39 ) + (J17 ) + (J33 ) + (J87 ) + (J13 ) + (J95 ) - (J79 ) + (J0 ) + (J8 ) - (J9 ))    
+        d_SigA = ( - (J100 ) + (J83 ) + (J16 ) + (J54 ))    
+        d_SigSP = ((J76 ) - (J27 ))    
+        d_SigAP = ((J100 ) - (J48 ) - (J26 ) - (J95 ) - (J38 ))    
+        d_SigG_O = ((J15 ) - (J54 ))    
+        d_SigG_A = ((J83 ) - (J85 ))    
+        d_SigSP_G = (J27 )    
+        d_SigAP_S = (J48 )    
+        d_SigAP_I = (J26 )    
+        d_SigAP_R = (J95 )    
+        d_P3_A = ((J16 ) - (J73 ))    
+        d_P2 = - (J92 )    
+        d_P3 = ( - (J16 ) + (J92 ))    
+        d_Akt = - (J22 )    
+        d_Aktstar = (J22 )    
+        d_RsD = - (J68 )    
+        d_RsT = (J68 )    
+        d_SigRP = (J79 )    
+        d_Raf = - (J94 )    
+        d_Rafstar = (J94 )    
+        d_MEK = - (J97 )    
+        d_MEKstar = ((J97 ) - (J7 ) + (J24 ) - (J23 ) + (J51 ))    
+        d_ERK = ( - (J7 ) + (J77 ))    
+        d_ERKstar = ((J51 ) - (J59 ))    
+        d_OP = (J74 )    
+        d_AP = (J2 )    
+        d_A_SigG_O = ((J54 ) + (J85 ))    
+        d_SigA_G = ((J73 ) - (J28 ))    
+        d_SigA_G_O = (J28 )    
+        d_SigO = ((J15 ) + (J28 ) + (J85 ))    
+        d_E13 = ((J84 ) - (J31 ))    
+        d_E14 = ((J58 ) - (J44 ))    
+        d_E13P = ((J31 ) - (J96 ) - (J35 ) - (J91 ) - (J0 ) - (J52 ))    
+        d_E14P = ((J44 ) - (J45 ) - (J86 ) - (J14 ) - (J8 ) - (J69 ))    
+        d_E13G = (J96 )    
+        d_E13S = (J35 )    
+        d_E13I = (J91 )    
+        d_E13R = (J0 )    
+        d_E14G = (J45 )    
+        d_E14S = (J86 )    
+        d_E14I = (J14 )    
+        d_E14R = (J8 )    
+        d_fint = (J30 )    
+        d_T = ( - (J37 ) - (J43 ) - (J60 ) - (J98 ) - (J49 ) - (J101 ) - (J52 ) - (J69 ) - (J38 ) + (J62 ))    
+        d_E11T = ((J37 ) - (J62 ))    
+        d_E12T = (J43 )    
+        d_E23T = (J60 )    
+        d_E34T = (J98 )    
+        d_E24T = (J49 )    
+        d_E44T = (J101 )    
+        d_E13T = (J52 )    
+        d_E14T = (J69 )    
+        d_SigAP_T = (J38 )    
+        d_SigT = ((J37 ) + (J43 ) + (J60 ) + (J98 ) + (J49 ) + (J101 ) + (J52 ) + (J69 ) + (J38 ) - (J62 ))    
+        d_E1_PT = ((J89 ) - (J64 ))    
+        d_E2_PT = (J41 )    
+        d_E4_PT = ((J46 ) - (J18 ))    
+        d_E_E1_PT = ((J3 ) + (J64 ))    
+        d_H_E4_PT = ((J5 ) + (J18 ))    
+        d_pERK = ((J24 ) - (J23 ) + (J61 ) - (J90 ))    
+        d_ERK_MEKstar = ((J7 ) - (J24 ))    
+        d_pERK_MEKstar = ((J23 ) - (J51 ))    
+        d_ERKpase = ( - (J59 ) + (J61 ) - (J90 ) + (J77 ))    
+        d_ERKstar_ERKpase = ((J59 ) - (J61 ))    
+        d_pERK_ERKpase = ((J90 ) - (J77 )) 
 
-        return (d_E2, d_E1, d_E3, d_E4, d_E_E1, d_H_E3, d_H_E4, d_E11, d_E12, 
-                d_E23, d_E34, d_E24, d_E44, d_E11P, d_E12P, d_E23P, d_E34P, 
-                d_E24P, d_E44P, d_G, d_S, d_I, d_R, d_O, d_A, d_E11G, d_E11S, 
-                d_E11R, d_E12G, d_E12S, d_E12R, d_E23G, d_E23S, d_E23I, d_E23R, 
-                d_E34G, d_E34S, d_E34I, d_E34R, d_E24G, d_E24S, d_E24I, d_E24R, 
-                d_E44G, d_E44S, d_E44I, d_E44R, d_SigG, d_SigS, d_SigI, d_SigR, 
-                d_SigA, d_SigSP, d_SigAP, d_SigG_O, d_SigG_A, d_SigSP_G, d_SigAP_S, 
-                d_SigAP_I, d_SigAP_R, d_Empty, d_P3_A, d_P2, d_P3, d_Akt, d_RsD, 
-                d_RsT, d_SigRP, d_Raf, d_Rafstar, d_MEK, d_MEKstar, d_ERK, 
-                d_ERKstar, d_OP, d_AP, d_A_SigG_O, d_SigA_G, d_SigA_G_O, d_SigO, 
-                d_E13, d_E14, d_E13P, d_E14P, d_E13G, d_E13S, d_E13I, d_E13R, 
-                d_E14G, d_E14S, d_E14I, d_E14R, d_T, d_E11T, d_E12T, d_E23T, 
-                d_E34T, d_E24T, d_E44T, d_E13T, d_E14T, d_SigT, d_E1_PT, 
-                d_E2_PT, d_E4_PT, d_E_E1_PT, d_H_E4_PT, d_Aktstar, d_SigAP_T, 
-                d_E, d_H, d_fint, d_pERK, d_ERK_MEKstar, d_pERK_MEKstar, 
-                d_pERK_ERKpase, d_ERKpase, d_ERKstar_ERKpase)
+        return (
+            d_E, d_H, d_E1, d_E2, d_E3, d_E4, d_E_E1, d_H_E3, d_H_E4, d_E11, d_E12, 
+            d_E23, d_E34, d_E24, d_E44, d_E11P, d_E12P, d_E23P, d_E34P, 
+            d_E24P, d_E44P, d_G, d_S, d_I, d_R, d_O, d_A, d_E11G, d_E11S, 
+            d_E11R, d_E12G, d_E12S, d_E12R, d_E23G, d_E23S, d_E23I, d_E23R, 
+            d_E34G, d_E34S, d_E34I, d_E34R, d_E24G, d_E24S, d_E24I, d_E24R, 
+            d_E44G, d_E44S, d_E44I, d_E44R, d_SigG, d_SigS, d_SigI, d_SigR, 
+            d_SigA, d_SigSP, d_SigAP, d_SigG_O, d_SigG_A, d_SigSP_G, d_SigAP_S, 
+            d_SigAP_I, d_SigAP_R, d_P3_A, d_P2, d_P3, d_Akt, d_Aktstar, d_RsD, 
+            d_RsT, d_SigRP, d_Raf, d_Rafstar, d_MEK, d_MEKstar, d_ERK, 
+            d_ERKstar, d_OP, d_AP, d_A_SigG_O, d_SigA_G, d_SigA_G_O, d_SigO, 
+            d_E13, d_E14, d_E13P, d_E14P, d_E13G, d_E13S, d_E13I, d_E13R, 
+            d_E14G, d_E14S, d_E14I, d_E14R, d_fint, d_T, d_E11T, d_E12T, d_E23T, 
+            d_E34T, d_E24T, d_E44T, d_E13T, d_E14T, d_SigAP_T, d_SigT, d_E1_PT, 
+            d_E2_PT, d_E4_PT, d_E_E1_PT, d_H_E4_PT, d_pERK, d_ERK_MEKstar, d_pERK_MEKstar, 
+            d_ERKpase, d_ERKstar_ERKpase, d_pERK_ERKpase)
 
     
     def get_initial_conditions(self):
         """ Function to get nominal initial conditions for the model. """
-        ic_dict = {'E1': 274.0,
+        ic_dict = {
+            'E': 0.0,
+            'H': 0.0,
+            'E1': 274.0,
             'E2': 158.0,
             'E3': 294.0,
             'E4': 399.0,
@@ -345,11 +349,11 @@ class birtwistle_2007(eqx.Module):
             'SigAP_S': 0.0,
             'SigAP_I': 0.0,
             'SigAP_R': 0.0,
-            'Empty': 0.0,
             'P3_A': 0.0,
             'P2': 197.0,
             'P3': 0.0,
             'Akt': 444.0,
+            'Aktstar': 0.0,
             'RsD': 95.7,
             'RsT': 0.0,
             'SigRP': 0.0,
@@ -377,6 +381,7 @@ class birtwistle_2007(eqx.Module):
             'E14S': 0.0,
             'E14I': 0.0,
             'E14R': 0.0,
+            'fint': 0.0,
             'T': 500.0,
             'E11T': 0.0,
             'E12T': 0.0,
@@ -386,27 +391,23 @@ class birtwistle_2007(eqx.Module):
             'E44T': 0.0,
             'E13T': 0.0,
             'E14T': 0.0,
+            'SigAP_T': 0.0,
             'SigT': 0.0,
             'E1_PT': 0.0,
             'E2_PT': 0.0,
             'E4_PT': 0.0,
             'E_E1_PT': 0.0,
             'H_E4_PT': 0.0,
-            'Aktstar': 0.0,
-            'SigAP_T': 0.0,
-            'E': 0.0,
-            'H': 10.0,
-            'fint': 0.0,
             'pERK': 0.0,
             'ERK_MEKstar': 0.0,
             'pERK_MEKstar': 0.0,
-            'pERK_ERKpase': 0.0,
             'ERKpase': 0.0,
-            'ERKstar_ERKpase': 35.0}
+            'ERKstar_ERKpase': 35.0,
+            'pERK_ERKpase': 0.0,}
         
-        ic_list = [ic_dict[key] for key in ic_dict]]
+        ic_tup = tuple([ic_dict[key] for key in ic_dict])
 
-        return ic_dict, ic_list
+        return ic_dict, ic_tup
 
         
     

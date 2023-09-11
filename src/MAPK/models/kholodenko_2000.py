@@ -40,7 +40,7 @@ class kholodenko_2000(eqx.Module):
         return (d_MKKK_P, d_MKK_P, d_MKK_PP, d_MAPK_P, d_MAPK_PP)
     
 
-    def get_nominals():
+    def get_nominal_params():
         return {
             'v1': 2.5,
             'KI': 9.0,
@@ -69,7 +69,7 @@ class kholodenko_2000(eqx.Module):
             'MAPK_total': 300.0,
         }
 
-    def get_nominal_ics():
+    def get_initial_conditions():
         return {
             'MKKK_P': 90.0,
             'MKK_P': 10.0,
