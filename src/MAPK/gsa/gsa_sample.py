@@ -96,7 +96,6 @@ for model_name in model_list:
     # define the bounds
     multiplier = 0.25
     bounds = [[p*(1-multiplier), p*(1+multiplier)] for p in plist]
-    print(bounds)
 
     # set up the problem dictionary for SALib
     problem = {
@@ -112,11 +111,9 @@ for model_name in model_list:
     np.save('{}_morris_sample.npy'.format(model_name), sample)
 
     # run the model using vmap
+    print('Running {} samples'.format(sample.size))
     dfrx_ode = diffrax.ODETerm(model)
     ss = vsolve_ss(dfrx_ode, y0, sample)
 
     # save the steady-state values
     np.save('{}_morris_ss.npy'.format(model_name), ss)
-
-    break
-    
