@@ -9,9 +9,9 @@ environ['OMP_NUM_THREADS'] = '1'
 # required for parallel cpu runs
 n_cores = mp.cpu_count()
 cpu_mult = 2
-print('Using {} cores'.format(n_cores))
+# print('Using {} cores'.format(n_cores))
 n_devices = int(2**np.ceil(math.log(cpu_mult*n_cores, 2))) # sets n_devices to the next largest power of 2
-print('Set {} XLA devices'.format(n_devices))
+# print('Set {} XLA devices'.format(n_devices))
 
 xla_flag = '--xla_force_host_platform_device_count={}'.format(n_devices)
 environ['XLA_FLAGS']=xla_flag
@@ -35,6 +35,10 @@ from shin_2014 import *
 # use 64bit and CPUmode in jax
 jax.config.update("jax_enable_x64", True)
 jax.config.update("jax_platform_name", "cpu")
+
+# print out device count
+n_devices = jax.local_device_count() 
+print('Using {} jax devices'.format(n_devices))
 
 from SALib.sample import morris as morris_sample
 from SALib.analyze import morris as morris_analyze
@@ -72,8 +76,8 @@ def solve_ss(model_dfrx_ode, y0, params, t1=3000):
 # vmap it over the parameters
 # assume that the first dimension of params is the number of samples
 # and the second dimension is the number of parameters
-vsolve_ss = jax.jit(jax.vmap(solve_ss, in_axes=(None, None, 0)))
-
+vsolve_ss = jax.vmap(solve_ss, in_axes=(None, None, 0))
+psolve_ss = jax.pmap(vsolve_ss, in_axes=(None, None, 0))
 
 
 ##############################
@@ -113,7 +117,17 @@ for model_name in model_list:
     # run the model using vmap
     print('Running {} samples'.format(sample.shape[0]))
     dfrx_ode = diffrax.ODETerm(model)
-    ss = vsolve_ss(dfrx_ode, y0, sample)
+
+    # reshape the sample to be (n_devices, n_samples/n_devices, n_params) so that
+    # pmap doesn't complain
+    reshaped_sample = sample.reshape((n_devices, int(sample.shape[0]/n_devices), sample.shape[-1]))
+
+    ss = psolve_ss(dfrx_ode, y0, reshaped_sample)
+
+    # reshape back to (n_samples, n_species)
+    n_dev, n_samp_per_dev, n_states, n_one = ss.shape
+    ss = ss.reshape((n_dev*n_samp_per_dev, n_states, n_one))
+    print(ss.shape)
 
     # save the steady-state values
     np.save('{}_morris_ss.npy'.format(model_name), ss)
