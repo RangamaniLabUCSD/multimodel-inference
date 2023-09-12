@@ -83,9 +83,9 @@ psolve_ss = jax.pmap(vsolve_ss, in_axes=(None, None, 0, None))
 ##############################
 # loop over models and run the analysis
 ##############################
-model_list = ['schoeberl_2002', 
-              'brightman_fell_2000', 'birtwistle_2007', 'hatakeyama_2003', 'hornberg_2005']
-sim_times = [300, 100, 1800, 3000, 6000]
+model_list = ['birtwistle_2007', 'schoeberl_2002', 
+              'brightman_fell_2000',  'hatakeyama_2003', 'hornberg_2005']
+sim_times = [1800, 300, 100,  3000, 6000]
 # model_list = ['shin_2014', 'huang_ferrell_1996', 'schoeberl_2002', 
             #   'brightman_fell_2000', 'birtwistle_2007', 'hatakeyama_2003', 'hornberg_2005']
 
