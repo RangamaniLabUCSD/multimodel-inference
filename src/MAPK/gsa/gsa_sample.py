@@ -47,7 +47,7 @@ from SALib.analyze import morris as morris_analyze
 # def vmap function to solve for the steady-state solution of the ODE system
 ##############################
 @jax.jit
-def solve_ss(model_dfrx_ode, y0, params, t1=3000):
+def solve_ss(model_dfrx_ode, y0, params, t1):
     """ simulates a model over the specified time interval and returns the 
     calculated steady-state values.
     Returns an array of shape (n_species, 1) """
@@ -76,17 +76,20 @@ def solve_ss(model_dfrx_ode, y0, params, t1=3000):
 # vmap it over the parameters
 # assume that the first dimension of params is the number of samples
 # and the second dimension is the number of parameters
-vsolve_ss = jax.vmap(solve_ss, in_axes=(None, None, 0))
-psolve_ss = jax.pmap(vsolve_ss, in_axes=(None, None, 0))
+vsolve_ss = jax.vmap(solve_ss, in_axes=(None, None, 0, None))
+psolve_ss = jax.pmap(vsolve_ss, in_axes=(None, None, 0, None))
 
 
 ##############################
 # loop over models and run the analysis
 ##############################
-model_list = ['shin_2014', 'huang_ferrell_1996', 'schoeberl_2002', 
+model_list = ['schoeberl_2002', 
               'brightman_fell_2000', 'birtwistle_2007', 'hatakeyama_2003', 'hornberg_2005']
+sim_times = [300, 100, 1800, 3000, 6000]
+# model_list = ['shin_2014', 'huang_ferrell_1996', 'schoeberl_2002', 
+            #   'brightman_fell_2000', 'birtwistle_2007', 'hatakeyama_2003', 'hornberg_2005']
 
-for model_name in model_list:
+for model_name, time in zip(model_list, sim_times):
     print('Running: ', model_name)
     try:
         model = eval(model_name + '()')
@@ -121,7 +124,7 @@ for model_name in model_list:
     # reshape the sample to be (n_devices, n_samples/n_devices, n_params) so that
     # pmap doesn't complain
     reshaped_sample = sample.reshape((n_devices, int(sample.shape[0]/n_devices), sample.shape[-1]))
-    ss = psolve_ss(dfrx_ode, y0, reshaped_sample)
+    ss = psolve_ss(dfrx_ode, y0, reshaped_sample, time)
 
     # reshape back to (n_samples, n_species)
     n_dev, n_samp_per_dev, n_states, n_one = ss.shape
