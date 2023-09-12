@@ -130,4 +130,4 @@ for model_name in model_list:
     # save the steady-state values
     np.save('{}_morris_ss.npy'.format(model_name), ss)
 
-    print('Completed {}'.format(model_name'))
+    print('Completed {}'.format(model_name))
