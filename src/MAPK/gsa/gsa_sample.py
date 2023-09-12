@@ -105,13 +105,13 @@ for model_name in model_list:
     }
 
     # generate the samples
-    n_samples = 1024
+    n_samples = 256
     n_levels = 4
     sample = morris_sample.sample(problem, n_samples, n_levels, seed=1234)
     np.save('{}_morris_sample.npy'.format(model_name), sample)
 
     # run the model using vmap
-    print('Running {} samples'.format(sample.size))
+    print('Running {} samples'.format(sample.shape[0]))
     dfrx_ode = diffrax.ODETerm(model)
     ss = vsolve_ss(dfrx_ode, y0, sample)
 
