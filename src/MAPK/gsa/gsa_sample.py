@@ -109,10 +109,14 @@ psolve_traj = jax.pmap(vsolve_traj, in_axes=(None, None, 0, None))
 ##############################
 # loop over models and run the analysis
 ##############################
-model_list = ['shin_2014', 'huang_ferrell_1996', 'schoeberl_2002', 
-              'brightman_fell_2000', 'birtwistle_2007', 'hatakeyama_2003', 'hornberg_2005']
-sustained = [True, True, False, True, True, False, False]
-sim_times = [200, 1000, 60, 60, 1800, 1800, 6000]
+# model_list = ['shin_2014', 'huang_ferrell_1996', 'schoeberl_2002', 
+#               'brightman_fell_2000', 'birtwistle_2007', 'hatakeyama_2003', 'hornberg_2005']
+# sustained = [True, True, False, True, True, False, False]
+# sim_times = [200, 1000, 60, 60, 1800, 1800, 6000]
+
+model_list = ['birtwistle_2007', 'hatakeyama_2003', 'hornberg_2005']
+sustained = [True, False, False]
+sim_times = [1800, 1800, 6000]
 
 
 for model_name, time, sus in zip(model_list, sim_times, sustained):
