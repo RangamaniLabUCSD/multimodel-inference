@@ -121,13 +121,13 @@ for model_name in model_list:
     # reshape the sample to be (n_devices, n_samples/n_devices, n_params) so that
     # pmap doesn't complain
     reshaped_sample = sample.reshape((n_devices, int(sample.shape[0]/n_devices), sample.shape[-1]))
-
     ss = psolve_ss(dfrx_ode, y0, reshaped_sample)
 
     # reshape back to (n_samples, n_species)
     n_dev, n_samp_per_dev, n_states, n_one = ss.shape
     ss = ss.reshape((n_dev*n_samp_per_dev, n_states, n_one))
-    print(ss.shape)
 
     # save the steady-state values
     np.save('{}_morris_ss.npy'.format(model_name), ss)
+
+    print('Completed {}'.format(model_name'))
