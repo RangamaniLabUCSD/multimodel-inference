@@ -73,23 +73,49 @@ def solve_ss(model_dfrx_ode, y0, params, t1):
     
     return jnp.array(sol.ys)
 
+@jax.jit
+def solve_traj(model_dfrx_ode, y0, params, t1):
+    """ simulates a model over the specified time interval and returns the 
+    calculated steady-state values.
+    Returns an array of shape (n_species, 1) """
+    dt0=1e-3
+    solver = diffrax.Kvaerno5()
+    stepsize_controller=diffrax.PIDController(rtol=1e-6, atol=1e-6)
+    t0 = 0.0
+    dt0 = 1e-3
+
+    sol = diffrax.diffeqsolve(
+        model_dfrx_ode, 
+        solver, 
+        t0, t1, dt0, 
+        y0, 
+        stepsize_controller=stepsize_controller,
+        args=tuple(list(params)),
+        max_steps=60000,
+        throw=False,)
+    
+    return jnp.array(sol.ys)
+
 # vmap it over the parameters
 # assume that the first dimension of params is the number of samples
 # and the second dimension is the number of parameters
 vsolve_ss = jax.vmap(solve_ss, in_axes=(None, None, 0, None))
 psolve_ss = jax.pmap(vsolve_ss, in_axes=(None, None, 0, None))
 
+vsolve_traj = jax.vmap(solve_traj, in_axes=(None, None, 0, None))
+psolve_traj = jax.pmap(vsolve_traj, in_axes=(None, None, 0, None))
+
 
 ##############################
 # loop over models and run the analysis
 ##############################
-model_list = ['birtwistle_2007', 'schoeberl_2002', 
-              'brightman_fell_2000',  'hatakeyama_2003', 'hornberg_2005']
-sim_times = [1800, 300, 100,  3000, 6000]
-# model_list = ['shin_2014', 'huang_ferrell_1996', 'schoeberl_2002', 
-            #   'brightman_fell_2000', 'birtwistle_2007', 'hatakeyama_2003', 'hornberg_2005']
+model_list = ['shin_2014', 'huang_ferrell_1996', 'schoeberl_2002', 
+              'brightman_fell_2000', 'birtwistle_2007', 'hatakeyama_2003', 'hornberg_2005']
+sustained = [True, True, False, True, True, False, False]
+sim_times = [200, 1000, 60, 60, 1800, 1800, 6000]
 
-for model_name, time in zip(model_list, sim_times):
+
+for model_name, time, sus in zip(model_list, sim_times, sustained):
     print('Running: ', model_name)
     try:
         model = eval(model_name + '()')
@@ -124,13 +150,17 @@ for model_name, time in zip(model_list, sim_times):
     # reshape the sample to be (n_devices, n_samples/n_devices, n_params) so that
     # pmap doesn't complain
     reshaped_sample = sample.reshape((n_devices, int(sample.shape[0]/n_devices), sample.shape[-1]))
-    ss = psolve_ss(dfrx_ode, y0, reshaped_sample, time)
+
+    if sus:
+        sol = psolve_ss(dfrx_ode, y0, reshaped_sample, time)
+    else:
+        sol = psolve_traj(dfrx_ode, y0, reshaped_sample, time)
 
     # reshape back to (n_samples, n_species)
-    n_dev, n_samp_per_dev, n_states, n_one = ss.shape
-    ss = ss.reshape((n_dev*n_samp_per_dev, n_states, n_one))
+    n_dev, n_samp_per_dev, n_states, n_dim = sol.shape
+    sol = sol.reshape((n_dev*n_samp_per_dev, n_states, n_dim))
 
     # save the steady-state values
-    np.save('{}_morris_ss.npy'.format(model_name), ss)
+    np.save('{}_morris_ss.npy'.format(model_name), sol)
 
     print('Completed {}'.format(model_name))
