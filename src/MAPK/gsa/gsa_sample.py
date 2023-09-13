@@ -74,7 +74,7 @@ def solve_ss(model_dfrx_ode, y0, params, t1):
     return jnp.array(sol.ys)
 
 @jax.jit
-def solve_traj(model_dfrx_ode, y0, params, t1):
+def solve_traj(model_dfrx_ode, y0, params, t1, times):
     """ simulates a model over the specified time interval and returns the 
     calculated steady-state values.
     Returns an array of shape (n_species, 1) """
@@ -83,8 +83,6 @@ def solve_traj(model_dfrx_ode, y0, params, t1):
     stepsize_controller=diffrax.PIDController(rtol=1e-6, atol=1e-6)
     t0 = 0.0
     dt0 = 1e-3
-    n_out = 500
-    times = np.linspace(t0, t1, n_out)
     saveat = saveat=diffrax.SaveAt(ts=times)
 
     sol = diffrax.diffeqsolve(
@@ -106,8 +104,8 @@ def solve_traj(model_dfrx_ode, y0, params, t1):
 vsolve_ss = jax.vmap(solve_ss, in_axes=(None, None, 0, None))
 psolve_ss = jax.pmap(vsolve_ss, in_axes=(None, None, 0, None))
 
-vsolve_traj = jax.vmap(solve_traj, in_axes=(None, None, 0, None))
-psolve_traj = jax.pmap(vsolve_traj, in_axes=(None, None, 0, None))
+vsolve_traj = jax.vmap(solve_traj, in_axes=(None, None, 0, None, None))
+psolve_traj = jax.pmap(vsolve_traj, in_axes=(None, None, 0, None, None))
 
 
 ##############################
@@ -162,7 +160,9 @@ for model_name, time, sus in zip(model_list, sim_times, sustained):
     if sus:
         sol = psolve_ss(dfrx_ode, y0, reshaped_sample, time)
     else:
-        sol = psolve_traj(dfrx_ode, y0, reshaped_sample, time)
+        n_out = 500
+        times = np.linspace(0.0, time, n_out)
+        sol = psolve_traj(dfrx_ode, y0, reshaped_sample, time, times)
 
     # reshape back to (n_samples, n_species)
     n_dev, n_samp_per_dev, n_states, n_dim = sol.shape
