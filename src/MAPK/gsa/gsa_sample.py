@@ -8,7 +8,7 @@ environ['OMP_NUM_THREADS'] = '1'
 # use all available cores (do before loading jax)
 # required for parallel cpu runs
 n_cores = mp.cpu_count()
-cpu_mult = 2
+cpu_mult = 1
 # print('Using {} cores'.format(n_cores))
 n_devices = int(2**np.ceil(math.log(cpu_mult*n_cores, 2))) # sets n_devices to the next largest power of 2
 # print('Set {} XLA devices'.format(n_devices))
@@ -83,12 +83,16 @@ def solve_traj(model_dfrx_ode, y0, params, t1):
     stepsize_controller=diffrax.PIDController(rtol=1e-6, atol=1e-6)
     t0 = 0.0
     dt0 = 1e-3
+    n_out = 500
+    times = np.linspace(t0, t1, n_out)
+    saveat = saveat=diffrax.SaveAt(ts=times)
 
     sol = diffrax.diffeqsolve(
         model_dfrx_ode, 
         solver, 
         t0, t1, dt0, 
         y0, 
+        saveat=saveat,
         stepsize_controller=stepsize_controller,
         args=tuple(list(params)),
         max_steps=60000,
@@ -114,9 +118,9 @@ psolve_traj = jax.pmap(vsolve_traj, in_axes=(None, None, 0, None))
 # sustained = [True, True, False, True, True, False, False]
 # sim_times = [200, 1000, 60, 60, 1800, 1800, 6000]
 
-model_list = ['birtwistle_2007', 'hatakeyama_2003', 'hornberg_2005']
-sustained = [True, False, False]
-sim_times = [1800, 1800, 6000]
+model_list = ['hatakeyama_2003', 'hornberg_2005', 'birtwistle_2007', 'schoeberl_2002',]
+sustained = [False, False, True, False]
+sim_times = [1800, 6000, 1800, 60]
 
 
 for model_name, time, sus in zip(model_list, sim_times, sustained):
