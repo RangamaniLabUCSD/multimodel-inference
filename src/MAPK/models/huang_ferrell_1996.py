@@ -170,4 +170,4 @@ class huang_ferrell_1996(eqx.Module):
 
         ic_tup = tuple([ic_dict[key] for key in ic_dict.keys()])
 
-        return ic_tup
+        return ic_dict, ic_tup

@@ -70,10 +70,14 @@ class kholodenko_2000(eqx.Module):
         }
 
     def get_initial_conditions():
-        return {
+        ic_dict = {
             'MKKK_P': 90.0,
             'MKK_P': 10.0,
             'MKK_PP': 0.0,
             'MAPK_P': 10.0,
             'MAPK_PP': 0.0,
         }
+
+        ic_tup = tuple([ic_dict[k] for k in ic_dict.keys()])
+
+        return ic_dict, ic_tup
