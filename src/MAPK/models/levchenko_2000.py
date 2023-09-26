@@ -33,11 +33,11 @@ class levchenko_2000(eqx.Module):
         J12 = a5*MEKstar*RAFstar
         J13 = k4*MEKstar_MEKPase
         J14 = kOff1*(C2 + C6 + C9)
-        J15 = kOn1*(C1 + C4 + C5)
+        J15 = kOn1*MEK*(C1 + C4 + C5)
         J16 = a4*MEKstar*(MEKPase - MEKstar_MEKPase - MEKstarstar_MEKPase)
         J17 = d4*MEKstar_MEKPase
         J18 = k6*MEKstarstar_MEKPase
-        J19 = a6*MEKstarstar(MEKPase - MEKstar_MEKPase - MEKstarstar_MEKPase)
+        J19 = a6*MEKstarstar*(MEKPase - MEKstar_MEKPase - MEKstarstar_MEKPase)
         J20 = d6*MEKstarstar_MEKPase
         J21 = a7*MEKstarstar*MAPK
         J22 = d7*MAPK_MEKstarstar
@@ -47,7 +47,7 @@ class levchenko_2000(eqx.Module):
         J26 = a9*MAPKstar*MEKstarstar
         J27 = kOff3*(C3 + C7 + C8)
         J28 = k8*MAPKstar_MAPKPase
-        J29 = kOff2*(C4 + C6 + C9)
+        J29 = kOff2*(C4 + C6 + C7)
         J30 = kOn2*MAPK*(C1 + C2 + C3)
         J31 = a8*MAPKstar*(MAPKPase - MAPKstar_MAPKPase - MAPKstarstar_MAPKPase)
         J32 = d8*MAPKstar_MAPKPase
@@ -68,6 +68,7 @@ class levchenko_2000(eqx.Module):
         J47 = kOn2*C3*MAPK
         J48 = kOff2*C7
         J49 = kOff4*C8
+        # J50 = kr1*C2*RAF # i think this is wrong
         # skip J50, typo
         J51 = kOff1*C6
         J52 = kOff3*C7
@@ -76,9 +77,11 @@ class levchenko_2000(eqx.Module):
         J55 = kOff3*C8
         J56 = kOn1*C5*MEK
         # skip J57, typo
-        J58 = kr1*C6*RAF
+        J58 = kr1*C6*RAFstar 
+        # J58 = kr1*C6*RAF
         J59 = kr2*C7
-        J60 = kr1*C9*RAF
+        J60 = kr1*C9*RAFstar 
+        # J60 =kr1*C9*RAF
 
 
         
@@ -96,7 +99,7 @@ class levchenko_2000(eqx.Module):
         d_MEKstar_RAFstar = J12 - J11 - J10
         d_MEKstarstar = J10 - J19 + J20 - J21 + J22 + J23 + J24 + J25 - J26 + J27
         d_MEKstarstar_MEKPase = J19  - J20 - J18
-        d_MAPK = -J21 + J28 + J29 - J30
+        d_MAPK = -J21 + J22 + J28 + J29 - J30
         d_MAPK_MEKstarstar = J21 - J22 - J23
         d_MAPKstar = J23 - J31 + J32 - J26 + J24 + J33
         d_MAPKstar_MEKstarstar = J26 - J24 - J25
@@ -122,81 +125,91 @@ class levchenko_2000(eqx.Module):
                 d_C4, d_C5, d_C6, d_C7, d_C8, d_C9)
     
 
-def get_nominal_params():
-    # values come from Ferrell 1996 - trends biochem sci
-    #   and Bray and Lay 1997 - PNAS 
-    return {
-        'a1': 1.0, # 1/(uM*sec)
-        'a2': 0.5, # 1/(uM*sec)
-        'a3': 3.3, # 1/(uM*sec)
-        'a4': 10.0, # 1/(uM*sec)
-        'a5': 3.3, # 1/(uM*sec)
-        'a6': 10.0, # 1/(uM*sec)
-        'a7': 20.0, # 1/(uM*sec)
-        'a8': 5.0, # 1/(uM*sec)
-        'a9': 20.0, # 1/(uM*sec)
-        'a10': 5.0, # 1/(uM*sec)
-        'd1': 0.4, # 1/sec
-        'd2': 0.5, # 1/sec
-        'd3': 0.42, # 1/sec
-        'd4': 0.8, # 1/sec
-        'd5': 0.4, # 1/sec
-        'd6': 0.8, # 1/sec
-        'd7': 0.6, # 1/sec
-        'd8': 0.4, # 1/sec
-        'd9': 0.6, # 1/sec
-        'd10': 0.4, # 1/sec
-        'k1': 0.1, # 1/sec
-        'k2': 0.1, # 1/sec
-        'k3': 0.1, # 1/sec
-        'k4': 0.1, # 1/sec
-        'k5': 0.1, # 1/sec
-        'k6': 0.1, # 1/sec
-        'k7': 0.1, # 1/sec
-        'k8': 0.1, # 1/sec
-        'k9': 0.1, # 1/sec
-        'k10': 0.1, # 1/sec
-        'kOn1': 10.0, # 1/(uM*sec)
-        'kOn2': 10.0, # 1/(uM*sec)
-        'kOff1': 0.05, # 1/sec
-        'kOff2': 0.05, # 1/sec
-        'kOff3': 0.05, # 1/sec
-        'kOff4': 0.5, # 1/sec
-        'RAFact': 0.2, #uM
-        'RAFPase': 0.3, #uM
-        'MEKPase': 0.2, #uM
-        'MAPKPase': 0.3, #uM
-    }
+    def get_nominal_params(self):
+        # values come from Ferrell 1996 - trends biochem sci
+        #   and Bray and Lay 1997 - PNAS 
+        p_dict =  {
+            'a1': 1.0, # 1/(uM*sec)
+            'a2': 0.5, # 1/(uM*sec)
+            'a3': 3.3, # 1/(uM*sec)
+            'a4': 10.0, # 1/(uM*sec)
+            'a5': 3.3, # 1/(uM*sec)
+            'a6': 10.0, # 1/(uM*sec)
+            'a7': 20.0, # 1/(uM*sec)
+            'a8': 5.0, # 1/(uM*sec)
+            'a9': 20.0, # 1/(uM*sec)
+            'a10': 5.0, # 1/(uM*sec)
+            'd1': 0.4, # 1/sec
+            'd2': 0.5, # 1/sec
+            'd3': 0.42, # 1/sec
+            'd4': 0.8, # 1/sec
+            'd5': 0.4, # 1/sec
+            'd6': 0.8, # 1/sec
+            'd7': 0.6, # 1/sec
+            'd8': 0.4, # 1/sec
+            'd9': 0.6, # 1/sec
+            'd10': 0.4, # 1/sec
+            'k1': 0.1, # 1/sec
+            'k2': 0.1, # 1/sec
+            'k3': 0.1, # 1/sec
+            'k4': 0.1, # 1/sec
+            'k5': 0.1, # 1/sec
+            'k6': 0.1, # 1/sec
+            'k7': 0.1, # 1/sec
+            'k8': 0.1, # 1/sec
+            'k9': 0.1, # 1/sec
+            'k10': 0.1, # 1/sec
+            'kOn1': 10.0, # 1/(uM*sec)
+            'kOn2': 10.0, # 1/(uM*sec)
+            'kOff1': 0.05, # 1/sec
+            'kOff2': 0.05, # 1/sec
+            'kOff3': 0.05, # 1/sec
+            'kOff4': 0.5, # 1/sec
+            'RAFact': 0.2, #uM
+            'RAFPase': 0.3, #uM
+            'MEKPase': 0.2, #uM
+            'MAPKPase': 0.3, #uM
+        }
 
-def get_initial_conditions():
-    # values come from Ferrell 1996 - trends biochem sci
-    #   and Bray and Lay 1997 - PNAS 
-    return {
-        'RAF': 0.3, # uM 
-        'RAF_RAFact': 0.0, # uM 
-        'RAFstar': 0.0, # uM 
-        'RAFstar_RAFPase': 0.0, # uM 
-        'MEK': 0.2, # uM 
-        'MEK_RAFstar': 0.0, # uM 
-        'MEKstar': 0.0, # uM 
-        'MEKstar_MEKPase': 0.0, # uM 
-        'MEKstar_RAFstar': 0.0, # uM 
-        'MEKstarstar': 0.0, # uM 
-        'MEKstarstar_MEKPase': 0.0, # uM 
-        'MAPK': 0.4, # uM 
-        'MAPK_MEKstarstar': 0.0, # uM 
-        'MAPKstar': 0.0, # uM 
-        'MAPKstar_MEKstarstar': 0.0, # uM 
-        'MAPKstarstar': 0.0, # uM 
-        'MAPKstar_MAPKPase': 0.0, # uM 
-        'MAPKstarstar_MAPKPase': 0.0, # uM 
-        'C1': 0.0, # uM
-        'C2': 0.0, # uM
-        'C3': 0.0, # uM
-        'C4': 0.0, # uM
-        'C5': 0.0, # uM
-        'C6': 0.0, # uM
-        'C7': 0.0, # uM
-        'C8': 0.0, # uM
-        'C9': 0.0, # uM
-    }
+        p_list = [p_dict[key] for key in p_dict.keys()]
+
+        return p_dict, p_list
+    
+
+
+    def get_initial_conditions(self):
+        # values come from Ferrell 1996 - trends biochem sci
+        #   and Bray and Lay 1997 - PNAS 
+        y0_dict = {
+            'RAF': 0.3, # uM 
+            'RAF_RAFact': 0.0, # uM 
+            'RAFstar': 0.0, # uM 
+            'RAFstar_RAFPase': 0.0, # uM 
+            'MEK': 0.2, # uM 
+            'MEK_RAFstar': 0.0, # uM 
+            'MEKstar': 0.0, # uM 
+            'MEKstar_MEKPase': 0.0, # uM 
+            'MEKstar_RAFstar': 0.0, # uM 
+            'MEKstarstar': 0.0, # uM 
+            'MEKstarstar_MEKPase': 0.0, # uM 
+            'MAPK': 0.4, # uM 
+            'MAPK_MEKstarstar': 0.0, # uM 
+            'MAPKstar': 0.0, # uM 
+            'MAPKstar_MEKstarstar': 0.0, # uM 
+            'MAPKstarstar': 0.0, # uM 
+            'MAPKstar_MAPKPase': 0.0, # uM 
+            'MAPKstarstar_MAPKPase': 0.0, # uM 
+            'C1': 0.0, # uM
+            'C2': 0.0, # uM
+            'C3': 0.0, # uM
+            'C4': 0.0, # uM
+            'C5': 0.0, # uM
+            'C6': 0.0, # uM
+            'C7': 0.0, # uM
+            'C8': 0.0, # uM
+            'C9': 0.0, # uM
+        }
+
+        y0_tup = tuple([y0_dict[key] for key in y0_dict.keys()])
+
+        return y0_dict, y0_tup

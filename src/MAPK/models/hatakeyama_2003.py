@@ -101,41 +101,43 @@ class hatakeyama_2003(eqx.Module):
     
     def get_initial_conditions(self):
         """ Function to get nominal initial conditions for the model. """
-        R = 80.0
-        Shc = 1000.0
-        PI3K = 10.0
-        HRG = 10.0
-        R_HRG = 0.0
-        R_HRG2 = 0.0
-        Internalisation = 0.0
-        RP = 0.0
-        R_Shc = 0.0
-        R_ShP = 0.0
-        ShP = 0.0
-        R_ShGS = 0.0
-        ShGS = 0.0
-        GS = 10.0
-        R_PI3K = 0.0
-        R_PI3Kstar = 0.0
-        PI3Kstar = 0.0
-        RasGTP = 0.0
-        RasGDP = 120.0
-        Akt_PIPP = 0.0
-        RAF_star = 0.0
-        RAF = 100.0
-        MEKP = 0.0
-        MEKPP = 0.0
-        P = 800.0
-        PIP3 = 0.0
-        Akt = 10.0
-        Akt_PIP3 = 0.0
-        Akt_PIP = 0.0
-        MEK = 120.0
-        ERK = 1000.0
-        ERKP = 0.0
-        ERKPP = 0.0
+        y0_dict = {'R':80.0,
+        'Shc':1000.0,
+        'PI3K':10.0,
+        'HRG':10.0,
+        'R_HRG':0.0,
+        'R_HRG2':0.0,
+        'Internalisation':0.0,
+        'RP':0.0,
+        'R_Shc':0.0,
+        'R_ShP':0.0,
+        'ShP':0.0,
+        'R_ShGS':0.0,
+        'ShGS':0.0,
+        'GS':10.0,
+        'R_PI3K':0.0,
+        'R_PI3Kstar':0.0,
+        'PI3Kstar':0.0,
+        'RasGTP':0.0,
+        'RasGDP':120.0,
+        'Akt_PIPP':0.0,
+        'RAF_star':0.0,
+        'RAF':100.0,
+        'MEKP':0.0,
+        'MEKPP':0.0,
+        'P':800.0,
+        'PIP3':0.0,
+        'Akt':10.0,
+        'Akt_PIP3':0.0,
+        'Akt_PIP':0.0,
+        'MEK':120.0,
+        'ERK':1000.0,
+        'ERKP':0.0,
+        'ERKPP':0.0,}
 
-        return (R, Shc, PI3K, HRG, R_HRG, R_HRG2, Internalisation, RP, R_Shc, R_ShP, ShP, R_ShGS, ShGS, GS, R_PI3K, R_PI3Kstar, PI3Kstar, RasGTP, RasGDP, Akt_PIPP, RAF_star, RAF, MEKP, MEKPP, P, PIP3, Akt, Akt_PIP3, Akt_PIP, MEK, ERK, ERKP, ERKPP)
+        y0_tup = tuple([y0_dict[key] for key in y0_dict])
+
+        return y0_dict, y0_tup
 
         
     

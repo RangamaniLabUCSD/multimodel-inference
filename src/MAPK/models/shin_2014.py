@@ -40,14 +40,17 @@ class shin_2014(eqx.Module):
     
     def get_initial_conditions(self):
         """ Function to get nominal initial conditions for the model. """
-        RE = 0.0 # uM
-        GS = 0.0 # uM
-        Ras_GTP = 0.0 # uM
-        act_Raf = 0.0 # uM
-        pp_MEK = 0.0 # uM
-        pp_ERK = 0.0 # uM
+        y0_dict = {'RE': 0.0, # uM
+            'GS': 0.0, # uM
+            'Ras_GTP': 0.0, # uM
+            'act_Raf': 0.0, # uM
+            'pp_MEK': 0.0, # uM
+            'pp_ERK': 0.0, # uM
+        }
 
-        return (RE, GS, Ras_GTP, act_Raf, pp_MEK, pp_ERK)
+        y0_tup = tuple([y0_dict[key] for key in y0_dict.keys()])
+
+        return y0_dict, y0_tup
 
         
     

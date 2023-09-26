@@ -40,8 +40,8 @@ class kholodenko_2000(eqx.Module):
         return (d_MKKK_P, d_MKK_P, d_MKK_PP, d_MAPK_P, d_MAPK_PP)
     
 
-    def get_nominal_params():
-        return {
+    def get_nominal_params(self):
+        p_dict = {
             'v1': 2.5,
             'KI': 9.0,
             'K1': 10.0,
@@ -69,7 +69,12 @@ class kholodenko_2000(eqx.Module):
             'MAPK_total': 300.0,
         }
 
-    def get_initial_conditions():
+        p_list = [p_dict[k] for k in p_dict.keys()]
+
+        return p_dict, p_list
+
+
+    def get_initial_conditions(self):
         ic_dict = {
             'MKKK_P': 90.0,
             'MKK_P': 10.0,

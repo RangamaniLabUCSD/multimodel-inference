@@ -407,7 +407,7 @@ class birtwistle_2007(eqx.Module):
         
         ic_tup = tuple([ic_dict[key] for key in ic_dict])
 
-        return ic_tup
+        return ic_dict, ic_tup
     
     def get_nominal_params(self):
         """ Function to get nominal parameters for the model. """
