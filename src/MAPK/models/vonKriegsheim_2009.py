@@ -62,7 +62,7 @@ class vonKriegsheim_2009(eqx.Module):
         #PLCg PKC Activation
         v14=k14*(pPLCg**k61/(k62**k61+pPLCg**k61))*PKC + k63*(pPLCg**k64/(k65**k64+pPLCg**k64))*PKC;
         #Phorbol Ester (PhE) PKC Activation
-        v15=k15*(PhE**k66/(k67**k66+PhE**k67))*PKC;
+        v15=k15*(PhE**k66/(k67**k66+PhE**k66))*PKC;
         #PKC Deactivation
         v16=k16*PKCa+k59*PKCa*EGF+k60*PKCa*NGF;
         #RKIP Phosphorylation

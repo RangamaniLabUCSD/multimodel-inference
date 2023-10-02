@@ -115,7 +115,7 @@ class birtwistle_2007(eqx.Module):
         J68 = (((((kf49 * SigO * RsD) / (Kmf49 + RsD)) - ((kr49 * SigR * RsT) / (Kmr49 + RsT))) - ((kr49b * SigRP * RsT) / (Kmr49b + RsT))) - (kcon49 * RsT))
         J69 = ((3.0 * kon80 * E14P * T) - (koff80 * E14T))
         J70 = (((kf14 * E24) - ((VmaxPY * E24P) / (KmPY + E24P))) - (kPTP14 * SigT * E24P))
-        J71 = ((kon1 * E * E1) - (EGF_off * E_E1))/ VeVc
+        J71 = ((kon1 * E * E1) - (EGF_off * E_E1)) / VeVc
         J72 = ((8.0 * kon17 * E11P * S) - (koff17 * (SigS / (SigS + SigSP + SigSP_G + eps)) * E11S))
         J73 = ((kon57 * P3_A * G) - (koff57 * SigA_G))
         J74 = (((kf54 * O * ERKstar) / (Kmf54 + O)) - ((Vmaxr54 * OP) / (Kmr54 + OP)))

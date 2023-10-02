@@ -2,9 +2,8 @@ import equinox as eqx
 import jax.numpy as jnp
 
 class bhalla_iyengar_1999(eqx.Module):
-    """ Note this is the code at https://models.physiomeproject.org/exposure/48c4b41256d698c4d18aace1cb159865/hornberg_binder_bruggeman_schoeberl_heinrich_westerhoff_2005.cellml/@@cellml_codegen/Python
-    
-Which comes from the Hornberg paper entry on the CellML site https://models.physiomeproject.org/e/7e3/bhalla_iyengar_1999_a.cellml/view"""
+    """ 
+Which comes from the Bhalla and Inyengar paper entry on the CellML site https://models.physiomeproject.org/e/7e3/bhalla_iyengar_1999_a.cellml/view"""
 
     def __call__(self, t, y, constants):
 
@@ -41,99 +40,97 @@ Which comes from the Hornberg paper entry on the CellML site https://models.phys
             kmE12, VmaxE2, VmaxE4, VmaxE6, VmaxE8, VmaxE12, kmF2, kmF6, VmaxF2, \
             VmaxF6, kfG8, kfG9, kmG6, VmaxG6, kmG7, VmaxG7 = constants
 
-        dy_dt_0 = ((((((((((PKC_i*kfK1-PKC*kbK1)+PKC_i*AA*kfK2)-PKC*kbK2)+CaPKC*kfK3)-PKC*kbK3)+CaPKC*AA*kfK4)-PKC*kbK4)+DAGCaPKC*kfK5)-PKC*kbK5)+AADAGPKC*kfK6)-PKC*kbK6
-        dy_dt_1 = (-PKC*VmaxB3*GAP)/(kmB3*(1.0+Raf/kmH1+GEF/kmB6+Ng/kmM7+NgCaM/kmM8)+GAP)+kfB4*GAPstar
-        dy_dt_2 = (-PKC*Raf*VmaxH1)/(kmH1*(1.0+GAP/kmB3+GEF/kmB6+Ng/kmM7+NgCaM/kmM8)+Raf)+(Raf_star*PP2A*VmaxH3)/(kmH3*(1.0+Raf_star_star/kmH4+MAPKK_star_star/kmH9+MAPKK_star/kmH8)+Raf_star)
-        dy_dt_3 = (PKC*VmaxB6*GEF)/(kmB6*(1.0+GAP/kmB3+Ng/kmM7+Raf/kmH1+NgCaM/kmM8)+GEF)-kfB7*GEF_star
-        dy_dt_4 = -kbB5*CaM_GEF+kfB5*GEF*Ca4CAM
-        dy_dt_5 = -(-kfB8*GEF*Gbg+kbB8*Gbg_GEF)
-        dy_dt_6 = (((GqPLC*Ca*kfG3-CaGqPLC*kbG3)+CaPLC*Ga_GTP*kfG4)-CaGqPLC*kbG4)-CaGqPLC*kfG5     
-        dy_dt_7 = ((PLC*Ca*kfG1-CaPLC*kbG1)+CaGqPLC*kfG5)-(-CaGqPLC*kbG4+CaPLC*Ga_GTP*kfG4)
-        dy_dt_8 = (kfM4*Ng*CaM-kbM4*NgCaM)-(NgCaM*PKC*VmaxM8)/(NgCaM+kmM8*(1.0+GAP/kmB3+GEF/kmB6+Raf/kmH1+Ng/kmM7))
-        dy_dt_9 = (((-((((PKA*VmaxB1*GEF)/(kmB1+GEF)+(PKC*VmaxB6*GEF)/(kmB6*(1.0+GAP/kmB3+Ng/kmM7+Raf/kmH1+NgCaM/kmM8)+GEF))-kfB2*GEF_inact)-kfB7*GEF_star)-kfB5*Ca4CAM*GEF)+kbB5*CaM_GEF)-kfB8*GEF*Gbg)+kbB8*Gbg_GEF
-        dy_dt_10 = (kfM6*Ng_star+(VmaxM5*Ng_star)/(Ng_star+kmM5))-(Ng*PKC*VmaxM7)/(Ng+kmM7*(1.0+GAP/kmB3+GEF/kmB6+Raf/kmH1+NgCaM/kmM8))
-        dy_dt_11 = (-Ga_GDP*Gbg*kfD8+kfD6*Gabg_GluR+kfD9*Gabg*GTP)-(kfB8*GEF*Gbg-kbB8*Gbg_GEF)
-        dy_dt_12 = (Ga_GTP*kfD7-Ga_GDP*kfD8*Gbg)+CaGqPLC*kfG5
-        dy_dt_13 = ((kfD5*Gabg_GluR-kbD5*Gabg*mGluR)-(kfD3*mGluR-kbD3*Glu*R))+kfD6*Gabg_GluR
-        dy_dt_14 = -(PLC*Ca*kfG1-CaPLC*kbG1)-(PLC*Ga_GTP*kfG2-GqPLC*kbG2)
-        dy_dt_15 = (kfM1*Ca*Ca*CaM-kbM1*Ca2CaM)-(Ca*Ca2CaM*kfM2-kbM2*Ca3CaM)
-        dy_dt_16 = (Ca*Ca2CaM*kfM2-kbM2*Ca3CaM)-(Ca*Ca3CaM*kfM3-kbM3*Ca4CAM)
-        dy_dt_17 = (((NgCaM*PKC*VmaxM8)/(NgCaM+kmM8*(1.0+GAP/kmB3+GEF/kmB6+Raf/kmH1+Ng/kmM7))-kfM6*Ng_star)-(VmaxM5*Ng_star)/(Ng_star+kmM5))+(Ng*PKC*VmaxM7)/(Ng+kmM7*(1.0+GAP/kmB3+GEF/kmB6+Raf/kmH1+NgCaM/kmM8))
-        dy_dt_18 = (((Ga_GDP*Gbg*kfD8-(Gabg*R*kfD4-Gabg_R*kbD4))+kfD5*Gabg_GluR)-kbD5*Gabg*mGluR)-kfD9*Gabg*GTP
-        dy_dt_19 = (kfD3*mGluR-kbD3*Glu*R)-(Gabg*R*kfD4-Gabg_R*kbD4)
-        dy_dt_20 = ((Gabg*R*kfD4-Gabg_R*kbD4)+kfD2*Gabg_GluR)-Gabg_R*Glu*kbD2
-        dy_dt_21 = -(kfD1*Glu_synapse-kbD1*Glu)
-        dy_dt_22 = (-(kfD2*Gabg_GluR-Gabg_R*Glu*kbD2)-(kfD5*Gabg_GluR-kbD5*Gabg*mGluR))-kfD6*Gabg_GluR
-        dy_dt_23 = ((((kfD1*Glu_synapse-kbD1*Glu)+kfD2*Gabg_GluR)-Gabg_R*Glu*kbD2)+kfD3*mGluR)-kbD3*Glu*R
-        dy_dt_24 = ((kfD9*Gabg*GTP-Ga_GTP*kfD7)-(PLC*Ga_GTP*kfG2-GqPLC*kbG2))-(CaGqPLC*kbG4+CaPLC*Ga_GTP*kfG4)
-        dy_dt_25 = (PLC*Ga_GTP*kfG2-GqPLC*kbG2)-(Ca*GqPLC*kfG3-CaGqPLC*kbG3)
-        dy_dt_26 = (PKA*VmaxB1*GEF)/(kmB1+GEF)-kfB2*GEF_inact
-        dy_dt_27 = (-(-kbB5*CaM_GEF+kfB5*GEF*Ca4CAM)+Ca*Ca3CaM*kfM3)-kbM3*Ca4CAM
-        dy_dt_28 = (-(kfM1*Ca*Ca*CaM-kbM1*Ca2CaM)-(kfM4*Ng*CaM-kbM4*NgCaM))+(NgCaM*PKC*VmaxM8)/(NgCaM+kmM8)
-        dy_dt_29 = kfA6*SHCstar*SOS_GRB2-kbA6*SHCstar_SOS_GRB2
-        dy_dt_30 = (MAPK_tyr*VmaxH11*MAPKK_star_star)/(kmH11*(1.0+MAPK/kmH10)+MAPK_tyr)-(MAPK_star*VmaxH13*MKP1)/(kmH13*(1.0+MAPK_tyr/kmH12)+MAPK_star)
-        dy_dt_31 = (((kfA8*SOSstar-kbA8*SOS)-(MAPK_star*VmaxA9*SOS)/(kmA9*(1.0+Raf_star/kmH2)+SOS))+kbA5*SOS_GRB2)-kfA5*SOS*GRB2
-        dy_dt_32 = (MAPKK_star*VmaxH7*GTPRasRaf_star)/(kmH7*(1.0+MAPKK/kmH6)+MAPKK_star)-(MAPKK_star_star*VmaxH9*PP2A)/(kmH9*(1.0+Raf_star/kmH3+Raf_star_star/kmH4+MAPKK_star/kmH8)+MAPKK_star_star)
-        dy_dt_33 = (((MAPKK*VmaxH6*GTPRasRaf_star)/(kmH6*(1.0+MAPKK_star/kmH7)+MAPKK)-(MAPKK_star*VmaxH8*PP2A)/(kmH8*(1.0+Raf_star/kmH3+Raf_star_star/kmH4+MAPKK_star_star/kmH9)+MAPKK_star))-(MAPKK_star*VmaxH7*GTPRasRaf_star)/(kmH7*(1.0+MAPKK/kmH6)+MAPKK_star))+(MAPKK_star_star*VmaxH9*PP2A)/(kmH9*(1.0+Raf_star/kmH3+Raf_star_star/kmH4+MAPKK_star/kmH8)+MAPKK_star_star)
-        dy_dt_34 = (((PKC*Raf*VmaxH1)/(kmH1*(1.0+GAP/kmB3+GEF/kmB6+Ng/kmM7+NgCaM/kmM8)+Raf)-(Raf_star*PP2A*VmaxH3)/(kmH3*(1.0+Raf_star_star/kmH4+MAPKK_star_star/kmH9+MAPKK_star/kmH8)+Raf_star))-(Raf_star*MAPK_star*VmaxH2)/(kmH2*(1.0+SOS/kmA9)+Raf_star))+(Raf_star_star*PP2A*VmaxH4)/(kmH4*(1.0+Raf_star/kmH3+MAPKK_star_star/kmH9+MAPKK_star/kmH8)+Raf_star_star)
-        dy_dt_35 = GTP_RAS*Raf_star*kfH5-GTPRasRaf_star*kbH5
-        dy_dt_36 = (Raf_star*MAPK_star*VmaxH2)/(kmH2*(1.0+SOS/kmA9)+Raf_star)-(Raf_star_star*PP2A*VmaxH4)/(kmH4*(1.0+Raf_star/kmH3+MAPKK_star_star/kmH9+MAPKK_star/kmH8)+Raf_star_star)
-        dy_dt_37 = ((((-GAP*VmaxB13*GTP_RAS)/(kmB13+GTP_RAS)-kfB12*GTP_RAS)+(GEF_star*VmaxB10*GDP_RAS)/(kmB10+GDP_RAS)+(Gbg_GEF*VmaxB11*GDP_RAS)/(kmB11+GDP_RAS)+(CaM_GEF*VmaxB9*GDP_RAS)/(kmB9+GDP_RAS)+(SHCstar_SOS_GRB2*VmaxA7*GDP_RAS)/(kmA7+GDP_RAS))-GTP_RAS*Raf_star*kfH5)+GTPRasRaf_star*kbH5
-        dy_dt_38 = -(((-GAP*VmaxB13*GTP_RAS)/(kmB13+GTP_RAS)-kfB12*GTP_RAS)+(GEF_star*VmaxB10*GDP_RAS)/(kmB10+GDP_RAS)+(Gbg_GEF*VmaxB11*GDP_RAS)/(kmB11+GDP_RAS)+(CaM_GEF*VmaxB9*GDP_RAS)/(kmB9+GDP_RAS))-(SHCstar_SOS_GRB2*VmaxA7*GDP_RAS)/(kmA7+GDP_RAS)
-        dy_dt_39 = (PKC*VmaxB3*GAP)/(kmB3*(1.0+Raf/kmH1+GEF/kmB6+Ng/kmM7+NgCaM/kmM8)+GAP)-kfB4*GAPstar
-        dy_dt_40 = (-MAPKK*VmaxH6*GTPRasRaf_star)/(kmH6*(1.0+MAPKK_star/kmH7)+MAPKK)+(MAPKK_star*VmaxH8*PP2A)/(kmH8*(1.0+Raf_star/kmH3+Raf_star_star/kmH4+MAPKK_star_star/kmH9)+MAPKK_star)
-        dy_dt_41 = (-MAPK*VmaxH10*MAPKK_star_star)/(kmH10*(1.0+MAPK_tyr/kmH11)+MAPK)+(MAPK_tyr*VmaxH12*MKP1)/(kmH12*(1.0+MAPK_star/kmH13)+MAPK_tyr)
-        dy_dt_42 = (((MAPK*VmaxH10*MAPKK_star_star)/((kmH10*MAPK_tyr)/kmH11+MAPK)-(MAPK_tyr*VmaxH12*MKP1)/(kmH12*(1.0+MAPK_star/kmH13)+MAPK_tyr))-(MAPK_tyr*VmaxH11*MAPKK_star_star)/(kmH11*(1.0+MAPK_tyr/kmH12)+MAPK_tyr))+(MAPK_star*VmaxH13*MKP1)/(kmH13*(1.0+MAPK_tyr/kmH12)+MAPK_star)
-        dy_dt_43 = ((kfA1*EGF*EGFR-kbA1*EGF_EGFR)-kfA2*EGF_EGFR)+kbA2*EGF_EGFR_INTERNAL
-        dy_dt_44 = (-(-Ca*PLCg*kfF1+CaPLCg*kbF1)+kfF3*CaPLCg_star)-(VmaxF4*EGF_EGFR*CaPLCg)/(kmF4*(1.0+SHC/kmA3)+CaPLCg)
-        dy_dt_45 = (kfA4*SHCstar-kbA4*SHC)-(EGF_EGFR*VmaxA3*SHC)/(kmA3*(1.0+CaPLCg/kmF4)+SHC)
-        dy_dt_46 = (((EGF_EGFR*VmaxA3*SHC)/(kmA3*(1.0+CaPLCg/kmF4)+SHC)-kfA6*SHCstar*SOS_GRB2)+kbA6*SHCstar_SOS_GRB2)-kfA4*SHCstar
-        dy_dt_47 = kfA10*SOSstar*GRB2-kbA10*SOSstar_GRB2
-        dy_dt_48 = ((-kfA6*SHCstar*SOS_GRB2+kbA6*SHCstar_SOS_GRB2)-kbA5*SOS_GRB2)+kfA5*SOS*GRB2
-        dy_dt_49 = ((kbA5*SOS_GRB2-kfA5*SOS*GRB2)-kfA10*SOSstar*GRB2)+kbA10*SOSstar_GRB2
-        dy_dt_50 = ((-kfA8*SOSstar+kbA8*SOS+(MAPK_star*VmaxA9*SOS)/(kmA9*(1.0+Raf_star/kmH2)+SOS))-kfA10*SOSstar*GRB2)+kbA10*SOSstar_GRB2
-        dy_dt_51 = kfA2*EGF_EGFR-kbA2*EGF_EGFR_INTERNAL
-        dy_dt_52 = -kfA1*EGF*EGFR+kbA1*EGF_EGFR
-        dy_dt_53 = -kfA1*EGF*EGFR+kbA1*EGF_EGFR
-        dy_dt_54 = (-(kfF3*CaPLCg_star-(VmaxF4*EGF_EGFR*CaPLCg)/(kmF4+CaPLCg))+Ca*PLCg_star*kfF5)-kbF5*CaPLCg_star
-        dy_dt_55 = -Ca*PLCg*kfF1+CaPLCg*kbF1
-        dy_dt_56 = -Ca*PLCg_star*kfF5+kbF5*CaPLCg_star
-        dy_dt_57 = ((((((-PKC_i*kfK1+PKC*kbK1)-PKC_i*AA*kfK2)+PKC*kbK2)-PKC_i*DAG*kfK9)+DAGPKC*kbK9)-PKC_i*Ca*kfK7)+CaPKC*kbK7
-        dy_dt_58 = ((PKC_i*DAG*kfK9-DAGPKC*kbK9)-DAGPKC*AA*kfK10)+AADAGPKC*kbK10
-        dy_dt_59 = ((DAGPKC*AA*kfK10-AADAGPKC*kbK10)-AADAGPKC*kfK6)+PKC*kbK6
-        dy_dt_60 = ((DAG*CaPKC*kfK8-DAGCaPKC*kbK8)-DAGCaPKC*kfK5)+PKC*kbK5
-        dy_dt_61 = ((((((PKC_i*Ca*kfK7-CaPKC*kbK7)-CaPKC*kfK3)+PKC*kbK3)-CaPKC*AA*kfK4)+PKC*kbK4)-DAG*CaPKC*kfK8)+DAGCaPKC*kbK8
-        dy_dt_62 = ((((((-PKC_i*AA*kfK2+PKC*kbK2)-CaPKC*AA*kfK4)+PKC*kbK4)-DAGPKC*AA*kfK10)+AADAGPKC*kbK10)-AA*kfE13)+(CaPLA2_star*VmaxE12*APC)/(kmE12+APC)+(CaPLA2*VmaxE4*APC)/(kmE4+APC)+(DAGCaPLA2*VmaxE8*APC)/(kmE8+APC)+(PIP2CaPLA2*VmaxE6*APC)/(kmE6+APC)+(PIP2PLA2*VmaxE2*APC)/(kmE2+APC)
-        dy_dt_63 = AA*kfE13-((CaPLA2_star*VmaxE12*APC)/(kmE12+APC)+(CaPLA2*VmaxE4*APC)/(kmE4+APC)+(DAGCaPLA2*VmaxE8*APC)/(kmE8+APC)+(PIP2CaPLA2*VmaxE6*APC)/(kmE6+APC)+(PIP2PLA2*VmaxE2*APC)/(kmE2+APC))
-        dy_dt_64 = ((-PIP2_star*PLA2_cyt*kfE1+PIP2PLA2*kbE1)-PIP2_star*CaPLA2*kfE5)+PIP2CaPLA2*kbE5
-        dy_dt_65 = ((((PLA2_star*kfE10-PIP2_star*PLA2_cyt*kfE1)+PIP2PLA2*kbE1)-Ca*PLA2_cyt*kfE3)+CaPLA2*kbE3)-(MAPK*VmaxE9*PLA2_cyt)/(kmE9+PLA2_cyt)
-        dy_dt_66 = ((-PLA2_star*kfE10+(MAPK*VmaxE9*PLA2_cyt)/(kmE9+PLA2_cyt))-Ca*PLA2_star*kfE11)+CaPLA2_star*kbE11
-        dy_dt_67 = ((((Ca*PLA2_cyt*kfE3-CaPLA2*kbE3)-DAG*CaPLA2*kfE7)+DAGCaPLA2*kbE7)-PIP2_star*CaPLA2*kfE5)+PIP2CaPLA2*kbE5
-        dy_dt_68 = PIP2_star*CaPLA2*kfE5-PIP2CaPLA2*kbE5
-        dy_dt_69 = PIP2_star*PLA2_cyt*kfE1-PIP2PLA2*kbE1
-        dy_dt_70 = DAG*CaPLA2*kfE7-DAGCaPLA2*kbE7
-        dy_dt_71 = Ca*PLA2_star*kfE11-CaPLA2_star*kbE11
-        dy_dt_72 = (((-CaPLCg*VmaxF2*PIP2)/(kmF2+PIP2)-(CaPLCg_star*VmaxF6*PIP2)/(kmF6+PIP2))-(CaPLC*VmaxG7*PIP2)/(kmG7+PIP2))-(CaGqPLC*VmaxG6*PIP2)/(kmG6+PIP2)
-        dy_dt_73 = (((((((((CaPLCg*VmaxF2*PIP2)/(kmF2+PIP2)+(CaPLCg_star*VmaxF6*PIP2)/(kmF6+PIP2)+(CaPLC*VmaxG7*PIP2)/(kmG7+PIP2))-kfG8*DAG)+(CaGqPLC*VmaxG6*PIP2)/(kmG6+PIP2))-PKC_i*DAG*kfK9)+DAGPKC*kbK9)-DAG*CaPKC*kfK8)+DAGCaPKC*kbK8)-DAG*CaPLA2*kfE7)+DAGCaPLA2*kbE7
-        dy_dt_74 = (((CaPLCg*VmaxF2*PIP2)/(kmF2+PIP2)+(CaPLCg_star*VmaxF6*PIP2)/(kmF6+PIP2)+(CaGqPLC*VmaxG6*PIP2)/(kmG6+PIP2))-kfG9*IP3)+(CaPLC*VmaxG7*PIP2)/(kmG7+PIP2)
-        dy_dt_75 = kfG9*IP3
-        dy_dt_76 = kfG8*DAG
+        # rates
+        d_Ga_GDP = (Ga_GTP*kfD7-Ga_GDP*kfD8*Gbg)+CaGqPLC*kfG5
+        d_mGluR = ((kfD5*Gabg_GluR-kbD5*Gabg*mGluR)-(kfD3*mGluR-kbD3*Glu*R))+kfD6*Gabg_GluR
+        d_Gabg = (((Ga_GDP*Gbg*kfD8-(Gabg*R*kfD4-Gabg_R*kbD4))+kfD5*Gabg_GluR)-kbD5*Gabg*mGluR)-kfD9*Gabg*GTP
+        d_R = (kfD3*mGluR-kbD3*Glu*R)-(Gabg*R*kfD4-Gabg_R*kbD4)
+        d_Gbg = (-Ga_GDP*Gbg*kfD8+kfD6*Gabg_GluR+kfD9*Gabg*GTP)-(kfB8*GEF*Gbg-kbB8*Gbg_GEF)
+        d_Gabg_R = ((Gabg*R*kfD4-Gabg_R*kbD4)+kfD2*Gabg_GluR)-Gabg_R*Glu*kbD2
+        d_Glu_synapse = -(kfD1*Glu_synapse-kbD1*Glu)
+        d_Gabg_GluR = (-(kfD2*Gabg_GluR-Gabg_R*Glu*kbD2)-(kfD5*Gabg_GluR-kbD5*Gabg*mGluR))-kfD6*Gabg_GluR
+        d_Glu = ((((kfD1*Glu_synapse-kbD1*Glu)+kfD2*Gabg_GluR)-Gabg_R*Glu*kbD2)+kfD3*mGluR)-kbD3*Glu*R
+        d_Ga_GTP = ((kfD9*Gabg*GTP-Ga_GTP*kfD7)-(PLC*Ga_GTP*kfG2-GqPLC*kbG2))-(CaGqPLC*kbG4+CaPLC*Ga_GTP*kfG4)
+        d_PLC = -(PLC*Ca*kfG1-CaPLC*kbG1)-(PLC*Ga_GTP*kfG2-GqPLC*kbG2)
+        d_GqPLC = (PLC*Ga_GTP*kfG2-GqPLC*kbG2)-(Ca*GqPLC*kfG3-CaGqPLC*kbG3)
+        d_CaPLC = ((PLC*Ca*kfG1-CaPLC*kbG1)+CaGqPLC*kfG5)-(-CaGqPLC*kbG4+CaPLC*Ga_GTP*kfG4)
+        d_CaGqPLC = (((GqPLC*Ca*kfG3-CaGqPLC*kbG3)+CaPLC*Ga_GTP*kfG4)-CaGqPLC*kbG4)-CaGqPLC*kfG5
+        d_GEF_inact = (PKA*VmaxB1*GEF)/(kmB1+GEF)-kfB2*GEF_inact
+        d_GEF = (((-((((PKA*VmaxB1*GEF)/(kmB1+GEF)+(PKC*VmaxB6*GEF)/(kmB6*(1.0+GAP/kmB3+Ng/kmM7+Raf/kmH1+NgCaM/kmM8)+GEF))-kfB2*GEF_inact)-kfB7*GEF_star)-kfB5*Ca4CAM*GEF)+kbB5*CaM_GEF)-kfB8*GEF*Gbg)+kbB8*Gbg_GEF
+        d_CaM_GEF = -kbB5*CaM_GEF+kfB5*GEF*Ca4CAM
+        d_Ca4CAM = (-(-kbB5*CaM_GEF+kfB5*GEF*Ca4CAM)+Ca*Ca3CaM*kfM3)-kbM3*Ca4CAM
+        d_Gbg_GEF = -(-kfB8*GEF*Gbg+kbB8*Gbg_GEF)
+        d_GEF_star = (PKC*VmaxB6*GEF)/(kmB6*(1.0+GAP/kmB3+Ng/kmM7+Raf/kmH1+NgCaM/kmM8)+GEF)-kfB7*GEF_star
+        d_CaM = (-(kfM1*Ca*Ca*CaM-kbM1*Ca2CaM)-(kfM4*Ng*CaM-kbM4*NgCaM))+(NgCaM*PKC*VmaxM8)/(NgCaM+kmM8)
+        d_NgCaM = (kfM4*Ng*CaM-kbM4*NgCaM)-(NgCaM*PKC*VmaxM8)/(NgCaM+kmM8*(1.0+GAP/kmB3+GEF/kmB6+Raf/kmH1+Ng/kmM7))
+        d_Ca2CaM = (kfM1*Ca*Ca*CaM-kbM1*Ca2CaM)-(Ca*Ca2CaM*kfM2-kbM2*Ca3CaM)
+        d_Ca3CaM = (Ca*Ca2CaM*kfM2-kbM2*Ca3CaM)-(Ca*Ca3CaM*kfM3-kbM3*Ca4CAM)
+        d_Ng_star = (((NgCaM*PKC*VmaxM8)/(NgCaM+kmM8*(1.0+GAP/kmB3+GEF/kmB6+Raf/kmH1+Ng/kmM7))-kfM6*Ng_star)-(VmaxM5*Ng_star)/(Ng_star+kmM5))+(Ng*PKC*VmaxM7)/(Ng+kmM7*(1.0+GAP/kmB3+GEF/kmB6+Raf/kmH1+NgCaM/kmM8))
+        d_Ng = (kfM6*Ng_star+(VmaxM5*Ng_star)/(Ng_star+kmM5))-(Ng*PKC*VmaxM7)/(Ng+kmM7*(1.0+GAP/kmB3+GEF/kmB6+Raf/kmH1+NgCaM/kmM8))
+        d_GTP_RAS = ((((-GAP*VmaxB13*GTP_RAS)/(kmB13+GTP_RAS)-kfB12*GTP_RAS)+(GEF_star*VmaxB10*GDP_RAS)/(kmB10+GDP_RAS)+(Gbg_GEF*VmaxB11*GDP_RAS)/(kmB11+GDP_RAS)+(CaM_GEF*VmaxB9*GDP_RAS)/(kmB9+GDP_RAS)+(SHCstar_SOS_GRB2*VmaxA7*GDP_RAS)/(kmA7+GDP_RAS))-GTP_RAS*Raf_star*kfH5)+GTPRasRaf_star*kbH5
+        d_GDP_RAS = -(((-GAP*VmaxB13*GTP_RAS)/(kmB13+GTP_RAS)-kfB12*GTP_RAS)+(GEF_star*VmaxB10*GDP_RAS)/(kmB10+GDP_RAS)+(Gbg_GEF*VmaxB11*GDP_RAS)/(kmB11+GDP_RAS)+(CaM_GEF*VmaxB9*GDP_RAS)/(kmB9+GDP_RAS))-(SHCstar_SOS_GRB2*VmaxA7*GDP_RAS)/(kmA7+GDP_RAS)
+        d_GAP = (-PKC*VmaxB3*GAP)/(kmB3*(1.0+Raf/kmH1+GEF/kmB6+Ng/kmM7+NgCaM/kmM8)+GAP)+kfB4*GAPstar
+        d_GAPstar = (PKC*VmaxB3*GAP)/(kmB3*(1.0+Raf/kmH1+GEF/kmB6+Ng/kmM7+NgCaM/kmM8)+GAP)-kfB4*GAPstar
+        d_GTPRasRaf_star = GTP_RAS*Raf_star*kfH5-GTPRasRaf_star*kbH5
+        d_Raf = (-PKC*Raf*VmaxH1)/(kmH1*(1.0+GAP/kmB3+GEF/kmB6+Ng/kmM7+NgCaM/kmM8)+Raf)+(Raf_star*PP2A*VmaxH3)/(kmH3*(1.0+Raf_star_star/kmH4+MAPKK_star_star/kmH9+MAPKK_star/kmH8)+Raf_star)
+        d_Raf_star = (((PKC*Raf*VmaxH1)/(kmH1*(1.0+GAP/kmB3+GEF/kmB6+Ng/kmM7+NgCaM/kmM8)+Raf)-(Raf_star*PP2A*VmaxH3)/(kmH3*(1.0+Raf_star_star/kmH4+MAPKK_star_star/kmH9+MAPKK_star/kmH8)+Raf_star))-(Raf_star*MAPK_star*VmaxH2)/(kmH2*(1.0+SOS/kmA9)+Raf_star))+(Raf_star_star*PP2A*VmaxH4)/(kmH4*(1.0+Raf_star/kmH3+MAPKK_star_star/kmH9+MAPKK_star/kmH8)+Raf_star_star)
+        d_Raf_star_star = (Raf_star*MAPK_star*VmaxH2)/(kmH2*(1.0+SOS/kmA9)+Raf_star)-(Raf_star_star*PP2A*VmaxH4)/(kmH4*(1.0+Raf_star/kmH3+MAPKK_star_star/kmH9+MAPKK_star/kmH8)+Raf_star_star)
+        d_MAPKK = (-MAPKK*VmaxH6*GTPRasRaf_star)/(kmH6*(1.0+MAPKK_star/kmH7)+MAPKK)+(MAPKK_star*VmaxH8*PP2A)/(kmH8*(1.0+Raf_star/kmH3+Raf_star_star/kmH4+MAPKK_star_star/kmH9)+MAPKK_star)
+        d_MAPKK_star = (((MAPKK*VmaxH6*GTPRasRaf_star)/(kmH6*(1.0+MAPKK_star/kmH7)+MAPKK)-(MAPKK_star*VmaxH8*PP2A)/(kmH8*(1.0+Raf_star/kmH3+Raf_star_star/kmH4+MAPKK_star_star/kmH9)+MAPKK_star))-(MAPKK_star*VmaxH7*GTPRasRaf_star)/(kmH7*(1.0+MAPKK/kmH6)+MAPKK_star))+(MAPKK_star_star*VmaxH9*PP2A)/(kmH9*(1.0+Raf_star/kmH3+Raf_star_star/kmH4+MAPKK_star/kmH8)+MAPKK_star_star)
+        d_MAPKK_star_star = (MAPKK_star*VmaxH7*GTPRasRaf_star)/(kmH7*(1.0+MAPKK/kmH6)+MAPKK_star)-(MAPKK_star_star*VmaxH9*PP2A)/(kmH9*(1.0+Raf_star/kmH3+Raf_star_star/kmH4+MAPKK_star/kmH8)+MAPKK_star_star)
+        d_MAPK = (-MAPK*VmaxH10*MAPKK_star_star)/(kmH10*(1.0+MAPK_tyr/kmH11)+MAPK)+(MAPK_tyr*VmaxH12*MKP1)/(kmH12*(1.0+MAPK_star/kmH13)+MAPK_tyr)
+        d_MAPK_tyr = (((MAPK*VmaxH10*MAPKK_star_star)/((kmH10*MAPK_tyr)/kmH11+MAPK)-(MAPK_tyr*VmaxH12*MKP1)/(kmH12*(1.0+MAPK_star/kmH13)+MAPK_tyr))-(MAPK_tyr*VmaxH11*MAPKK_star_star)/(kmH11*(1.0+MAPK_tyr/kmH12)+MAPK_tyr))+(MAPK_star*VmaxH13*MKP1)/(kmH13*(1.0+MAPK_tyr/kmH12)+MAPK_star)
+        d_MAPK_star = (MAPK_tyr*VmaxH11*MAPKK_star_star)/(kmH11*(1.0+MAPK/kmH10)+MAPK_tyr)-(MAPK_star*VmaxH13*MKP1)/(kmH13*(1.0+MAPK_tyr/kmH12)+MAPK_star)
+        d_SHCstar = (((EGF_EGFR*VmaxA3*SHC)/(kmA3*(1.0+CaPLCg/kmF4)+SHC)-kfA6*SHCstar*SOS_GRB2)+kbA6*SHCstar_SOS_GRB2)-kfA4*SHCstar
+        d_SHC = (kfA4*SHCstar-kbA4*SHC)-(EGF_EGFR*VmaxA3*SHC)/(kmA3*(1.0+CaPLCg/kmF4)+SHC)
+        d_SHCstar_SOS_GRB2 = kfA6*SHCstar*SOS_GRB2-kbA6*SHCstar_SOS_GRB2
+        d_SOS_GRB2 = ((-kfA6*SHCstar*SOS_GRB2+kbA6*SHCstar_SOS_GRB2)-kbA5*SOS_GRB2)+kfA5*SOS*GRB2
+        d_SOS = (((kfA8*SOSstar-kbA8*SOS)-(MAPK_star*VmaxA9*SOS)/(kmA9*(1.0+Raf_star/kmH2)+SOS))+kbA5*SOS_GRB2)-kfA5*SOS*GRB2
+        d_SOSstar = ((-kfA8*SOSstar+kbA8*SOS+(MAPK_star*VmaxA9*SOS)/(kmA9*(1.0+Raf_star/kmH2)+SOS))-kfA10*SOSstar*GRB2)+kbA10*SOSstar_GRB2
+        d_SOSstar_GRB2 = kfA10*SOSstar*GRB2-kbA10*SOSstar_GRB2
+        d_GRB2 = ((kbA5*SOS_GRB2-kfA5*SOS*GRB2)-kfA10*SOSstar*GRB2)+kbA10*SOSstar_GRB2
+        d_EGF = -kfA1*EGF*EGFR+kbA1*EGF_EGFR
+        d_EGFR = -kfA1*EGF*EGFR+kbA1*EGF_EGFR
+        d_EGF_EGFR = ((kfA1*EGF*EGFR-kbA1*EGF_EGFR)-kfA2*EGF_EGFR)+kbA2*EGF_EGFR_INTERNAL
+        d_EGF_EGFR_INTERNAL = kfA2*EGF_EGFR-kbA2*EGF_EGFR_INTERNAL
+        d_PLCg = -Ca*PLCg*kfF1+CaPLCg*kbF1
+        d_CaPLCg = (-(-Ca*PLCg*kfF1+CaPLCg*kbF1)+kfF3*CaPLCg_star)-(VmaxF4*EGF_EGFR*CaPLCg)/(kmF4*(1.0+SHC/kmA3)+CaPLCg)
+        d_CaPLCg_star = (-(kfF3*CaPLCg_star-(VmaxF4*EGF_EGFR*CaPLCg)/(kmF4+CaPLCg))+Ca*PLCg_star*kfF5)-kbF5*CaPLCg_star
+        d_PLCg_star = -Ca*PLCg_star*kfF5+kbF5*CaPLCg_star
+        d_PKC_i = ((((((-PKC_i*kfK1+PKC*kbK1)-PKC_i*AA*kfK2)+PKC*kbK2)-PKC_i*DAG*kfK9)+DAGPKC*kbK9)-PKC_i*Ca*kfK7)+CaPKC*kbK7
+        d_DAGPKC = ((PKC_i*DAG*kfK9-DAGPKC*kbK9)-DAGPKC*AA*kfK10)+AADAGPKC*kbK10
+        d_AADAGPKC = ((DAGPKC*AA*kfK10-AADAGPKC*kbK10)-AADAGPKC*kfK6)+PKC*kbK6
+        d_CaPKC = ((((((PKC_i*Ca*kfK7-CaPKC*kbK7)-CaPKC*kfK3)+PKC*kbK3)-CaPKC*AA*kfK4)+PKC*kbK4)-DAG*CaPKC*kfK8)+DAGCaPKC*kbK8
+        d_DAGCaPKC = ((DAG*CaPKC*kfK8-DAGCaPKC*kbK8)-DAGCaPKC*kfK5)+PKC*kbK5
+        d_PKC = ((((((((((PKC_i*kfK1-PKC*kbK1)+PKC_i*AA*kfK2)-PKC*kbK2)+CaPKC*kfK3)-PKC*kbK3)+CaPKC*AA*kfK4)-PKC*kbK4)+DAGCaPKC*kfK5)-PKC*kbK5)+AADAGPKC*kfK6)-PKC*kbK6
+        d_AA = ((((((-PKC_i*AA*kfK2+PKC*kbK2)-CaPKC*AA*kfK4)+PKC*kbK4)-DAGPKC*AA*kfK10)+AADAGPKC*kbK10)-AA*kfE13)+(CaPLA2_star*VmaxE12*APC)/(kmE12+APC)+(CaPLA2*VmaxE4*APC)/(kmE4+APC)+(DAGCaPLA2*VmaxE8*APC)/(kmE8+APC)+(PIP2CaPLA2*VmaxE6*APC)/(kmE6+APC)+(PIP2PLA2*VmaxE2*APC)/(kmE2+APC)
+        d_PLA2_cyt = ((((PLA2_star*kfE10-PIP2_star*PLA2_cyt*kfE1)+PIP2PLA2*kbE1)-Ca*PLA2_cyt*kfE3)+CaPLA2*kbE3)-(MAPK*VmaxE9*PLA2_cyt)/(kmE9+PLA2_cyt)
+        d_PIP2PLA2 = PIP2_star*PLA2_cyt*kfE1-PIP2PLA2*kbE1
+        d_PIP2_star = ((-PIP2_star*PLA2_cyt*kfE1+PIP2PLA2*kbE1)-PIP2_star*CaPLA2*kfE5)+PIP2CaPLA2*kbE5
+        d_PLA2_star = ((-PLA2_star*kfE10+(MAPK*VmaxE9*PLA2_cyt)/(kmE9+PLA2_cyt))-Ca*PLA2_star*kfE11)+CaPLA2_star*kbE11
+        d_CaPLA2_star = Ca*PLA2_star*kfE11-CaPLA2_star*kbE11
+        d_CaPLA2 = ((((Ca*PLA2_cyt*kfE3-CaPLA2*kbE3)-DAG*CaPLA2*kfE7)+DAGCaPLA2*kbE7)-PIP2_star*CaPLA2*kfE5)+PIP2CaPLA2*kbE5
+        d_PIP2CaPLA2 = PIP2_star*CaPLA2*kfE5-PIP2CaPLA2*kbE5
+        d_DAGCaPLA2 = DAG*CaPLA2*kfE7-DAGCaPLA2*kbE7
+        d_APC = AA*kfE13-((CaPLA2_star*VmaxE12*APC)/(kmE12+APC)+(CaPLA2*VmaxE4*APC)/(kmE4+APC)+(DAGCaPLA2*VmaxE8*APC)/(kmE8+APC)+(PIP2CaPLA2*VmaxE6*APC)/(kmE6+APC)+(PIP2PLA2*VmaxE2*APC)/(kmE2+APC))
+        d_PIP2 = (((-CaPLCg*VmaxF2*PIP2)/(kmF2+PIP2)-(CaPLCg_star*VmaxF6*PIP2)/(kmF6+PIP2))-(CaPLC*VmaxG7 *PIP2)/(kmG7+PIP2))-(CaGqPLC*VmaxG6*PIP2)/(kmG6+PIP2)
+        d_DAG = (((((((((CaPLCg*VmaxF2*PIP2)/(kmF2+PIP2)+(CaPLCg_star*VmaxF6*PIP2)/(kmF6+PIP2)+(CaPLC*VmaxG7 *PIP2)/(kmG7+PIP2))-kfG8*DAG)+(CaGqPLC*VmaxG6*PIP2)/(kmG6+PIP2))-PKC_i*DAG*kfK9)+DAGPKC*kbK9)-DAG*CaPKC*kfK8)+DAGCaPKC*kbK8)-DAG*CaPLA2*kfE7)+DAGCaPLA2*kbE7
+        d_IP3 = (((CaPLCg*VmaxF2*PIP2)/(kmF2+PIP2)+(CaPLCg_star*VmaxF6*PIP2)/(kmF6+PIP2)+(CaGqPLC*VmaxG6*PIP2)/(kmG6+PIP2))-kfG9*IP3)+(CaPLC*VmaxG7 *PIP2)/(kmG7+PIP2)
+        d_PC = kfG8*DAG
+        d_Inositol  = kfG9*IP3
 
 
-        return (dy_dt_0, dy_dt_1, dy_dt_2, dy_dt_3, dy_dt_4, dy_dt_5, dy_dt_6, 
-                dy_dt_7, dy_dt_8, dy_dt_9, dy_dt_10, dy_dt_11, dy_dt_12, 
-                dy_dt_13, dy_dt_14, dy_dt_15, dy_dt_16, dy_dt_17, dy_dt_18, 
-                dy_dt_19, dy_dt_20, dy_dt_21, dy_dt_22, dy_dt_23, dy_dt_24, 
-                dy_dt_25, dy_dt_26, dy_dt_27, dy_dt_28, dy_dt_29, dy_dt_30, 
-                dy_dt_31, dy_dt_32, dy_dt_33, dy_dt_34, dy_dt_35, dy_dt_36, 
-                dy_dt_37, dy_dt_38, dy_dt_39, dy_dt_40, dy_dt_41, dy_dt_42, 
-                dy_dt_43, dy_dt_44, dy_dt_45, dy_dt_46, dy_dt_47, dy_dt_48, 
-                dy_dt_49, dy_dt_50, dy_dt_51, dy_dt_52, dy_dt_53, dy_dt_54, 
-                dy_dt_55, dy_dt_56, dy_dt_57, dy_dt_58, dy_dt_59, dy_dt_60, 
-                dy_dt_61, dy_dt_62, dy_dt_63, dy_dt_64, dy_dt_65, dy_dt_66, 
-                dy_dt_67, dy_dt_68, dy_dt_69, dy_dt_70, dy_dt_71, dy_dt_72, 
-                dy_dt_73, dy_dt_74, dy_dt_75, dy_dt_76,)
-
+        return (d_PKC, d_GAP, d_Raf, d_GEF_star, d_CaM_GEF, d_Gbg_GEF, d_CaGqPLC, 
+                d_CaPLC, d_NgCaM, d_GEF, d_Ng, d_Gbg, d_Ga_GDP, d_mGluR, d_PLC, 
+                d_Ca2CaM, d_Ca3CaM, d_Ng_star, d_Gabg, d_R, d_Gabg_R, d_Glu_synapse, d_Gabg_GluR, d_Glu, d_Ga_GTP, d_GqPLC, d_GEF_inact, d_Ca4CAM, d_CaM, d_SHCstar_SOS_GRB2, d_MAPK_star, d_SOS, d_MAPKK_star_star, 
+                d_MAPKK_star, d_Raf_star, d_GTPRasRaf_star, d_Raf_star_star, 
+                d_GTP_RAS, d_GDP_RAS, d_GAPstar, d_MAPKK, d_MAPK, d_MAPK_tyr, 
+                d_EGF_EGFR, d_CaPLCg, d_SHC, d_SHCstar, d_SOSstar_GRB2, 
+                d_SOS_GRB2, d_GRB2, d_SOSstar, d_EGF_EGFR_INTERNAL, d_EGF, 
+                d_EGFR, d_CaPLCg_star, d_PLCg, d_PLCg_star, d_PKC_i, d_DAGPKC, 
+                d_AADAGPKC, d_DAGCaPKC, d_CaPKC, d_AA, d_APC, d_PIP2_star, 
+                d_PLA2_cyt, d_PLA2_star, d_CaPLA2, d_PIP2CaPLA2, d_PIP2PLA2, 
+                d_DAGCaPLA2, d_CaPLA2_star, d_PIP2, d_DAG, d_IP3, d_Inositol, d_PC)
 
 
     
