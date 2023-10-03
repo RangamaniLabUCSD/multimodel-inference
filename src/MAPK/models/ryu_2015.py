@@ -2,17 +2,22 @@ import equinox as eqx
 import jax.numpy as jnp
 
 class ryu_2015(eqx.Module):
+    # transient: bool True for transient EGF stim, False for sustained
+    transient: any
+    def __init__(self, transient=False):
+        self.transient = transient
+
     def __call__(self, t, y, args):
 
         # unpack state variables
-        R, R_star, Ras, Ras_star, Raf, Raf_star, MEK, MEK_star, ERK, ERK_star, \
+        EGF, R, R_star, Ras, Ras_star, Raf, Raf_star, MEK, MEK_star, ERK, ERK_star, \
             NFB, NFB_star, PFB, PFB_star, dusp, DUSP = y
 
         # unpack parameters
         k1, kd1, Ptase_R, ksyn, kdeg, ki, kdi, kdegi, k6, K6, kd6, D6, GAP, k5, \
             K5, kd5, D5, K_NFB, Ptase_Raf, k_PFB, K_PFB, k4, K4, kd4, D4, \
             Ptase_MEK, k2, K2, kd2, D2, k3_F, K3, K3R, kd3, D3, Ptase_NFB, k7, \
-            K7, kd7, D7, Ptase_PFB, dusp_basal, dusp_ind, K_dusp, T_dusp, EGF = args
+            K7, kd7, D7, Ptase_PFB, dusp_basal, dusp_ind, K_dusp, T_dusp= args
 
         # expressions
         # EGF = 1.0 # input function
@@ -50,6 +55,10 @@ class ryu_2015(eqx.Module):
         v11 = DUSP*(jnp.log10(2)/T_dusp)
 
         # ODE rhs
+        if self.transient:
+            d_EGF = -k1*R*EGF
+        else:
+            d_EGF = 0.0
         d_R = -v1
         d_R_star = v1
         d_Ras = -v6
@@ -69,7 +78,7 @@ class ryu_2015(eqx.Module):
 
 
         # concatenate into tuple and return
-        return (d_R, d_R_star, d_Ras, d_Ras_star, d_Raf, d_Raf_star, d_MEK, 
+        return (d_EGF, d_R, d_R_star, d_Ras, d_Ras_star, d_Raf, d_Raf_star, d_MEK, 
                 d_MEK_star, d_ERK, d_ERK_star, d_NFB, d_NFB_star, d_PFB, 
                 d_PFB_star, d_dusp, d_DUSP)
 
@@ -122,7 +131,6 @@ class ryu_2015(eqx.Module):
             'dusp_ind':6.0,
             'K_dusp':0.1,
             'T_dusp':90.0,
-            'EGF':1.0,
         }
 
         p_list = [p_dict[key] for key in p_dict.keys()]
@@ -134,6 +142,7 @@ class ryu_2015(eqx.Module):
     def get_initial_conditions(self):
 
         y0_dict = {
+            'EGF':1.0,
             'R': 1.0,
             'R_star': 0.0,
             'Ras': 1.0,

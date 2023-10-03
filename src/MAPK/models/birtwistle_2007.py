@@ -2,6 +2,11 @@ import equinox as eqx
 import jax.numpy as jnp
 
 class birtwistle_2007(eqx.Module):
+    # transient: bool True for transient EGF stim, False for sustained
+    transient: any
+    def __init__(self, transient=True): # defaults to transient stim
+        self.transient = transient
+
     def __call__(self, t, y, args):
         # unpack state
         E, H, E1, E2, E3, E4, E_E1, H_E3, H_E4, E11, E12, E23, E34, E24, E44, \
@@ -147,8 +152,11 @@ class birtwistle_2007(eqx.Module):
         J100 = (((kf39 * SigA * (E11P + E12P + E23P + E24P + E34P + E44P + E13P + E14P)) - ((VmaxPY * SigAP) / (KmPY + SigAP))) - (kPTP39 * SigT * SigAP))
         J101 = ((2.0 * kon78 * E44P * T) - (koff78 * E44T))
         
-        
-        d_E = -J32 
+        # variable EGF rate
+        if self.transient:
+            d_E = -J32
+        else:
+            d_E = 0.0
         d_H = -J19
         d_E1 = -J71 -J89
         d_E2 = -J53 -J93 -J10 -J41

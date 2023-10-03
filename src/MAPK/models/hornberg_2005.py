@@ -4,7 +4,16 @@ import jax.numpy as jnp
 class hornberg_2005(eqx.Module):
     """ Note this is the code at https://models.physiomeproject.org/exposure/48c4b41256d698c4d18aace1cb159865/hornberg_binder_bruggeman_schoeberl_heinrich_westerhoff_2005.cellml/@@cellml_codegen/Python
     
-Which comes from the Hornberg paper entry on the CellML site https://models.physiomeproject.org/exposure/48c4b41256d698c4d18aace1cb159865"""
+    Which comes from the Hornberg paper entry on the CellML site https://models.physiomeproject.org/exposure/48c4b41256d698c4d18aace1cb159865
+
+    c1 - EGF
+    c2 - EGFR
+    c3 - EGFR_EGF
+    """
+    # transient: bool True for transient EGF stim, False for sustained
+    transient: any
+    def __init__(self, transient=False): # defaults to sustained stim
+        self.transient = transient
 
     def __call__(self, t, y, constants):
         # unpack state
@@ -17,9 +26,13 @@ Which comes from the Hornberg paper entry on the CellML site https://models.phys
             c80, c81, c82, c83, c84, c85, c86, c87, c88, c89, c90, c91, c92, \
             c93, c94, c95, c96, c97, c98, c99, c100, c101, c102, c103 = y
 
-        
-        dy_dt_0 = constants[95]
         v1 = constants[0]*c1*c2-constants[1]*c3
+        # variable EGF rate
+        if self.transient:
+            dy_dt_0 = -v1
+        else:
+            dy_dt_0 = constants[95]
+
         v2 = constants[2]*c3*c3-constants[3]*c4
         dy_dt_2 = v1-2.0*v2
         v3 = constants[4]*c4*1.0-constants[5]*c5
@@ -454,7 +467,7 @@ Which comes from the Hornberg paper entry on the CellML site https://models.phys
             'k35': 7.5e-06,
             'kd35': 0.0015,
             'k36': 0.005,
-            'kd36': 1e-10, #0.0,
+            'kd36': 0.0,
             'k37': 1.5e-06,
             'kd37': 0.3,
             'k40': 5e-05,
@@ -463,41 +476,41 @@ Which comes from the Hornberg paper entry on the CellML site https://models.phys
             'kd41': 0.0429,
             'k42': 0.000118,
             'kd42': 0.2,
-            'k43': 1e-10, #0.0,
+            'k43': 0.0,
             'kd43': 1.0,
             'k44': 1.95e-05,
             'kd52': 0.033,
-            'k45': 1e-10, #0.0,
+            'k45': 0.0,
             'kd45': 3.5,
-            'k47': 1e-10, #0.0,
+            'k47': 0.0,
             'kd47': 2.9,
             'k48': 2.38e-05,
             'kd48': 0.8,
-            'k49': 1e-10, #0.0,
+            'k49': 0.0,
             'kd49': 0.0568,
             'k50': 4.5e-07,
             'kd50': 0.5,
             'k52': 8.91e-05,
             'kd44': 0.0183,
-            'k53': 1e-10, #0.0,
+            'k53': 0.0,
             'kd53': 16.0,
-            'k55': 1e-10, #0.0,
+            'k55': 0.0,
             'kd55': 5.7,
             'k56': 2.35e-05,
             'kd56': 0.6,
-            'k57': 1e-10, #0.0,
+            'k57': 0.0,
             'kd57': 0.246,
             'k58': 8.33e-06,
             'kd58': 0.5,
             'k60': 0.0055,
-            'kd60': 1e-10, #0.0,
+            'kd60': 0.0,
             'k61': 0.00067,
-            'kd61': 1e-10, #0.0,
+            'kd61': 0.0,
             'k126': 1.66e-07,
             'kd126': 2.0,
-            'k127': 1e-10, #0.0,
+            'k127': 0.0,
             'kd127': 0.0001,
-            'constants[95]': 1e-10,} #0.0}
+            'constants[95]': 0.0}
 
         param_list = [param_dict[key] for key in param_dict]
 

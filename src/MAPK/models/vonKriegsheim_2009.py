@@ -1,8 +1,12 @@
 import equinox as eqx
 
 class vonKriegsheim_2009(eqx.Module):
-    def __call__(self, t, y, args):
+    # transient: bool True for transient EGF stim, False for sustained
+    transient: any
+    def __init__(self, transient=False): # defaults to sustained stim
+        self.transient = transient
 
+    def __call__(self, t, y, args):
         # unpack state variables
         NGF, EGF, NGFR, pNGFR, EGFR, pEGFR, pEGFRi, PIP3, Akt, pAkt, PhE, \
             PLCg, pPLCg, PKC, PKCa, RKIP, pRKIP, RasD, RasT, NF1, pNF1, Raf, \
@@ -34,118 +38,121 @@ class vonKriegsheim_2009(eqx.Module):
 
         # fluxes
         #NGFR Activation
-        v1=k1*NGF*NGFR;
+        v1=k1*NGF*NGFR
         #NGFR Deactivation
-        v2=k2*pNGFR;
+        v2=k2*pNGFR
         #EGFR Activation
-        v3=k3*EGF*EGFR;
+        v3=k3*EGF*EGFR
         #EGFR Deactivation
-        v4=k4*pEGFR;
+        v4=k4*pEGFR
         #Constitutive EGFR Internalization
-        v5=k5*pEGFR;
+        v5=k5*pEGFR
         #EGFR Recycling
-        v6=k6*EGFRi;
+        v6=k6*EGFRi
         #EGFR Degradation
-        v7=k7*pEGFRi*MG;
+        v7=k7*pEGFRi*MG
         #pNGFR PIP3 Synthesis
-        v8=k8*pNGFR*LY;
+        v8=k8*pNGFR*LY
         #pEGFR PIP3 Synthesis
-        v9=k9*pEGFR*LY;
+        v9=k9*pEGFR*LY
         #PIP3 Destruction
-        v10=k10*PIP3;
+        v10=k10*PIP3
         #pNGFR PLCg Activation
-        v11=k11*pNGFR*PLCg;
+        v11=k11*pNGFR*PLCg
         #pEGFR PLCg Activation
-        v12=k12*pEGFR*PLCg;
+        v12=k12*pEGFR*PLCg
         #PLCg Deactivation
-        v13=k13*pPLCg;
+        v13=k13*pPLCg
         #PLCg PKC Activation
-        v14=k14*(pPLCg**k61/(k62**k61+pPLCg**k61))*PKC + k63*(pPLCg**k64/(k65**k64+pPLCg**k64))*PKC;
+        v14=k14*(pPLCg**k61/(k62**k61+pPLCg**k61))*PKC + k63*(pPLCg**k64/(k65**k64+pPLCg**k64))*PKC
         #Phorbol Ester (PhE) PKC Activation
-        v15=k15*(PhE**k66/(k67**k66+PhE**k66))*PKC;
+        v15=k15*(PhE**k66/(k67**k66+PhE**k66))*PKC
         #PKC Deactivation
-        v16=k16*PKCa+k59*PKCa*EGF+k60*PKCa*NGF;
+        v16=k16*PKCa+k59*PKCa*EGF+k60*PKCa*NGF
         #RKIP Phosphorylation
-        v17=k17*RKIP*PKCa*GO;
+        v17=k17*RKIP*PKCa*GO
         #RKIP Dephosphorylation
-        v18=k18*pRKIP;
+        v18=k18*pRKIP
         #Surface EGFR Ras Activation
-        v19=k19*pEGFR*RasD/ERKFeedtoSOS;
+        v19=k19*pEGFR*RasD/ERKFeedtoSOS
         #Surface NGFR Ras Activation
-        v20=k20*pNGFR*RasD/ERKFeedtoSOS;
+        v20=k20*pNGFR*RasD/ERKFeedtoSOS
         #Internalized EGFR Ras Activation
-        v21=k21*pEGFRi*RasD/ERKFeedtoSOS;
+        v21=k21*pEGFRi*RasD/ERKFeedtoSOS
         #PIP3 Ras Activation
-        v22=k22*PIP3*RasD/ERKFeedtoSOS;
+        v22=k22*PIP3*RasD/ERKFeedtoSOS
         #Basal Ras Activation
-        v23=k23*RasD;
+        v23=k23*RasD
         #PhE Ras Activation
-        v24=k24*PhE*RasD;
+        v24=k24*PhE*RasD
         #PLCg Ras Activation
-        v25=k25*(pPLCg**k70/(pPLCg**k70+k71**k70))*RasD;
+        v25=k25*(pPLCg**k70/(pPLCg**k70+k71**k70))*RasD
         #Ras Deactivation
-        v26=k26*NF1*RasT;
+        v26=k26*NF1*RasT
         #NF1 Phosphorylation
-        v27=k27*ppERK*NF1*ERKDN;
+        v27=k27*ppERK*NF1*ERKDN
         #NF1 Dephosphorylation
-        v28=k28*pNF1;
+        v28=k28*pNF1
         #Raf Activation
-        v29=k29*(RasT**k72/(RasT**k72+k73**k72))*Raf;
+        v29=k29*(RasT**k72/(RasT**k72+k73**k72))*Raf
         #Raf Deactivation
-        v30=k30*Rafa;
+        v30=k30*Rafa
         #MEK Activation
-        v31=k31*Rafa*MEK/RKIPNegFeed;
+        v31=k31*Rafa*MEK/RKIPNegFeed
         #MEK Deactivation
-        v32=k32*ppMEK;
+        v32=k32*ppMEK
         #ERK Activation
-        v33=k33*ppMEK*ERK*UO;
+        v33=k33*ppMEK*ERK*UO
         #ERK Deactivation
-        v34=k34*ppERK;
+        v34=k34*ppERK
         #ERK_15 Activation
-        v35=k33*ppMEK*ERK_15*UO;
+        v35=k33*ppMEK*ERK_15*UO
         #ERK_15 Deactivation
-        v36=k34*ppERK_15;
+        v36=k34*ppERK_15
         #PEA binding to ERK
-        v37=k37*ERK*PEA;
+        v37=k37*ERK*PEA
         #PEA binding to ppERK
-        v38=k38*ppERK*PEA;
+        v38=k38*ppERK*PEA
         #ERK_15 dissociation
-        v39=k39*ERK_15;
+        v39=k39*ERK_15
         #ppERK_15 dissociation
-        v40=k40*ppERK_15;
-        #ppERK nuclear translocation;
-        v41=k41*ppERK;
-        #ppERKn deactivation and export;
-        v42=k42*ppERKn;
+        v40=k40*ppERK_15
+        #ppERK nuclear translocation
+        v41=k41*ppERK
+        #ppERKn deactivation and export
+        v42=k42*ppERKn
         #PEA phosphorylation on 104
-        v43=k43*ppERK*PEA*S104A*ERKDN;
+        v43=k43*ppERK*PEA*S104A*ERKDN
         #PEA phosphorylation on 116
-        v44=k44*pAkt*PEA*S116A;
+        v44=k44*pAkt*PEA*S116A
         #PEA dephosphorylation on 104
-        v45=k45*p104PEA;
+        v45=k45*p104PEA
         #PEA dephosphorylation on 116
-        v46=k46*p116PEA;
+        v46=k46*p116PEA
         #Akt Activation
-        v47=k47*PIP3*Akt;
+        v47=k47*PIP3*Akt
         #Akt Deactivation
-        v48=k48*pAkt;
+        v48=k48*pAkt
         #Saturable EGFR endocytosis
-        v49=k52*pEGFR/(k53+pEGFR);
+        v49=k52*pEGFR/(k53+pEGFR)
         #pNGFR endocytosis
-        v50=k54*pNGFR**k57/(k58**k57+pNGFR**k57);
+        v50=k54*pNGFR**k57/(k58**k57+pNGFR**k57)
         #Dephosphorylation of pEGFRi
-        v51=k55*pEGFRi;
+        v51=k55*pEGFRi
         #Phosphorylation of EGFRi
-        v52=k56*EGFRi;
+        v52=k56*EGFRi
         #Phosphorylation of RSK
-        v53=k68*(ppERK+ppERK_15)*RSK*ERKDN;
+        v53=k68*(ppERK+ppERK_15)*RSK*ERKDN
         #Dephosphorylation of RSK
-        v54=k69*pRSK;
+        v54=k69*pRSK
 
 
         # ODE rhs
         d_NGF = NGFDeriv
-        d_EGF = EGFDeriv
+        if self.transient:
+            d_EGF = -v1 + v2
+        else:
+            d_EGF = EGFDeriv
         d_NGFR = v2-v1
         d_pNGFR = -d_NGFR-v50
         d_EGFR = v4+v6-v3

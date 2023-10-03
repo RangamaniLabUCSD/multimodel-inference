@@ -5,6 +5,11 @@ class hatakeyama_2003(eqx.Module):
     """ Note this is the code at https://models.physiomeproject.org/exposure/c14e77a831ec3f1e56ef03240986a8b7/hatakeyama_kimura_naka_kawasaki_yumoto_ichikawa_kim_saito_saeki_shirouzu_yokoyama_konagaya_2003.cellml/@@cellml_codegen/Python
     
     Which comes from the Hatakeyama paper entry on the CellML site https://models.physiomeproject.org/exposure/c14e77a831ec3f1e56ef03240986a8b7"""
+    # transient: bool True for transient HRG stim, False for sustained
+    transient: any
+    def __init__(self, transient=True): # defaults to sustained stim
+        self.transient = transient
+
     def __call__(self, t, y, args):
         # unpack state
         R, Shc, PI3K, HRG, R_HRG, R_HRG2, Internalisation, RP, R_Shc, R_ShP, \
@@ -60,7 +65,11 @@ class hatakeyama_2003(eqx.Module):
         dy_dt_0 = -v1 # R
         dy_dt_1 = -v5+v10 # Shc
         dy_dt_2 = -v23+v26 # PI3K
-        dy_dt_3 = -v1 # HRG
+        # variable HRG flux
+        if self.transient:
+            dy_dt_3 = -v1 # HRG
+        else:
+            dy_dt_3 = 0.0
         dy_dt_4 = v1 - 2.0*v2 # R_HRG
         dy_dt_5 = v2-v3+v4 # R_HRG2
         dy_dt_6 = v34 # Internalisation

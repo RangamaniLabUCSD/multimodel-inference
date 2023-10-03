@@ -2,10 +2,15 @@ import equinox as eqx
 import jax.numpy as jnp
 
 class kochanczyk_2017(eqx.Module):
+    # transient: bool True for transient EGF stim, False for sustained
+    transient: any
+    def __init__(self, transient=False):
+        self.transient = transient
+
     def __call__(self, t, y, args):
 
         # unpack state variables
-        EGFRegfIsos, RASgGDPsos, RASgGTPsos, SOSSUegfrrem, RasGAPras, RAFSI, \
+        EGF, EGFRegfIsos, RASgGDPsos, RASgGTPsos, SOSSUegfrrem, RasGAPras, RAFSI, \
             MEKSUT292U, ERKSU, EKAREVactI, ERKTRactI, EGFRegfAsos, \
             RASgGTP1sos_RasGAPras1, RAFSA, EGFRegfAsos1_SOSSUegfr1rem, \
             RASgGDP1sos_RasGAPras1, MEKSPT292U, EGFRegfIsos1_SOSSUegfr1rem, \
@@ -17,7 +22,7 @@ class kochanczyk_2017(eqx.Module):
             EKAREVactA, ERKTRactA, SOSSPPegfrrem, SOSSPPPegfrrem, SOSSPPPPegfrrem = y
         
         # unpack parameters
-        EGF, ERKpp_SOS1_FB, ERKpp_MEK_FB, ERKpp_RAF1_FB, BIMOL, RAS_t0_active, \
+        ERKpp_SOS1_FB, ERKpp_MEK_FB, ERKpp_RAF1_FB, BIMOL, RAS_t0_active, \
             d1, u1a, u1b, u2a, u2b, u3, k3, d2, q1, q2, q3, q4, q5, q6, \
             a0_ekarev, d0_ekarev, a0_erktr, d0_erktr = args
 
@@ -92,6 +97,10 @@ class kochanczyk_2017(eqx.Module):
     
 
         # ODE rhs
+        if self.transient:
+            d_EGF = -v1
+        else:
+            d_EGF = 0.0
         d_EGFRegfIsos = -v1 +v4 +v19
         d_RASgGDPsos = -v12 +v13 -v22 +v23 -v24 -v25 +v31 -v32 -v33
         d_RASgGTPsos = -v2 -v11 -v20 +v21 +v24 +v25 +v30 +v32 +v33
@@ -129,7 +138,7 @@ class kochanczyk_2017(eqx.Module):
 
 
         # concatenate into tuple and return
-        return (d_EGFRegfIsos, d_RASgGDPsos, d_RASgGTPsos, d_SOSSUegfrrem, 
+        return (d_EGF, d_EGFRegfIsos, d_RASgGDPsos, d_RASgGTPsos, d_SOSSUegfrrem, 
                 d_RasGAPras, d_RAFSI, d_MEKSUT292U, d_ERKSU, d_EKAREVactI, 
                 d_ERKTRactI, d_EGFRegfAsos, d_RASgGTP1sos_RasGAPras1, d_RAFSA, 
                 d_EGFRegfAsos1_SOSSUegfr1rem, d_RASgGDP1sos_RasGAPras1, 
@@ -145,7 +154,6 @@ class kochanczyk_2017(eqx.Module):
     def get_nominal_params(self):
 
         p_dict =  {
-            'EGF':10,
             'ERKpp_SOS1_FB':1,
             'ERKpp_MEK_FB':1,
             'ERKpp_RAF1_FB':1,
@@ -180,6 +188,7 @@ class kochanczyk_2017(eqx.Module):
     def get_initial_conditions(self):
 
         y0_dict = {
+            'EGF':10.0,
             'EGFRegfIsos':300000.0,
             'RASgGDPsos':60000.0,
             'RASgGTPsos':0.0,

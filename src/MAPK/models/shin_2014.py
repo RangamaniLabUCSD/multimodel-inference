@@ -4,7 +4,6 @@ import jax.numpy as jnp
 class shin_2014(eqx.Module):
     # transient: bool True for transient EGF stim, False for sustained
     transient: any
-
     def __init__(self, transient=False):
         self.transient = transient
 
@@ -88,7 +87,6 @@ class shin_2014(eqx.Module):
             'kc45': 6.872e-2, # 1/min
             'kc46': 7.821, # 1/(uM*min)
             'kc47': 3.905e-1, # 1/min
-            # 'EGF': 1.0e-2, # uM NOTE: this is not in the paper, but assuming something reasonable
         }
         param_list = [param_dict[key] for key in param_dict]
 

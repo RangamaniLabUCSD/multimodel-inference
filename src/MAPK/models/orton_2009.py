@@ -1,9 +1,14 @@
 import equinox as eqx
 
 class orton_2009(eqx.Module):
+    # transient: bool True for transient EGF stim, False for sustained
+    transient: any
+    def __init__(self, transient=False): # defaults to sustained stim
+        self.transient = transient
+
     def __call__(self, t, y, args):
         # unpack state
-        bRafInactive, bRafActive, Rap1Inactive, Rap1Active, C3GInactive, C3GActive, \
+        EGF, bRafInactive, bRafActive, Rap1Inactive, Rap1Active, C3GInactive, C3GActive, \
             degradedEGFRReceptor, AktInactive, AktActive, PI3KInactive, PI3KActive, \
             P90RskInactive, P90RskActive, ErkInactive, ErkActive, MekInactive, \
             MekActive, Raf1Inactive, Raf1Active, RasInactive, RasActive, \
@@ -31,7 +36,7 @@ class orton_2009(eqx.Module):
             Kcat_PI3K_Activation_EGFR, km_Sos_Activation, \
             Kcat_Sos_Feedback_Deactivation, J_reaction_28, \
             Kcat_P90Rsk_Activation, Kcat_Erk_Deactivation, proEGFRReceptor, \
-            RasGapActive, EGF = args
+            RasGapActive = args
 
         # fluxes
         J_EGF_Binding_Unbinding =  - ((k2_EGF_Binding_Unbinding * boundEGFRReceptor) - (k1_EGF_Binding_Unbinding * freeEGFRReceptor * EGF))
@@ -66,6 +71,10 @@ class orton_2009(eqx.Module):
         J_bRaf_Activation_Ras = (kcat_bRaf_Activation_Ras * bRafInactive * RasActive / (km_bRaf_Activation_Ras + bRafInactive))
 
         # ODE rhs
+        if self.transient:
+            d_EGF = -J_EGF_Binding_Unbinding
+        else:
+            d_EGF = 0.0
         d_bRafInactive = ( - J_bRaf_Activation + J_bRaf_Deactivation - J_bRaf_Activation_Ras)
         d_bRafActive = (J_bRaf_Activation - J_bRaf_Deactivation + J_bRaf_Activation_Ras)
         d_Rap1Inactive = ( - J_Rap1_Activation + J_Rap1_Deactivation)
@@ -93,7 +102,7 @@ class orton_2009(eqx.Module):
         d_boundEGFRReceptor = (J_EGF_Binding_Unbinding - J_EGFReceptor_Degradation)
 
         # concatenate into tuple and return
-        return (d_bRafInactive, d_bRafActive, d_Rap1Inactive, d_Rap1Active,
+        return (d_EGF, d_bRafInactive, d_bRafActive, d_Rap1Inactive, d_Rap1Active,
             d_C3GInactive, d_C3GActive, d_degradedEGFRReceptor, d_AktInactive,
             d_AktActive, d_PI3KInactive, d_PI3KActive, d_P90RskInactive,
             d_P90RskActive, d_ErkInactive, d_ErkActive, d_MekInactive,
@@ -164,7 +173,6 @@ class orton_2009(eqx.Module):
             'Kcat_Erk_Deactivation': 8.8912,
             'proEGFRReceptor': 1.0,
             'RasGapActive': 120000.0,
-            'EGF': 1.0002e7,
         }
 
         p_list = [p_dict[key] for key in p_dict.keys()]
@@ -175,7 +183,9 @@ class orton_2009(eqx.Module):
 
     def get_initial_conditions(self):
         
-        y0_dict = {'bRafInactive':120000.0,
+        y0_dict = {
+            'EGF': 1.0002e7,
+            'bRafInactive':120000.0,
             'bRafActive':0.0,
             'Rap1Inactive':120000.0,
             'Rap1Active':0.0,
