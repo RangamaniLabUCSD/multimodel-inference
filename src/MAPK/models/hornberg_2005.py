@@ -1,5 +1,6 @@
 import equinox as eqx
 import jax.numpy as jnp
+from jax.lax import cond
 
 class hornberg_2005(eqx.Module):
     """ Note this is the code at https://models.physiomeproject.org/exposure/48c4b41256d698c4d18aace1cb159865/hornberg_binder_bruggeman_schoeberl_heinrich_westerhoff_2005.cellml/@@cellml_codegen/Python
@@ -28,10 +29,13 @@ class hornberg_2005(eqx.Module):
 
         v1 = constants[0]*c1*c2-constants[1]*c3
         # variable EGF rate
-        if self.transient:
-            dy_dt_0 = -v1
-        else:
-            dy_dt_0 = constants[95]
+        trans_fun = lambda v1: -v1
+        sus_fun = lambda v1: 0.0
+        dy_dt_0 = cond(self.transient, trans_fun, sus_fun, v1)
+        # if self.transient:
+        #     dy_dt_0 = -v1
+        # else:
+        #     dy_dt_0 = constants[95]
 
         v2 = constants[2]*c3*c3-constants[3]*c4
         dy_dt_2 = v1-2.0*v2
