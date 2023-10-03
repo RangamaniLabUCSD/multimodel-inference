@@ -12,7 +12,7 @@ import sys
 from scipy.stats import mode
 import time
 
-sys.path.append("./models/")
+sys.path.append("../models/")
 from hornberg_2005 import *
 
 jax.config.update("jax_enable_x64", True)
