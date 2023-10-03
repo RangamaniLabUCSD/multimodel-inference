@@ -1,7 +1,13 @@
 import equinox as eqx
 import jax.numpy as jnp
 
-class shin_2014_transient(eqx.Module):
+class shin_2014(eqx.Module):
+    # transient: bool True for transient EGF stim, False for sustained
+    transient: any
+
+    def __init__(self, transient=False):
+        self.transient = transient
+
     def __call__(self, t, y, args):
         # unpack state
         EGF, RE, GS, Ras_GTP, act_Raf, pp_MEK, pp_ERK = y
@@ -9,8 +15,7 @@ class shin_2014_transient(eqx.Module):
         # unpack parameters
         EGFR_tot, SOS_tot, Grb2_tot, Ras_tot, Raf_tot, MEK_tot, ERK_tot, ka38, \
             kd38, ka39a, ki39, kd39, kc40, kc41, kc42, kc43, kc44, kc45, kc46, \
-            kc47, _ = args
-
+            kc47 = args
 
         # define algebraic equations
         EGFR = EGFR_tot - RE
@@ -23,7 +28,10 @@ class shin_2014_transient(eqx.Module):
 
         # ode
         # EGF
-        d_EGF_dt = -ka38*EGF*EGFR
+        if self.transient == True:
+            d_EGF_dt = -ka38*EGF*EGFR
+        else:
+            d_EGF_dt = 0.0
         # RE
         d_RE_dt = ka38*EGF*EGFR - kd38*RE
         # GS
@@ -42,15 +50,18 @@ class shin_2014_transient(eqx.Module):
     
     def get_initial_conditions(self):
         """ Function to get nominal initial conditions for the model. """
-        EGF =  1.0e-2
-        RE = 0.0 # uM
-        GS = 0.0 # uM
-        Ras_GTP = 0.0 # uM
-        act_Raf = 0.0 # uM
-        pp_MEK = 0.0 # uM
-        pp_ERK = 0.0 # uM
+        y0_dict = {'EGF': 1.0e-2,
+            'RE': 0.0, # uM
+            'GS': 0.0, # uM
+            'Ras_GTP': 0.0, # uM
+            'act_Raf': 0.0, # uM
+            'pp_MEK': 0.0, # uM
+            'pp_ERK': 0.0, # uM
+        }
 
-        return (EGF, RE, GS, Ras_GTP, act_Raf, pp_MEK, pp_ERK)
+        y0_tup = tuple([y0_dict[key] for key in y0_dict.keys()])
+
+        return y0_dict, y0_tup
 
         
     
@@ -77,8 +88,7 @@ class shin_2014_transient(eqx.Module):
             'kc45': 6.872e-2, # 1/min
             'kc46': 7.821, # 1/(uM*min)
             'kc47': 3.905e-1, # 1/min
-            'EGF': 1.0e-2, # uM NOTE: this is not in the paper, but assuming something reasonable
-
+            # 'EGF': 1.0e-2, # uM NOTE: this is not in the paper, but assuming something reasonable
         }
         param_list = [param_dict[key] for key in param_dict]
 
