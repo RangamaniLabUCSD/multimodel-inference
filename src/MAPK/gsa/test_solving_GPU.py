@@ -46,7 +46,7 @@ def simulate_model_trajectory(model_instance, y0, params, t1=300, dt0=1e-3, n_ou
     return sol
 
 # import model
-B_2005 = hornberg_2005(transient=False)
+HB_2005 = hornberg_2005(transient=False)
 pdict, plist = HB_2005.get_nominal_params()
 y0_dict, y0 = HB_2005.get_initial_conditions()
 
