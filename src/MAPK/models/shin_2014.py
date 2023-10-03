@@ -2,15 +2,20 @@ import equinox as eqx
 import jax.numpy as jnp
 
 class shin_2014(eqx.Module):
+    # transient: bool True for transient EGF stim, False for sustained
+    transient: any
+
+    def __init__(self, transient=False):
+        self.transient = transient
+
     def __call__(self, t, y, args):
         # unpack state
-        RE, GS, Ras_GTP, act_Raf, pp_MEK, pp_ERK = y
+        EGF, RE, GS, Ras_GTP, act_Raf, pp_MEK, pp_ERK = y
 
         # unpack parameters
         EGFR_tot, SOS_tot, Grb2_tot, Ras_tot, Raf_tot, MEK_tot, ERK_tot, ka38, \
             kd38, ka39a, ki39, kd39, kc40, kc41, kc42, kc43, kc44, kc45, kc46, \
-            kc47, EGF = args
-
+            kc47 = args
 
         # define algebraic equations
         EGFR = EGFR_tot - RE
@@ -22,6 +27,11 @@ class shin_2014(eqx.Module):
         ERK = ERK_tot - pp_ERK
 
         # ode
+        # EGF
+        if self.transient == True:
+            d_EGF_dt = -ka38*EGF*EGFR
+        else:
+            d_EGF_dt = 0.0
         # RE
         d_RE_dt = ka38*EGF*EGFR - kd38*RE
         # GS
@@ -35,12 +45,13 @@ class shin_2014(eqx.Module):
         # pp_ERK
         d_pp_ERK_dt = kc46*pp_MEK*ERK - kc47*pp_ERK
 
-        return (d_RE_dt, d_GS_dt, d_Ras_GTP_dt, d_act_Raf_dt, d_pp_MEK_dt, d_pp_ERK_dt)
+        return (d_EGF_dt, d_RE_dt, d_GS_dt, d_Ras_GTP_dt, d_act_Raf_dt, d_pp_MEK_dt, d_pp_ERK_dt)
 
     
     def get_initial_conditions(self):
         """ Function to get nominal initial conditions for the model. """
-        y0_dict = {'RE': 0.0, # uM
+        y0_dict = {'EGF': 1.0e-2,
+            'RE': 0.0, # uM
             'GS': 0.0, # uM
             'Ras_GTP': 0.0, # uM
             'act_Raf': 0.0, # uM
@@ -77,8 +88,7 @@ class shin_2014(eqx.Module):
             'kc45': 6.872e-2, # 1/min
             'kc46': 7.821, # 1/(uM*min)
             'kc47': 3.905e-1, # 1/min
-            'EGF': 1.0e-2, # uM NOTE: this is not in the paper, but assuming something reasonable
-
+            # 'EGF': 1.0e-2, # uM NOTE: this is not in the paper, but assuming something reasonable
         }
         param_list = [param_dict[key] for key in param_dict]
 

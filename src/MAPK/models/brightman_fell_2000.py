@@ -5,7 +5,13 @@ class brightman_fell_2000(eqx.Module):
     """ Note this is the code at https://models.physiomeproject.org/jnp.exposure/55e182564e746cc9bac6b03ad7778d4d/brightman_fell_2000.cellml/@@cellml_codegen/Python
     
     Which comes from the Brightman-Fell paper entry on the CellML site https://models.physiomeproject.org/jnp.exposure/55e182564e746cc9bac6b03ad7778d4d"""
+    # transient: bool True for transient EGF stim, False for sustained
+    transient: any
+    def __init__(self, transient=True): # defaults to sustained stim
+        self.transient = transient
+    
     def __call__(self, t, y, args):
+
         # unpack state
         Rs, RL, Ri, L, R2L2, R2_CPP, Li, R2i, Shc, ShcP, ShcGS, GS, GSP,\
             RasGDP, Ras_ShcGS, RasGTP, GAP, Ras_GAP, Raf, Ras_Raf, Rafa, \
@@ -54,10 +60,13 @@ class brightman_fell_2000(eqx.Module):
         dy_dt_0 = v3 -v1 # Rs
         dy_dt_1 = v1 -v2-v4 # RL
         dy_dt_2 = v2+v3+v6 # Ri
-        dy_dt_3 = -v1 # L
+        if self.transient:
+            dy_dt_3 = -v1 # L
+        else:
+            dy_dt_3 = 0.0
         dy_dt_4 = v4 -v5-v7 # R2L2
         dy_dt_5 = v7-v8 # R2-CPP
-        dy_dt_6 = v2+v6 # Ri
+        dy_dt_6 = v2+v6 # Li
         dy_dt_7 = v5+v8 -v6 # R2i
         dy_dt_8 = v10-v9 # Shc
         dy_dt_9 = v9+v27 -v10-v11 # ShcP
@@ -88,37 +97,39 @@ class brightman_fell_2000(eqx.Module):
     
     def get_initial_conditions(self):
         """ Function to get nominal initial conditions for the model. """
-        Rs = 11100.0
-        RL = 0.0
-        Ri = 3900.0
-        L = 1e-07
-        R2L2 = 0.0
-        R2_CPP = 0.0
-        Li = 0.0
-        R2i = 0.0
-        Shc = 30000.0
-        ShcP = 0.0
-        ShcGS = 0.0
-        GS = 20000.0
-        GSP = 0.0
-        RasGDP = 19800.0
-        Ras_ShcGS = 0.0
-        RasGTP = 200.0
-        GAP = 15000.0
-        Ras_GAP = 0.0
-        Raf = 10000.0
-        Ras_Raf = 0.0
-        Rafa = 0.0
-        MEK = 360000.0
-        MEKP = 0.0
-        MEKPP = 0.0
-        ERK = 750000.0
-        ERKP = 0.0
-        ERKPP = 0.0
+        y0_dict = {
+            'Rs':11100.0,
+            'RL':0.0,
+            'Ri':3900.0,
+            'L':1e-07,
+            'R2L2':0.0,
+            'R2_CPP':0.0,
+            'Li':0.0,
+            'R2i':0.0,
+            'Shc':30000.0,
+            'ShcP':0.0,
+            'ShcGS':0.0,
+            'GS':20000.0,
+            'GSP':0.0,
+            'RasGDP':19800.0,
+            'Ras_ShcGS':0.0,
+            'RasGTP':200.0,
+            'GAP':15000.0,
+            'Ras_GAP':0.0,
+            'Raf':10000.0,
+            'Ras_Raf':0.0,
+            'Rafa':0.0,
+            'MEK':360000.0,
+            'MEKP':0.0,
+            'MEKPP':0.0,
+            'ERK':750000.0,
+            'ERKP':0.0,
+            'ERKPP':0.0,
+        }
 
-        return (Rs, RL, Ri, L, R2L2, R2_CPP, Li, R2i, Shc, ShcP, ShcGS, GS, GSP,\
-                RasGDP, Ras_ShcGS, RasGTP, GAP, Ras_GAP, Raf, Ras_Raf, Rafa, \
-                MEK, MEKP, MEKPP, ERK, ERKP, ERKPP)
+        y0_tup = tuple([y0_dict[key] for key in y0_dict.keys()])
+
+        return y0_dict, y0_tup
 
         
     
@@ -176,60 +187,6 @@ class brightman_fell_2000(eqx.Module):
             'K_27': 600000.0,
             'V_28': 75.0,
             'K_28': 20000.0,}
-        
-        # param_dict = {'k1': 3.8e8,
-        #     'kn1': 0.73,
-        #     'DT': 6.5, # what is DT?
-        #     'E': 0.12, # what is E?
-        #     'k2': 0.7, 
-        #     'f': 0.2, # what is f?
-        #     'kn3': 0.7,
-        #     'k3': 0.0484,
-        #     'k2_4': 1e-07, # what is k2_4?
-        #     'k4': 0.001383,
-        #     'k5': 0.35,
-        #     'k6': 0.35,
-        #     'k7': 1.0,
-        #     'kn7': 0.000347,
-        #     'k8': 0.35,
-        #     'k9': 12.0,
-        #     'K_9': 6000.0,
-        #     'V_10': 300000.0,
-        #     'K_10': 6000.0,
-        #     'k11': 0.002,
-        #     'kn11': 3.8,
-        #     'k12': 0.0163,
-        #     'kn12': 10.0,
-        #     'k_13': 15.0,
-        #     'k14': 0.005,
-        #     'kn14': 60.0,
-        #     'k15': 720.0,
-        #     'k16': 0.0012,
-        #     'kn16': 3.0,
-        #     'k17': 27.0,
-        #     'V_18': 97000.0,
-        #     'K_18': 6000.0,
-        #     'k19': 50.0,
-        #     'K_19': 9000.0,
-        #     'V_20': 970000.0,
-        #     'K_20': 600000.0,
-        #     'k21': 50.0,
-        #     'K_21': 9000.0,
-        #     'V_22': 970000.0,
-        #     'K_22': 600000.0,
-        #     'k23': 8.3,
-        #     'K_23': 9000.0, # was 9e4 not 9e3
-        #     'V_24': 200000.0,
-        #     'K_24': 2.5e5, #600000.0,
-        #     'k25': 8.3,
-        #     'K_25': 9000.0, # was 9e4 not 9e3
-        #     'V_26': 2.5e5, # 400000.0,
-        #     'K_26': 600000.0,
-        #     'k27': 1.6,
-        #     'K_27': 600000.0,
-        #     'V_28': 75.0,
-        #     'K_28': 20000.0,}
-
 
         param_list = [param_dict[key] for key in param_dict]
 

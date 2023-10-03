@@ -1,9 +1,14 @@
 import equinox as eqx
 
 class levchenko_2000(eqx.Module):
+    # transient: bool True for transient EGF stim, False for sustained
+    transient: any
+    def __init__(self, transient=True): # defaults to sustained stim
+        self.transient = transient
+
     def __call__(self, t, y, args):
         # unpack state
-        RAF, RAF_RAFact, RAFstar, RAFstar_RAFPase, MEK, MEK_RAFstar, MEKstar, \
+        RAFact, RAF, RAF_RAFact, RAFstar, RAFstar_RAFPase, MEK, MEK_RAFstar, MEKstar, \
             MEKstar_MEKPase, MEKstar_RAFstar, MEKstarstar, MEKstarstar_MEKPase, \
             MAPK, MAPK_MEKstarstar, MAPKstar, MAPKstar_MEKstarstar, MAPKstarstar, \
             MAPKstar_MAPKPase, MAPKstarstar_MAPKPase, C1, C2, C3, C4, C5, C6, \
@@ -12,14 +17,14 @@ class levchenko_2000(eqx.Module):
         # unpack parameters
         a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, d1, d2, d3, d4, d5, d6, d7, d8, \
             d9, d10, k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, kOn1, kOn2, kOff1, \
-            kOff2, kOff3, kOff4, RAFact, RAFPase, MEKPase, MAPKPase = args
+            kOff2, kOff3, kOff4, RAFPase, MEKPase, MAPKPase = args
 
         # define additional parameters
         kr1 = k5
         kr2 = k9 
 
         # fluxes
-        J1 = a1*RAF*(RAFact - RAF_RAFact)
+        J1 = a1*RAF*RAFact
         J2 = d1*RAF_RAFact
         J3 = k2*RAFstar_RAFPase
         J4 = k1*RAF_RAFact
@@ -88,6 +93,10 @@ class levchenko_2000(eqx.Module):
 
         
         # ODE rhs
+        if self.transient:
+            d_RAFact = -J1 + J2 + J4
+        else:
+            d_RAFact = 0.0
         d_RAF = -J1 + J2 + J3
         d_RAF_RAFact = J1 - J2 - J4
         d_RAFstar = -J5 + J6 + J4 + J7 + J8 - J9 + J10 + J11 - J12
@@ -117,7 +126,7 @@ class levchenko_2000(eqx.Module):
         d_C9 = J56 - J54 - J44 - J60
         
         # concatenate into tuple and return
-        return (d_RAF, d_RAF_RAFact, d_RAFstar, d_RAFstar_RAFPase, d_MEK, 
+        return (d_RAFact, d_RAF, d_RAF_RAFact, d_RAFstar, d_RAFstar_RAFPase, d_MEK, 
                 d_MEK_RAFstar, d_MEKstar, d_MEKstar_MEKPase, d_MEKstar_RAFstar, 
                 d_MEKstarstar, d_MEKstarstar_MEKPase, d_MAPK, d_MAPK_MEKstarstar, 
                 d_MAPKstar, d_MAPKstar_MEKstarstar, d_MAPKstarstar, 
@@ -165,7 +174,6 @@ class levchenko_2000(eqx.Module):
             'kOff2': 0.05, # 1/sec
             'kOff3': 0.05, # 1/sec
             'kOff4': 0.5, # 1/sec
-            'RAFact': 0.2, #uM
             'RAFPase': 0.3, #uM
             'MEKPase': 0.2, #uM
             'MAPKPase': 0.3, #uM
@@ -181,6 +189,7 @@ class levchenko_2000(eqx.Module):
         # values come from Ferrell 1996 - trends biochem sci
         #   and Bray and Lay 1997 - PNAS 
         y0_dict = {
+            'RAFact': 0.2, #uM
             'RAF': 0.3, # uM 
             'RAF_RAFact': 0.0, # uM 
             'RAFstar': 0.0, # uM 

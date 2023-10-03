@@ -1,9 +1,14 @@
 import equinox as eqx
 
 class kholodenko_2000(eqx.Module):
+    # transient: bool True for transient EGF stim, False for sustained
+    transient: any
+    def __init__(self, transient=False): # defaults to sustained stim
+        self.transient = transient
+
     def __call__(self, t, y, args):
         # unpack state
-        MKKK_P, MKK_P, MKK_PP, MAPK_P, MAPK_PP = y
+        Input, MKKK_P, MKK_P, MKK_PP, MAPK_P, MAPK_PP = y
         
         # unpack parameters
         v1,KI,K1,n,v2,K2,k3,K3,k4,K4,v5,K5,v6,K6,k7,K7,k8,K8,v9,K9,v10,K10, \
@@ -15,7 +20,7 @@ class kholodenko_2000(eqx.Module):
         MAPK = MAPK_total - MAPK_P - MAPK_PP  # MAPK
         
         # fluxes
-        J1 = (v1*MKKK)/((1+(MAPK_PP/KI)**n)*(K1 + MKKK))
+        J1 = (v1*Input*MKKK)/((1+(MAPK_PP/KI)**n)*(K1 + MKKK))
         J2 = (v2*MKKK_P)/(K2 + MKKK_P)
         J3 = (k3*MKKK_P*MKK)/(K3 + MKK)
         J4 = (k4*MKKK_P*MKK_P)/(K4 + MKK_P)
@@ -27,6 +32,10 @@ class kholodenko_2000(eqx.Module):
         J10 = (v10*MAPK_P)/(K10 + MAPK_P)
 
         # ODE rhs
+        if self.transient:
+            d_Input = -J1
+        else:
+            d_Input = 0.0
         # d_MKKK = J2 - J1
         d_MKKK_P = J1 - J2
         # d_MKK = J6 - J3
@@ -37,12 +46,12 @@ class kholodenko_2000(eqx.Module):
         d_MAPK_PP = J8 - J9
 
         # concatenate into tuple and return
-        return (d_MKKK_P, d_MKK_P, d_MKK_PP, d_MAPK_P, d_MAPK_PP)
+        return (d_Input, d_MKKK_P, d_MKK_P, d_MKK_PP, d_MAPK_P, d_MAPK_PP)
     
 
     def get_nominal_params(self):
         p_dict = {
-            'v1': 2.5,
+            'v1': 1.0,
             'KI': 9.0,
             'K1': 10.0,
             'n': 1.0,
@@ -76,6 +85,7 @@ class kholodenko_2000(eqx.Module):
 
     def get_initial_conditions(self):
         ic_dict = {
+            'Input': 2.5,
             'MKKK_P': 90.0,
             'MKK_P': 10.0,
             'MKK_PP': 0.0,
