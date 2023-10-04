@@ -1,6 +1,5 @@
 from os import environ
 environ['OMP_NUM_THREADS'] = '1'
-environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 import diffrax
 import matplotlib.pyplot as plt
@@ -20,7 +19,7 @@ jax.config.update("jax_enable_x64", True)
 
 #n_devices = jax.local_device_count() 
 #print('Using {} jax devices'.format(n_devices))
-print('Device memory is {}'.format(jax.devices()[0].memory_stats()))
+print('Devices are {}'.format(jax.devices()))
 
 # function to solve the model and get a trajectory
 @jax.jit
