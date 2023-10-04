@@ -2,14 +2,10 @@ from os import environ
 environ['OMP_NUM_THREADS'] = '1'
 
 import diffrax
-import matplotlib.pyplot as plt
-import pandas as pd
-import seaborn as sns
 import jax
 import jax.numpy as jnp
 import equinox as eqx
 import sys
-from scipy.stats import mode
 import time
 
 sys.path.append("../models/")
@@ -19,7 +15,8 @@ jax.config.update("jax_enable_x64", True)
 
 #n_devices = jax.local_device_count() 
 #print('Using {} jax devices'.format(n_devices))
-print('Devices are {}'.format(jax.devices()))
+with open('/oasis/tscc/scratch/nlinden/gpu_test_info.txt', 'a') as f:
+    f.write('Devices are {}'.format(jax.devices()))
 
 # function to solve the model and get a trajectory
 @jax.jit
@@ -64,7 +61,9 @@ times = jnp.linspace(0, 6000, 501)
 start = time.time()
 sol =  solve_traj(HB_2005_ode, y0, plist, 6000, times)
 end = time.time()
-print('Compile + solves took {} seconds'.format(end-start))
+
+with open('/oasis/tscc/scratch/nlinden/gpu_test_info.txt', 'a') as f:
+    f.write('Compile + solves took {} seconds'.format(end-start))
 
 # repeat solve 10 times
 nsolves = 100
@@ -73,4 +72,6 @@ times = jnp.linspace(0, 6000, 501)
 start = time.time()
 sol =  vsolve_traj(HB_2005_ode, y0, plist, 6000, times)
 end = time.time()
-print('VMAP solves took {} seconds'.format(end-start))
+
+with open('/oasis/tscc/scratch/nlinden/gpu_test_info.txt', 'a') as f:
+    f.write('VMAP solves took {} seconds'.format(end-start))
