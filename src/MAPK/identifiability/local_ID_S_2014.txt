@@ -1,0 +1,4 @@
+Locally Identifiable parameters:
+x6, kc47, kc43, kd39, kc45, ERK_tot, ki39, kc41, 
+Nonidentifiable parameters:
+x5, x4, kd38, kc42, x3, kc40, kc46, x1, Ras_tot, ka39a, EGF, MEK_tot, ka38, SOS_tot, EGFR_tot, Raf_tot, kc44, x2, Grb2_tot, 

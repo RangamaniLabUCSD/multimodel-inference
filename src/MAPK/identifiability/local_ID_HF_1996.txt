@@ -1,0 +1,3 @@
+Locally Identifiable parameters:
+x10, x14, x5, MKK_tot, x15, a3, k7, a4, d3, d10, x4, d2, x12, x2, x3, a2, d6, a8, a1, E2_tot, a7, a9, k5, a6, d1, d9, d5, k8, x11, x9, x7, x13, x6, d8, x1, k4, k6, k9, k3, d7, a10, MAPK_tot, k2, x8, d4, a5, MKKK_tot, k10, MKKPase_tot, k1, 
+Nonidentifiable parameters:

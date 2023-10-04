@@ -1,0 +1,4 @@
+Locally Identifiable parameters:
+K8, v10, v9, K7, x4, K9, x5, KI, MAPK_total, K10, 
+Nonidentifiable parameters:
+MKKK_total, K5, K1, MKK_total, K6, v5, k7, k3, K4, v2, x3, v1, x2, K3, k8, x1, v6, K2, k4, 

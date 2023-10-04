@@ -1,0 +1,4 @@
+Locally Identifiable parameters:
+k3, q1, q3, q2, x8, u3, d1, EGF, q6, u2b, u1a, x23, d2, u2a, q5, u1b, x24, q4, 
+Nonidentifiable parameters:
+x30, x33, d0_ekarev, a0_ekarev, x25, ERKpp_RAF1_FB, ERKpp_MEK_FB, ERKpp_SOS1_FB, x28, x27, x7, x34, x16, x1, x19, x31, x2, x3, x14, x26, x4, BIMOL, x17, x6, x21, x20, d0_erktr, x9, x11, x13, x22, x29, x15, x5, a0_erktr, x32, x18, x12, x10, 

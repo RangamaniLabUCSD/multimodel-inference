@@ -1,0 +1,4 @@
+Locally Identifiable parameters:
+D2, T_dusp, K_dusp, K2, x10, dusp_ind, x9, 
+Nonidentifiable parameters:
+kd5, k_PFB, D7, D3, Ptase_NFB, k7, Ptase_PFB, Ptase_MEK, D5, k3_F, kd1, K5, K6, kd4, k4, x16, K4, D4, k6, x8, x2, x11, kd7, D6, k1, Ptase_Raf, k2, x5, EGF, K7, x3, GAP, K3, k5, x6, x13, kd2, x4, x7, K3R, dusp_basal, kd6, x1, x14, x15, Ptase_R, K_PFB, x12, kd3, K_NFB, 

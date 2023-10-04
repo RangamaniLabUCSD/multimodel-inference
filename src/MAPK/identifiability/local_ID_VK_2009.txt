@@ -1,0 +1,4 @@
+Locally Identifiable parameters:
+k42, k37, k4, x30, x28, k27, k45, x27, x26, k69, k30, k43, k48, k5, k14, k28, x32, k39, k46, k63, k68, k55, k29, k41, k25, k7, x31, k13, k2, x29, x33, k40, k6, k18, k56, k32, k38, k10, k34, 
+Nonidentifiable parameters:
+k60, k65_, k71_, k17, x6, x15, x17, k23, k49, x1, x9, V_CYT, k8, k44, x20, x8, k50, x13, x35, k22, x22, k73_, k1, k59, k54, x36, x25, k24, k3, x37, k15, k58_, x11, V_NUC, k11, x16, x2, k12, k47, k21, NGFDeriv, x23, x14, x7, k52, k26, EGFDeriv, x5, k33, x34, k19, x10, x18, k9, k53, x12, k51, x21, k31, x24, k16, x19, x4, x3, k62_, k67_, k20, 

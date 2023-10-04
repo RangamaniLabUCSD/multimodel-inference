@@ -1,0 +1,4 @@
+Locally Identifiable parameters:
+kn14, K_24, kn16, V_26, kn1, k3, V_24, kn12, k15, k_13, kn7, kn11, K_25, x25, x27, k2_4, K_26, x26, k17, K_23, 
+Nonidentifiable parameters:
+V_22, K_18, k19, x3, x18, x16, k21, K_10, x19, k25, k12, K_21, k1, k7, k27, x24, k5, V_10, K_9, x21, k16, K_28, x2, x10, k9, x23, x1, x15, K_20, k11, f, V_18, x11, x12, x9, k8, x20, k4, x6, K_19, k6, k23, x4, x22, x5, k14, K_22, E, V_28, K_27, x14, x17, x13, k2, V_20, x8, kn3, 

@@ -1,0 +1,3 @@
+Locally Identifiable parameters:
+a8, k2, a9, a2, Pase, x5, k4, x22, d10, x25, x13, x18, a5, k7, x24, d3, x8, d4, k10, k5, a7, x11, d2, kOff1, x23, kOn1, x19, kOff3, a6, x21, x3, d9, x4, x2, x15, kOff4, kOff2, k3, x10, x20, act, x27, k8, x9, x12, a4, x7, x17, d6, x16, d8, k6, a3, kOn2, a1, d7, k1, a10, k9, x1, x26, d1, d5, x14, x6, 
+Nonidentifiable parameters:
