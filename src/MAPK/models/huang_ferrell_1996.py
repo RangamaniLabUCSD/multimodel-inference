@@ -1,4 +1,5 @@
 import equinox as eqx
+from jax.lax import cond
 
 class huang_ferrell_1996(eqx.Module):
 
@@ -56,11 +57,13 @@ class huang_ferrell_1996(eqx.Module):
 
         # ODE rhs
         # stimulus dynamics
-        if self.transient:
-            d_E1 = -J1 + J2 + J4
-        else:
-            d_E1 = 0.0
-
+        trans_fun = lambda J1, J2, J4: -J1 + J2 + J4
+        sus_fun = lambda J1, J2, J4: 0.0
+        d_E1 = cond(self.transient, trans_fun, sus_fun, J1, J2, J3)
+        # if self.transient:
+        #     d_E1 = -J1 + J2 + J4
+        # else:
+        #     d_E1 = 0.0
         d_MKKK_E1 = J1 - J2 - J4
         d_MKKK_P = -J5 + J6 + J4 + J7 + J8 - J9 + J10 + J11 - J12
         d_MKKK_P_E2 = J5 - J6 - J3
