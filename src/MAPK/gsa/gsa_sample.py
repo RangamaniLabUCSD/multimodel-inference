@@ -1,5 +1,6 @@
 from os import environ
 environ['OMP_NUM_THREADS'] = '1'
+environ['CUDA_VISIBLE_DEVICES'] = 0
 
 import jax
 import jax.numpy as jnp
@@ -34,6 +35,7 @@ jax.config.update("jax_enable_x64", True)
 
 # print out device count
 n_devices = jax.local_device_count() 
+print(jax.devices())
 print('Using {} jax devices'.format(n_devices))
 
 ##############################
