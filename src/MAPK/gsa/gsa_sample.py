@@ -1,47 +1,58 @@
-import numpy as np
-import multiprocessing as mp
-import math
-
 from os import environ
 environ['OMP_NUM_THREADS'] = '1'
-
-# use all available cores (do before loading jax)
-# required for parallel cpu runs
-n_cores = mp.cpu_count()
-cpu_mult = 1
-# print('Using {} cores'.format(n_cores))
-n_devices = int(2**np.ceil(math.log(cpu_mult*n_cores, 2))) # sets n_devices to the next largest power of 2
-# print('Set {} XLA devices'.format(n_devices))
-
-xla_flag = '--xla_force_host_platform_device_count={}'.format(n_devices)
-environ['XLA_FLAGS']=xla_flag
-
 
 import jax
 import jax.numpy as jnp
 import diffrax
 import sys
+import argparse
+
+from SALib.sample import morris as morris_sample
 
 sys.path.append("../models/")
 from huang_ferrell_1996 import *
-from schoeberl_2002 import *
-from birtwistle_2007 import *
+from bhalla_iyengar_1999 import *
+from kholodenko_2000 import *
 from levchenko_2000 import *
 from brightman_fell_2000 import *
+from schoeberl_2002 import *
 from hatakeyama_2003 import *
 from hornberg_2005 import *
+from birtwistle_2007 import *
+from orton_2009 import *
+from vonKriegsheim_2009 import *
 from shin_2014 import *
+from ryu_2015 import *
+from kochanczyk_2017 import *
+from dessauges_2022 import *
 
-# use 64bit and CPUmode in jax
+sys.path.append("../")
+from utils import *
+
+# tell jax to use 64bit floats
 jax.config.update("jax_enable_x64", True)
-jax.config.update("jax_platform_name", "cpu")
 
 # print out device count
 n_devices = jax.local_device_count() 
 print('Using {} jax devices'.format(n_devices))
 
-from SALib.sample import morris as morris_sample
-from SALib.analyze import morris as morris_analyze
+##############################
+# def arg parsers to take inputs from the command line
+##############################
+def parse_args():
+    """ function to parse command line arguments
+    """
+    parser=argparse.ArgumentParser(description="Generate Morris samples for the specified model.")
+    parser.add_argument("model", type=str, help="model to process.")
+    parser.add_argument("--analyze_params", type=str, help="Comma separated list of additional parameters to include in the analysis.")
+    parser.add_argument("--max_time", type=int, help="Max time to simulate the model.")
+    parser.add_argument("--savedir", type=str, default='/oasis/tscc/scratch/nlinden/', 
+    help="Path to save results.")
+    parser.add_argument("--n_samples", type=int, default=256, help="Number of samples to generate. Defaults to 256. Must be a factor of 2.")
+    parser.add_argument("--multiplier", type=float, default=0.25, help="Multiplier to use for the Morris sampling. Must be between 0 and 1.")
+    args=parser.parse_args()
+    return args
+
 
 ##############################
 # def vmap function to solve for the steady-state solution of the ODE system
@@ -108,67 +119,71 @@ vsolve_traj = jax.vmap(solve_traj, in_axes=(None, None, 0, None, None))
 psolve_traj = jax.pmap(vsolve_traj, in_axes=(None, None, 0, None, None))
 
 
-##############################
-# loop over models and run the analysis
-##############################
-# model_list = ['shin_2014', 'huang_ferrell_1996', 'schoeberl_2002', 
-#               'brightman_fell_2000', 'birtwistle_2007', 'hatakeyama_2003', 'hornberg_2005']
-# sustained = [True, True, False, True, True, False, False]
-# sim_times = [200, 1000, 60, 60, 1800, 1800, 6000]
+def main():
+    """ main function to execute command line script functionality.
+    """
+    args = parse_args()
+    print('Processing model {}.'.format(args.model))
 
-model_list = ['hatakeyama_2003', 'hornberg_2005', 'birtwistle_2007', 'schoeberl_2002',]
-sustained = [False, False, True, False]
-sim_times = [1800, 6000, 1800, 60]
-
-
-for model_name, time, sus in zip(model_list, sim_times, sustained):
-    print('Running: ', model_name)
+    # try calling the model
     try:
-        model = eval(model_name + '()')
+        model = eval(args.model + '()')
     except:
-        print('Warning Model {} not found. Skipping this.'.format(model_name))
+        print('Warning Model {} not found. Skipping this.'.format(args.model))
 
     # get parameter names and initial conditions
     pdict, plist = model.get_nominal_params()
-    y0 = model.get_initial_conditions()
+    y0_dict, y0 = model.get_initial_conditions()
+
+    # get the params to analyze
+    analyze_params = args.analyze_params.split(',')
+    param_idxs = jnp.array([list(pdict.keys()).index(p) for p in analyze_params])
+
+    # get list of nominal vals for ID params
+    analyze_nominal_params = jnp.array([pdict[p] for p in analyze_params])
 
     # define the bounds
-    multiplier = 0.25
-    bounds = [[p*(1-multiplier), p*(1+multiplier)] for p in plist]
+    bounds = [[p*(1-args.multiplier), p*(1+args.multiplier)] for p in analyze_nominal_params]
 
     # set up the problem dictionary for SALib
     problem = {
-        'num_vars': len(plist),
-        'names': list(pdict.keys()),
+        'num_vars': len(analyze_nominal_params),
+        'names': analyze_params,
         'bounds': bounds
     }
 
-    # generate the samples
-    n_samples = 256
-    n_levels = 4
-    sample = morris_sample.sample(problem, n_samples, n_levels, seed=1234)
-    np.save('{}_morris_sample.npy'.format(model_name), sample)
 
-    # run the model using vmap
-    print('Running {} samples'.format(sample.shape[0]))
+    # generate the samples
+    n_levels = 4
+    samples = morris_sample.sample(problem, args.n_samples, n_levels, seed=1234)
+    jnp.save(args.savedir + '{}_morris_sample.npy'.format(args.model), samples)
+
+    full_samples = jnp.repeat(jnp.array([plist]), samples.shape[0], axis=0)
+
+    print(full_samples[1:3,:])
+
+    for i in range(samples.shape[0]):
+        full_samples = full_samples.at[i, param_idxs].set(samples[i])
+   
+    # RUN the samples
     dfrx_ode = diffrax.ODETerm(model)
 
     # reshape the sample to be (n_devices, n_samples/n_devices, n_params) so that
     # pmap doesn't complain
-    reshaped_sample = sample.reshape((n_devices, int(sample.shape[0]/n_devices), sample.shape[-1]))
+    reshaped_sample = full_samples.reshape((n_devices, int(full_samples.shape[0]/n_devices), full_samples.shape[-1]))
 
-    if sus:
-        sol = psolve_ss(dfrx_ode, y0, reshaped_sample, time)
-    else:
-        n_out = 500
-        times = np.linspace(0.0, time, n_out)
-        sol = psolve_traj(dfrx_ode, y0, reshaped_sample, time, times)
+    sol = psolve_ss(dfrx_ode, y0, reshaped_sample, args.max_time)
+    
 
     # reshape back to (n_samples, n_species)
     n_dev, n_samp_per_dev, n_states, n_dim = sol.shape
     sol = sol.reshape((n_dev*n_samp_per_dev, n_states, n_dim))
 
     # save the steady-state values
-    np.save('{}_morris_ss.npy'.format(model_name), sol)
+    jnp.save(args.savedir + '{}_morris_ss.npy'.format(args.model), sol)
 
-    print('Completed {}'.format(model_name))
+    print('Completed {}'.format(args.model))
+
+if __name__ == '__main__':
+    main()
+
