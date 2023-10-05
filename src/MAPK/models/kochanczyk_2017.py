@@ -97,10 +97,13 @@ class kochanczyk_2017(eqx.Module):
     
 
         # ODE rhs
-        if self.transient:
-            d_EGF = -v1
-        else:
-            d_EGF = 0.0
+        trans_fun = lambda v1: -v1
+        sus_fun = lambda v1: 0.0
+        d_EGF_dt = cond(self.transient, trans_fun, sus_fun, v1)
+        # if self.transient:
+        #     d_EGF = -v1
+        # else:
+        #     d_EGF = 0.0
         d_EGFRegfIsos = -v1 +v4 +v19
         d_RASgGDPsos = -v12 +v13 -v22 +v23 -v24 -v25 +v31 -v32 -v33
         d_RASgGTPsos = -v2 -v11 -v20 +v21 +v24 +v25 +v30 +v32 +v33

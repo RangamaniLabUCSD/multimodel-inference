@@ -1,4 +1,5 @@
 import equinox as eqx
+from jax.lax import cond
 
 class kholodenko_2000(eqx.Module):
     # transient: bool True for transient EGF stim, False for sustained
@@ -32,10 +33,13 @@ class kholodenko_2000(eqx.Module):
         J10 = (v10*MAPK_P)/(K10 + MAPK_P)
 
         # ODE rhs
-        if self.transient:
-            d_Input = -J1
-        else:
-            d_Input = 0.0
+        trans_fun = lambda J1: -J1
+        sus_fun = lambda J1: 0.0
+        d_Input = cond(self.transient, trans_fun, sus_fun, J1)
+        # if self.transient:
+        #     d_Input = -J1
+        # else:
+        #     d_Input = 0.0
         # d_MKKK = J2 - J1
         d_MKKK_P = J1 - J2
         # d_MKK = J6 - J3

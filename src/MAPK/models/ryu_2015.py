@@ -1,5 +1,6 @@
 import equinox as eqx
 import jax.numpy as jnp
+from jax.lax import cond
 
 class ryu_2015(eqx.Module):
     # transient: bool True for transient EGF stim, False for sustained
@@ -55,10 +56,13 @@ class ryu_2015(eqx.Module):
         v11 = DUSP*(jnp.log10(2)/T_dusp)
 
         # ODE rhs
-        if self.transient:
-            d_EGF = -k1*R*EGF
-        else:
-            d_EGF = 0.0
+        trans_fun = lambda k1, R, EGF: -k1*R*EGF
+        sus_fun = lambda k1, R, EGF: 0.0
+        d_EGF_dt = cond(self.transient, trans_fun, sus_fun, k1, R, EGF)
+        # if self.transient:
+        #     d_EGF = -k1*R*EGF
+        # else:
+        #     d_EGF = 0.0
         d_R = -v1
         d_R_star = v1
         d_Ras = -v6
