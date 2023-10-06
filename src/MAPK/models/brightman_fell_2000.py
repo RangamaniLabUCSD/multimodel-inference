@@ -1,5 +1,6 @@
 import equinox as eqx
 import jax.numpy as jnp
+from jax.lax import cond
 
 class brightman_fell_2000(eqx.Module):
     """ Note this is the code at https://models.physiomeproject.org/jnp.exposure/55e182564e746cc9bac6b03ad7778d4d/brightman_fell_2000.cellml/@@cellml_codegen/Python
@@ -60,10 +61,13 @@ class brightman_fell_2000(eqx.Module):
         dy_dt_0 = v3 -v1 # Rs
         dy_dt_1 = v1 -v2-v4 # RL
         dy_dt_2 = v2+v3+v6 # Ri
-        if self.transient:
-            dy_dt_3 = -v1 # L
-        else:
-            dy_dt_3 = 0.0
+        trans_fun = lambda v1: -v1
+        sus_fun = lambda v1: 0.0
+        dy_dt_3 = cond(self.transient, trans_fun, sus_fun, v1)
+        # if self.transient:
+        #     dy_dt_3 = -v1 # L
+        # else:
+        #     dy_dt_3 = 0.0
         dy_dt_4 = v4 -v5-v7 # R2L2
         dy_dt_5 = v7-v8 # R2-CPP
         dy_dt_6 = v2+v6 # Li

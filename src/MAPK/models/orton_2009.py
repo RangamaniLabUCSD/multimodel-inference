@@ -1,4 +1,5 @@
 import equinox as eqx
+from jax.lax import cond
 
 class orton_2009(eqx.Module):
     # transient: bool True for transient EGF stim, False for sustained
@@ -71,10 +72,13 @@ class orton_2009(eqx.Module):
         J_bRaf_Activation_Ras = (kcat_bRaf_Activation_Ras * bRafInactive * RasActive / (km_bRaf_Activation_Ras + bRafInactive))
 
         # ODE rhs
-        if self.transient:
-            d_EGF = -J_EGF_Binding_Unbinding
-        else:
-            d_EGF = 0.0
+        trans_fun = lambda J_EGF_Binding_Unbinding: -J_EGF_Binding_Unbinding
+        sus_fun = lambda J_EGF_Binding_Unbinding: 0.0
+        d_EGF = cond(self.transient, trans_fun, sus_fun, J_EGF_Binding_Unbinding)
+        # if self.transient:
+        #     d_EGF = -J_EGF_Binding_Unbinding
+        # else:
+        #     d_EGF = 0.0
         d_bRafInactive = ( - J_bRaf_Activation + J_bRaf_Deactivation - J_bRaf_Activation_Ras)
         d_bRafActive = (J_bRaf_Activation - J_bRaf_Deactivation + J_bRaf_Activation_Ras)
         d_Rap1Inactive = ( - J_Rap1_Activation + J_Rap1_Deactivation)

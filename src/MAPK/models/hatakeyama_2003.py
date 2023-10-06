@@ -1,5 +1,6 @@
 import equinox as eqx
 import jax.numpy as jnp
+from jax.lax import cond
 
 class hatakeyama_2003(eqx.Module):
     """ Note this is the code at https://models.physiomeproject.org/exposure/c14e77a831ec3f1e56ef03240986a8b7/hatakeyama_kimura_naka_kawasaki_yumoto_ichikawa_kim_saito_saeki_shirouzu_yokoyama_konagaya_2003.cellml/@@cellml_codegen/Python
@@ -66,10 +67,13 @@ class hatakeyama_2003(eqx.Module):
         dy_dt_1 = -v5+v10 # Shc
         dy_dt_2 = -v23+v26 # PI3K
         # variable HRG flux
-        if self.transient:
-            dy_dt_3 = -v1 # HRG
-        else:
-            dy_dt_3 = 0.0
+        trans_fun = lambda v1: -v1
+        sus_fun = lambda v1: 0.0
+        dy_dt_3 = cond(self.transient, trans_fun, sus_fun, v1)
+        # if self.transient:
+        #     dy_dt_3 = -v1 # HRG
+        # else:
+        #     dy_dt_3 = 0.0
         dy_dt_4 = v1 - 2.0*v2 # R_HRG
         dy_dt_5 = v2-v3+v4 # R_HRG2
         dy_dt_6 = v34 # Internalisation

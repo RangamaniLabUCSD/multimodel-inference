@@ -1,4 +1,5 @@
 import equinox as eqx
+from jax.lax import cond
 
 class vonKriegsheim_2009(eqx.Module):
     # transient: bool True for transient EGF stim, False for sustained
@@ -149,10 +150,14 @@ class vonKriegsheim_2009(eqx.Module):
 
         # ODE rhs
         d_NGF = NGFDeriv
-        if self.transient:
-            d_EGF = -v1 + v2
-        else:
-            d_EGF = EGFDeriv
+        trans_fun = lambda v1, v2: -v1 + v2
+        sus_fun = lambda v1, v2: 0.0
+        d_EGF = cond(self.transient, trans_fun, sus_fun, v1, v2)
+        # if self.transient:
+        # if self.transient:
+        #     d_EGF = -v1 + v2
+        # else:
+        #     d_EGF = EGFDeriv
         d_NGFR = v2-v1
         d_pNGFR = -d_NGFR-v50
         d_EGFR = v4+v6-v3

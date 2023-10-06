@@ -1,5 +1,6 @@
 import equinox as eqx
 import jax.numpy as jnp
+from jax.lax import cond
 
 class birtwistle_2007(eqx.Module):
     # transient: bool True for transient EGF stim, False for sustained
@@ -153,10 +154,13 @@ class birtwistle_2007(eqx.Module):
         J101 = ((2.0 * kon78 * E44P * T) - (koff78 * E44T))
         
         # variable EGF rate
-        if self.transient:
-            d_E = -J32
-        else:
-            d_E = 0.0
+        trans_fun = lambda J32: -J32
+        sus_fun = lambda J32: 0.0
+        d_E_dt = cond(self.transient, trans_fun, sus_fun, J32)
+        # if self.transient:
+        #     d_E = -J32
+        # else:
+        #     d_E = 0.0
         d_H = -J19
         d_E1 = -J71 -J89
         d_E2 = -J53 -J93 -J10 -J41
