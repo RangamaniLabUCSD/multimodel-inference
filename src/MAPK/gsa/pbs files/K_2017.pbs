@@ -1,0 +1,15 @@
+#!/bin/csh
+#PBS -q home-hopper
+#PBS -N kochanczyk_2017
+#PBS -l nodes=1:ppn=4:gpu
+#PBS -l walltime=02:00:00
+#PBS -o /oasis/tscc/scratch/nlinden/MAPK_models/K_2017_out.txt
+#PBS -e /oasis/tscc/scratch/nlinden/MAPK_models/K_2017_err.txt
+#PBS -V
+#PBS -M nlinden@ucsd.edu
+#PBS -m abe
+#PBS -A rangamani-hopper-gpu
+module load cuda/11.2.0
+cd /home/nlinden/multimodel-inference/src/MAPK/gsa
+/home/nlinden/y/envs/pymc/bin/python gsa_sample.py kochanczyk_2017 --analyze_params k3,q1,q3,q2,u3,d1,q6,u2b,u1a,d2,u2a,q5,u1b,q4 --n_samples 256 --savedir /oasis/tscc/scratch/nlinden/MAPK_models/ --max_time 540
+exit 0

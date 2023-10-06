@@ -1,0 +1,15 @@
+#!/bin/csh
+#PBS -q home-hopper
+#PBS -N brightman_fell_2000
+#PBS -l nodes=1:ppn=8:gpu
+#PBS -l walltime=05:00:00
+#PBS -o /oasis/tscc/scratch/nlinden/MAPK_models/BF_2000_out.txt
+#PBS -e /oasis/tscc/scratch/nlinden/MAPK_models/BF_2000_err.txt
+#PBS -V
+#PBS -M nlinden@ucsd.edu
+#PBS -m abe
+#PBS -A rangamani-hopper-gpu
+module load cuda/11.2.0
+cd /home/nlinden/multimodel-inference/src/MAPK/gsa
+/home/nlinden/y/envs/pymc/bin/python gsa_sample.py brightman_fell_2000 --analyze_params kn14,K_24,kn16,V_26,kn1,k3,V_24,kn12,k15,k_13,kn7,kn11,K_25,k2_4,K_26,k17,K_23,DT --n_samples 256 --savedir /oasis/tscc/scratch/nlinden/MAPK_models/ --max_time 360
+exit 0

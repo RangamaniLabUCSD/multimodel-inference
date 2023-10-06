@@ -1,0 +1,2 @@
+HUANG_FERREL_1996:
+qsub -W group_list=hopper-group -A rangamani-hopper -q home-hopper -e /oasis/tscc/scratch/nlinden/MAPK_models/HF_1996_err.txt -o /oasis/tscc/scratch/nlinden/MAPK_models/HF_1996_out.txt -M nlinden@ucsd.edu -l nodes=1:ppn=4 -l walltime=0:30:00 
