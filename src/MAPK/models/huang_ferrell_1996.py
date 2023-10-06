@@ -5,7 +5,7 @@ class huang_ferrell_1996(eqx.Module):
 
     # transient: bool True for transient EGF stim, False for sustained
     transient: any
-    def __init__(self, transient=True): # defaults to stim from paper
+    def __init__(self, transient=False): # defaults to stim from paper
         self.transient = transient
 
     def __call__(self, t, y, args):
