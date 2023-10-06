@@ -58,7 +58,7 @@ class ryu_2015(eqx.Module):
         # ODE rhs
         trans_fun = lambda k1, R, EGF: -k1*R*EGF
         sus_fun = lambda k1, R, EGF: 0.0
-        d_EGF_dt = cond(self.transient, trans_fun, sus_fun, k1, R, EGF)
+        d_EGF = cond(self.transient, trans_fun, sus_fun, k1, R, EGF)
         # if self.transient:
         #     d_EGF = -k1*R*EGF
         # else:
