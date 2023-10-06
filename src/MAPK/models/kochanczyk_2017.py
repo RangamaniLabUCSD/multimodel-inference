@@ -1,5 +1,6 @@
 import equinox as eqx
 import jax.numpy as jnp
+from jax.lax import cond
 
 class kochanczyk_2017(eqx.Module):
     # transient: bool True for transient EGF stim, False for sustained
@@ -99,7 +100,7 @@ class kochanczyk_2017(eqx.Module):
         # ODE rhs
         trans_fun = lambda v1: -v1
         sus_fun = lambda v1: 0.0
-        d_EGF_dt = cond(self.transient, trans_fun, sus_fun, v1)
+        d_EGF = cond(self.transient, trans_fun, sus_fun, v1)
         # if self.transient:
         #     d_EGF = -v1
         # else:
