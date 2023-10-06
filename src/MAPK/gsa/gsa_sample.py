@@ -179,7 +179,7 @@ def main():
     print(reshaped_sample.shape)
     # sol = psolve_ss(dfrx_ode, y0, reshaped_sample, args.max_time)
     # sol = vsolve_ss(dfrx_ode, y0, full_samples, args.max_time)
-    sol = solve_ss(dfrx_ode, y0, full_samples, args.max_time)
+    sol = solve_ss(dfrx_ode, y0, full_samples[0,:], args.max_time)
 
     print(sol.shape)
     
