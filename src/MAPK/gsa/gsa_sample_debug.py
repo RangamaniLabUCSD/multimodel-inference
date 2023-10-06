@@ -128,7 +128,7 @@ def main():
 
     # try calling the model
     try:
-        model = eval(args.model + '(transient=False)')
+        model = eval(args.model + '()')
     except:
         print('Warning Model {} not found. Skipping this.'.format(args.model))
 
@@ -174,7 +174,28 @@ def main():
     # pmap doesn't complain
     reshaped_sample = full_samples.reshape((n_devices, int(full_samples.shape[0]/n_devices), full_samples.shape[-1]))
 
-    sol = psolve_ss(dfrx_ode, y0, reshaped_sample, args.max_time)
+
+    dt0=1e-3
+    event_rtol=1e-6
+    event_atol=1e-6
+    solver = diffrax.Kvaerno5()
+    event=diffrax.SteadyStateEvent(event_rtol, event_atol)
+    stepsize_controller=diffrax.PIDController(rtol=1e-6, atol=1e-6)
+    t0 = 0.0
+    dt0 = 1e-3
+
+    sol = diffrax.diffeqsolve(
+        dfrx_ode, 
+        solver, 
+        t0, args.max_time, dt0, 
+        y0, 
+        stepsize_controller=stepsize_controller,
+        discrete_terminating_event=event,
+        args=tuple(list(reshaped_sample[0,0,:])),
+        max_steps=None,
+        throw=False,)
+
+    # sol = psolve_ss(dfrx_ode, y0, reshaped_sample, args.max_time)
     
 
     # reshape back to (n_samples, n_species)
