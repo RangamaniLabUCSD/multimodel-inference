@@ -177,7 +177,9 @@ def main():
     reshaped_sample = full_samples.reshape((n_devices, int(full_samples.shape[0]/n_devices), full_samples.shape[-1]))
 
     print(reshaped_sample.shape)
-    sol = psolve_ss(dfrx_ode, y0, reshaped_sample, args.max_time)
+    # sol = psolve_ss(dfrx_ode, y0, reshaped_sample, args.max_time)
+    sol = vsolve_ss(dfrx_ode, y0, full_samples, args.max_time)
+    sol = solve_ss(dfrx_ode, y0, full_samples, args.max_time)
 
     print(sol.shape)
     
