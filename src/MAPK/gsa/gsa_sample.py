@@ -152,6 +152,7 @@ def main():
         'names': analyze_params,
         'bounds': bounds
     }
+    print(problem)
 
 
     # generate the samples
@@ -165,6 +166,8 @@ def main():
 
     for i in range(samples.shape[0]):
         full_samples = full_samples.at[i, param_idxs].set(samples[i])
+    
+    print(full_samples.shape)
    
     # RUN the samples
     dfrx_ode = diffrax.ODETerm(model)
@@ -173,7 +176,10 @@ def main():
     # pmap doesn't complain
     reshaped_sample = full_samples.reshape((n_devices, int(full_samples.shape[0]/n_devices), full_samples.shape[-1]))
 
+    print(reshaped_sample.shape)
     sol = psolve_ss(dfrx_ode, y0, reshaped_sample, args.max_time)
+
+    print(sol.shape)
     
 
     # reshape back to (n_samples, n_species)
