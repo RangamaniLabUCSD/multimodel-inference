@@ -45,12 +45,15 @@ def parse_args():
     """
     parser=argparse.ArgumentParser(description="Generate Morris samples for the specified model.")
     parser.add_argument("model", type=str, help="model to process.")
-    parser.add_argument("--analyze_params", type=str, help="Comma separated list of additional parameters to include in the analysis.")
-    parser.add_argument("--max_time", type=int, help="Max time to simulate the model.")
-    parser.add_argument("--savedir", type=str, default='/oasis/tscc/scratch/nlinden/', 
+    parser.add_argument("-analyze_params", type=str, help="Comma separated list of additional parameters to include in the analysis.")
+    parser.add_argument("-max_time", type=int, help="Max time to simulate the model.")
+    parser.add_argument("-savedir", type=str, default='/oasis/tscc/scratch/nlinden/', 
     help="Path to save results.")
-    parser.add_argument("--n_samples", type=int, default=256, help="Number of samples to generate. Defaults to 256. Must be a factor of 2.")
-    parser.add_argument("--multiplier", type=float, default=0.25, help="Multiplier to use for the Morris sampling. Must be between 0 and 1.")
+    parser.add_argument("-input_param", type=str, default=None, help="Input parameter for EGF if its a param set to str")
+    parser.add_argument("-input_state", type=str, default=None, help="Input state for EGF if its a state set to str")
+    parser.add_argument("-input", type=float, default=0.01, help="Input EGF")    
+    parser.add_argument("-n_samples", type=int, default=256, help="Number of samples to generate. Defaults to 256. Must be a factor of 2.")
+    parser.add_argument("-multiplier", type=float, default=0.25, help="Multiplier to use for the Morris sampling. Must be between 0 and 1.")
     args=parser.parse_args()
     return args
 
@@ -135,6 +138,17 @@ def main():
     # get parameter names and initial conditions
     pdict, plist = model.get_nominal_params()
     y0_dict, y0 = model.get_initial_conditions()
+
+    # handle inputs
+    if args.input_param is not None and args.input_state is None:
+        pdict[args.input_param] = args.input
+        plist = [pdict[key] for key in pdict.keys()]
+    elif args.input_state is not None and args.input_param is None:
+        y0_dict[args.input_state] = args.input
+        y0 = [y0_dict[key] for key in y0_dict.keys()]
+    else:
+        ValueError('Must specify either input param or input state, but not both.')
+
 
     # get the params to analyze
     analyze_params = args.analyze_params.split(',')
