@@ -195,7 +195,7 @@ def main():
     # sol = solve_ss(dfrx_ode, y0, full_samples[0,:], args.max_time)
 
     print('Trying vsolve')
-    sol = vsolve_ss(dfrx_ode, y0, reshaped_sample, args.max_time)
+    sol = vsolve_ss(dfrx_ode, y0, full_samples, args.max_time)
 
     # print('Trying psolve')
     # sol = psolve_ss(dfrx_ode, y0, reshaped_sample, args.max_time)
