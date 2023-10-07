@@ -148,7 +148,7 @@ def main():
         plist = [pdict[key] for key in pdict.keys()]
     elif args.input_state is not None and args.input_param is None:
         y0_dict[args.input_state] = args.input
-        y0 = [y0_dict[key] for key in y0_dict.keys()]
+        y0 = tuple([y0_dict[key] for key in y0_dict.keys()])
     else:
         ValueError('Must specify either input param or input state, but not both.')
 
