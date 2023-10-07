@@ -87,8 +87,6 @@ def solve_ss(model_dfrx_ode, y0, params, t1):
         max_steps=None,
         throw=False,)
     
-    sol = diffrax.diffeqsolve(dfrx_ode, solver, t0, t1, dt0, y0, stepsize_controller=stepsize_controller, discrete_terminating_event=event, args=tuple(plist), max_steps=None, throw=False,)
-    
     return jnp.array(sol.ys)
 
 @jax.jit
