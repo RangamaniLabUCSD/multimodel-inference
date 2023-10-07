@@ -1,5 +1,5 @@
-from os import environ
-environ['OMP_NUM_THREADS'] = '1'
+# from os import environ
+# environ['OMP_NUM_THREADS'] = '1'
 
 import jax
 import jax.numpy as jnp
@@ -188,6 +188,13 @@ def main():
     # pmap doesn't complain
     reshaped_sample = full_samples.reshape((n_devices, int(full_samples.shape[0]/n_devices), full_samples.shape[-1]))
 
+    print('Trying solve')
+    sol = solve_ss(dfrx_ode, y0, full_samples[0,:], args.max_time)
+
+    print('Trying vsolve')
+    sol = vsolve_ss(dfrx_ode, y0, reshaped_sample, args.max_time)
+
+    print('Trying psolve')
     sol = psolve_ss(dfrx_ode, y0, reshaped_sample, args.max_time)
     
 
