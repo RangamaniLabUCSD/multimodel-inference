@@ -1,5 +1,6 @@
-# from os import environ
+from os import environ
 # environ['OMP_NUM_THREADS'] = '1'
+environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 import jax
 import jax.numpy as jnp
@@ -85,6 +86,8 @@ def solve_ss(model_dfrx_ode, y0, params, t1):
         args=tuple(list(params)),
         max_steps=None,
         throw=False,)
+    
+    sol = diffrax.diffeqsolve(dfrx_ode, solver, t0, t1, dt0, y0, stepsize_controller=stepsize_controller, discrete_terminating_event=event, args=tuple(plist), max_steps=None, throw=False,)
     
     return jnp.array(sol.ys)
 
@@ -188,14 +191,14 @@ def main():
     # pmap doesn't complain
     reshaped_sample = full_samples.reshape((n_devices, int(full_samples.shape[0]/n_devices), full_samples.shape[-1]))
 
-    print('Trying solve')
-    sol = solve_ss(dfrx_ode, y0, full_samples[0,:], args.max_time)
+    # print('Trying solve')
+    # sol = solve_ss(dfrx_ode, y0, full_samples[0,:], args.max_time)
 
     print('Trying vsolve')
     sol = vsolve_ss(dfrx_ode, y0, reshaped_sample, args.max_time)
 
-    print('Trying psolve')
-    sol = psolve_ss(dfrx_ode, y0, reshaped_sample, args.max_time)
+    # print('Trying psolve')
+    # sol = psolve_ss(dfrx_ode, y0, reshaped_sample, args.max_time)
     
 
     # reshape back to (n_samples, n_species)
