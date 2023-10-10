@@ -198,10 +198,10 @@ def main():
     # print('Trying vsolve')
     # sol = vsolve_ss(dfrx_ode, y0, full_samples, args.max_time)
 
-    if args.full_trajectory and args.ERK_states is not None:
+    if args.full_trajectory and args.ERK_state_indices is not None:
         print('Solving for trajectories. Saving, max vals.')
         times = jnp.linspace(0, args.max_time, 500)
-        ERK_indices = [int(s) for s in args.ERK_states.split(',')]
+        ERK_indices = [int(s) for s in args.ERK_state_indices.split(',')]
         print(ERK_indices)
         sol = psolve_traj(dfrx_ode, y0, reshaped_sample, args.max_time, times, ERK_indices)
 
@@ -211,7 +211,7 @@ def main():
 
         # save the steady-state values
         jnp.save(args.savedir + '{}_morris_traj.npy'.format(args.model), sol)
-    elif not args.full_trajectory and args.ERK_states is not None:
+    elif not args.full_trajectory and args.ERK_state_indices is not None:
         print('Solving for steady-states.')
         sol = psolve_ss(dfrx_ode, y0, reshaped_sample, args.max_time)
 
@@ -222,7 +222,7 @@ def main():
         # save the steady-state values
         jnp.save(args.savedir + '{}_morris_ss.npy'.format(args.model), sol)
     else:
-        ValueError('Not enough info provided! Must specify both full_trajectory and ERK_states or neither.')
+        ValueError('Not enough info provided! Must specify both full_trajectory and ERK_state_indices or neither.')
 
     print('Completed {}'.format(args.model))
 
