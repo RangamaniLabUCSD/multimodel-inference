@@ -1,3 +1,5 @@
+#!/usr/bin/bash
+
 # Huang Ferrell 1996
 # python gsa_sample.py huang_ferrell_1996 -analyze_params MKK_tot,a3,k7,a4,d3,d10,d2,a2,d6,a8,a1,E2_tot,a7,a9,k5,a6,d1,d9,d5,k8,d8,k4,k6,k9,k3,d7,a10,MAPK_tot,k2,d4,a5,MKKK_tot,k10,MKKPase_tot,k1 -n_samples 256 -savedir ../../../results/MAPK/gsa/ -max_time 3000 -input_param E1_tot
 
