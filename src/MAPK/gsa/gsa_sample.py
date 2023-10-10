@@ -123,8 +123,8 @@ def solve_traj(model_dfrx_ode, y0, params, t1, times, ERK_indices):
 vsolve_ss = jax.vmap(solve_ss, in_axes=(None, None, 0, None))
 psolve_ss = jax.pmap(vsolve_ss, in_axes=(None, None, 0, None))
 
-vsolve_traj = jax.vmap(solve_traj, in_axes=(None, None, 0, None, None))
-psolve_traj = jax.pmap(vsolve_traj, in_axes=(None, None, 0, None, None))
+vsolve_traj = jax.vmap(solve_traj, in_axes=(None, None, 0, None, None, None))
+psolve_traj = jax.pmap(vsolve_traj, in_axes=(None, None, 0, None, None, None))
 
 
 def main():
