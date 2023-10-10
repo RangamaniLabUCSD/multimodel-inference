@@ -206,8 +206,8 @@ def main():
         sol = psolve_traj(dfrx_ode, y0, reshaped_sample, args.max_time, times, ERK_indices)
 
         # reshape back to (n_samples, n_species, n_timepoints)
-        n_dev, n_samp_per_dev, n_dim, n_time = sol.shape
-        sol = sol.reshape((n_dev*n_samp_per_dev, n_dim, n_time))
+        n_dev, n_samp_per_dev, n_time = sol.shape
+        sol = sol.reshape((n_dev*n_samp_per_dev, n_time))
 
         # save the steady-state values
         jnp.save(args.savedir + '{}_morris_traj.npy'.format(args.model), sol)
