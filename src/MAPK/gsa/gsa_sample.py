@@ -56,7 +56,7 @@ def parse_args():
     parser.add_argument("-n_samples", type=int, default=256, help="Number of samples to generate. Defaults to 256. Must be a factor of 2.")
     parser.add_argument("-multiplier", type=float, default=0.25, help="Multiplier to use for the Morris sampling. Must be between 0 and 1.")
     parser.add_argument("--full_trajectory", action='store_true', help="Flag to save full active ERK trajectory. Omit to compute/save the steady-state of all states.")
-    parser.add_argument("-ERK_states", type=str, default=None, help="State indices to sum over to get total ERK activation.")
+    parser.add_argument("-ERK_state_indices", type=str, default=None, help="State indices to sum over to get total ERK activation.")
     args=parser.parse_args()
     return args
 
