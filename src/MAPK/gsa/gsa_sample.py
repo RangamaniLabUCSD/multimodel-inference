@@ -55,8 +55,8 @@ def parse_args():
     parser.add_argument("-input", type=float, default=0.01, help="Input EGF")    
     parser.add_argument("-n_samples", type=int, default=256, help="Number of samples to generate. Defaults to 256. Must be a factor of 2.")
     parser.add_argument("-multiplier", type=float, default=0.25, help="Multiplier to use for the Morris sampling. Must be between 0 and 1.")
-    parser.add_argument("--max_val", action='store_true', help="Flag to save the max vals. Omit to just compute/save the steady-state.")
-    parser.add_argument("--ERK_states", type=str, default=None, help="State indices to sum over to get total ERK activation.")
+    parser.add_argument("--full_trajectory", action='store_true', help="Flag to save full active ERK trajectory. Omit to compute/save the steady-state of all states.")
+    parser.add_argument("-ERK_states", type=str, default=None, help="State indices to sum over to get total ERK activation.")
     args=parser.parse_args()
     return args
 
@@ -198,10 +198,12 @@ def main():
     # print('Trying vsolve')
     # sol = vsolve_ss(dfrx_ode, y0, full_samples, args.max_time)
 
-    if args.max_val and args.ERK_states is not None:
+    if args.full_trajectory and args.ERK_states is not None:
         print('Solving for trajectories. Saving, max vals.')
         times = jnp.linspace(0, args.max_time, 500)
-        sol = psolve_traj(dfrx_ode, y0, reshaped_sample, args.max_time, times)
+        ERK_indices = [int(s) for s in args.ERK_states.split(',')]
+        print(ERK_indices)
+        sol = psolve_traj(dfrx_ode, y0, reshaped_sample, args.max_time, times, ERK_indices)
 
         # reshape back to (n_samples, n_species, n_timepoints)
         n_dev, n_samp_per_dev, n_dim, n_time = sol.shape
@@ -209,7 +211,7 @@ def main():
 
         # save the steady-state values
         jnp.save(args.savedir + '{}_morris_traj.npy'.format(args.model), sol)
-    elif not args.max_val and args.ERK_states is not None:
+    elif not args.full_trajectory and args.ERK_states is not None:
         print('Solving for steady-states.')
         sol = psolve_ss(dfrx_ode, y0, reshaped_sample, args.max_time)
 
@@ -220,7 +222,7 @@ def main():
         # save the steady-state values
         jnp.save(args.savedir + '{}_morris_ss.npy'.format(args.model), sol)
     else:
-        ValueError('Not enough info provided! Must specify both max_val and ERK_states or neither.')
+        ValueError('Not enough info provided! Must specify both full_trajectory and ERK_states or neither.')
 
     print('Completed {}'.format(args.model))
 
