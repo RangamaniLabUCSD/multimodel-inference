@@ -55,6 +55,7 @@ def parse_args():
     parser.add_argument("-input", type=float, default=0.01, help="Input EGF")    
     parser.add_argument("-n_samples", type=int, default=256, help="Number of samples to generate. Defaults to 256. Must be a factor of 2.")
     parser.add_argument("-multiplier", type=float, default=0.25, help="Multiplier to use for the Morris sampling. Must be between 0 and 1.")
+    parser.add_argument("--full_trajectory", action='store_true', help="Flag to save the full trajectory. Omit to just compute/save the steady-state.")
     args=parser.parse_args()
     return args
 
@@ -195,16 +196,27 @@ def main():
     # print('Trying vsolve')
     # sol = vsolve_ss(dfrx_ode, y0, full_samples, args.max_time)
 
-    print('Trying psolve')
-    sol = psolve_ss(dfrx_ode, y0, reshaped_sample, args.max_time)
-    
+    if args.full_trajectory:
+        print('Solving for trajectories.')
+        times = jnp.linspace(0, args.max_time, 500)
+        sol = psolve_traj(dfrx_ode, y0, reshaped_sample, args.max_time, times)
 
-    # reshape back to (n_samples, n_species)
-    n_dev, n_samp_per_dev, n_states, n_dim = sol.shape
-    sol = sol.reshape((n_dev*n_samp_per_dev, n_states, n_dim))
+        # reshape back to (n_samples, n_species, n_timepoints)
+        n_dev, n_samp_per_dev, n_states, n_dim, n_time = sol.shape
+        sol = sol.reshape((n_dev*n_samp_per_dev, n_states, n_dim, n_time))
 
-    # save the steady-state values
-    jnp.save(args.savedir + '{}_morris_ss.npy'.format(args.model), sol)
+        # save the steady-state values
+        jnp.save(args.savedir + '{}_morris_traj.npy'.format(args.model), sol)
+    else:
+        print('Solving for steady-states.')
+        sol = psolve_ss(dfrx_ode, y0, reshaped_sample, args.max_time)
+
+        # reshape back to (n_samples, n_species)
+        n_dev, n_samp_per_dev, n_states, n_dim = sol.shape
+        sol = sol.reshape((n_dev*n_samp_per_dev, n_states, n_dim))
+
+        # save the steady-state values
+        jnp.save(args.savedir + '{}_morris_ss.npy'.format(args.model), sol)
 
     print('Completed {}'.format(args.model))
 
