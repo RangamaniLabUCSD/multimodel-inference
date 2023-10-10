@@ -198,7 +198,8 @@ def main():
 
     if args.full_trajectory:
         print('Solving for trajectories.')
-        sol = psolve_traj(dfrx_ode, y0, reshaped_sample, args.max_time)
+        times = jnp.linspace(0, args.max_time, 500)
+        sol = psolve_traj(dfrx_ode, y0, reshaped_sample, args.max_time, times)
 
         # reshape back to (n_samples, n_species, n_timepoints)
         n_dev, n_samp_per_dev, n_states, n_dim, n_time = sol.shape
