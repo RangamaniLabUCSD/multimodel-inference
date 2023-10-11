@@ -156,7 +156,7 @@ class birtwistle_2007(eqx.Module):
         # variable EGF rate
         trans_fun = lambda J32: -J32
         sus_fun = lambda J32: 0.0
-        d_E_dt = cond(self.transient, trans_fun, sus_fun, J32)
+        d_E = cond(self.transient, trans_fun, sus_fun, J32)
         # if self.transient:
         #     d_E = -J32
         # else:
@@ -303,7 +303,7 @@ class birtwistle_2007(eqx.Module):
             'H': 0.0,
             'E1': 274.0,
             'E2': 158.0,
-            'E3': 0.0, #294.0,
+            'E3': 0.0, #294.0, set back to these to recover og results
             'E4': 0.0, #399.0,
             'E_E1': 0.0,
             'H_E3': 0.0,
