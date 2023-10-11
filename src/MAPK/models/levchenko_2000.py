@@ -75,7 +75,7 @@ class levchenko_2000(eqx.Module):
         J48 = kOff2*C7
         J49 = kOff4*C8
         # J50 = kr1*C2*RAF # i think this is wrong
-        # skip J50, typo
+        # skip J50, typo 
         J51 = kOff1*C6
         J52 = kOff3*C7
         J53 = kOn1*C4*MEK
