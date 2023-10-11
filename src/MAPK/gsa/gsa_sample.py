@@ -4,6 +4,7 @@ from os import environ
 
 import jax
 import jax.numpy as jnp
+import numpy as np
 import diffrax
 import sys
 import argparse
@@ -202,15 +203,44 @@ def main():
         print('Solving for trajectories. Saving, max vals.')
         times = jnp.linspace(0, args.max_time, 500)
         ERK_indices = [int(s) for s in args.ERK_state_indices.split(',')]
-        print(ERK_indices)
-        sol = psolve_traj(dfrx_ode, y0, reshaped_sample, args.max_time, times, ERK_indices)
 
-        # reshape back to (n_samples, n_species, n_timepoints)
-        n_dev, n_samp_per_dev, n_time = sol.shape
-        sol = sol.reshape((n_dev*n_samp_per_dev, n_time))
+        mean_device_memory = 0
+        for i in range(n_devices):
+            mean_device_memory += jax.devices()[i].memory_stats()['bytes_limit']
+        mean_device_memory/=n_devices
 
-        # save the steady-state values
-        jnp.save(args.savedir + '{}_morris_traj.npy'.format(args.model), sol)
+        total_sample_size = full_samples.shape[0]*500*8
+        print(total_sample_size)
+        print(mean_device_memory)
+
+        mult = 0.6
+        if total_sample_size >= mult*mean_device_memory:
+            print('WARNING: total sample size is greater than {}% of the mean device memory. This may cause an OOM error. So we will split the computation into several calls to psolve'.format(mult*100))
+            sols = []
+            n_rounds = 4
+            for i in range(n_rounds):
+                sub_samples = full_samples[int(i*full_samples.shape[0]/n_rounds):int((i+1)*full_samples.shape[0]/n_rounds), :]
+                reshaped_sub_sample = sub_samples.reshape((n_devices, int(sub_samples.shape[0]/n_devices), sub_samples.shape[-1]))
+                sol = psolve_traj(dfrx_ode, y0, reshaped_sub_sample, args.max_time, times, ERK_indices)
+
+                # reshape back to (n_samples, n_species, n_timepoints)
+                n_dev, n_samp_per_dev, n_time = sol.shape
+                sol = np.array(sol).reshape((n_dev*n_samp_per_dev, n_time))
+                sols.append(np.array(sol))
+                print('Completed round {} of {}'.format(i+1, n_rounds))
+            
+            sol = np.concatenate(sols, axis=0)
+            print(sol.shape)
+
+            np.save(args.savedir + '{}_morris_traj.npy'.format(args.model), sol)
+        else:
+            sol = psolve_traj(dfrx_ode, y0, reshaped_sub_sample, args.max_time, times, ERK_indices)
+            # reshape back to (n_samples, n_species, n_timepoints)
+            n_dev, n_samp_per_dev, n_time = sol.shape
+            sol = sol.reshape((n_dev*n_samp_per_dev, n_time))
+
+            # save the steady-state values
+            jnp.save(args.savedir + '{}_morris_traj.npy'.format(args.model), sol)
     elif not args.full_trajectory and args.ERK_state_indices is not None:
         print('Solving for steady-states.')
         sol = psolve_ss(dfrx_ode, y0, reshaped_sample, args.max_time)
