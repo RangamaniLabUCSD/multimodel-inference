@@ -1,4 +1,5 @@
 import equinox as eqx
+from jax.lax import cond
 
 class levchenko_2000(eqx.Module):
     # transient: bool True for transient EGF stim, False for sustained
@@ -93,10 +94,9 @@ class levchenko_2000(eqx.Module):
 
         
         # ODE rhs
-        if self.transient:
-            d_RAFact = -J1 + J2 + J4
-        else:
-            d_RAFact = 0.0
+        trans_fun = lambda J1, J2, J4: -J1 + J2 + J4
+        sus_fun = lambda J1, J2, J4: 0.0
+        d_RAFact = cond(self.transient, trans_fun, sus_fun, J1, J2, J4)
         d_RAF = -J1 + J2 + J3
         d_RAF_RAFact = J1 - J2 - J4
         d_RAFstar = -J5 + J6 + J4 + J7 + J8 - J9 + J10 + J11 - J12
