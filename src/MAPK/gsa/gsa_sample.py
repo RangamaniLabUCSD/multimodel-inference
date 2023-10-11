@@ -213,7 +213,7 @@ def main():
         print(total_sample_size)
         print(mean_device_memory)
 
-        mult = 0.6
+        mult = 0.4
         if total_sample_size >= mult*mean_device_memory:
             print('WARNING: total sample size is greater than {}% of the mean device memory. This may cause an OOM error. So we will split the computation into several calls to psolve'.format(mult*100))
             sols = []
@@ -234,7 +234,7 @@ def main():
 
             np.save(args.savedir + '{}_morris_traj.npy'.format(args.model), sol)
         else:
-            sol = psolve_traj(dfrx_ode, y0, reshaped_sub_sample, args.max_time, times, ERK_indices)
+            sol = psolve_traj(dfrx_ode, y0, reshaped_sample, args.max_time, times, ERK_indices)
             # reshape back to (n_samples, n_species, n_timepoints)
             n_dev, n_samp_per_dev, n_time = sol.shape
             sol = sol.reshape((n_dev*n_samp_per_dev, n_time))
