@@ -296,9 +296,9 @@ class vonKriegsheim_2009(eqx.Module):
         y0_dict = {
             'NGF':0.0,
             'EGF':0.0,
-            'NGFR':1.0,
+            'NGFR':0.0, # set to 1.0 to recover results in the paper
             'pNGFR':0.0,
-            'EGFR':0.0, # set to 1.0 to recover results in the paper
+            'EGFR':1.0,
             'pEGFR':0.0,
             'pEGFRi':0.0,
             'PIP3':0.0,
