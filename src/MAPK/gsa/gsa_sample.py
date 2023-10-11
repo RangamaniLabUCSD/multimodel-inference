@@ -1,6 +1,6 @@
 from os import environ
 # environ['OMP_NUM_THREADS'] = '1'
-environ['CUDA_VISIBLE_DEVICES'] = '0'
+#environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 import jax
 import jax.numpy as jnp
