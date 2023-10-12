@@ -53,7 +53,7 @@ def parse_args():
     help="Path to save results.")
     parser.add_argument("-input_param", type=str, default=None, help="Input parameter for EGF if its a param set to str")
     parser.add_argument("-input_state", type=str, default=None, help="Input state for EGF if its a state set to str")
-    parser.add_argument("-input", type=float, default=0.01, help="Input EGF")    
+    parser.add_argument("-input", type=float, default=0.1, help="Input EGF")    
     parser.add_argument("-n_samples", type=int, default=256, help="Number of samples to generate. Defaults to 256. Must be a factor of 2.")
     parser.add_argument("-multiplier", type=float, default=0.25, help="Multiplier to use for the Morris sampling. Must be between 0 and 1.")
     parser.add_argument("--full_trajectory", action='store_true', help="Flag to save full active ERK trajectory. Omit to compute/save the steady-state of all states.")
@@ -181,8 +181,6 @@ def main():
 
     full_samples = jnp.repeat(jnp.array([plist]), samples.shape[0], axis=0)
 
-    print(full_samples[1:3,:])
-
     for i in range(samples.shape[0]):
         full_samples = full_samples.at[i, param_idxs].set(samples[i])
    
@@ -204,43 +202,13 @@ def main():
         times = jnp.linspace(0, args.max_time, 500)
         ERK_indices = [int(s) for s in args.ERK_state_indices.split(',')]
 
-        mean_device_memory = 0
-        for i in range(n_devices):
-            mean_device_memory += jax.devices()[i].memory_stats()['bytes_limit']
-        mean_device_memory/=n_devices
+        sol = psolve_traj(dfrx_ode, y0, reshaped_sample, args.max_time, times, ERK_indices)
+        # reshape back to (n_samples, n_species, n_timepoints)
+        n_dev, n_samp_per_dev, n_time = sol.shape
+        sol = sol.reshape((n_dev*n_samp_per_dev, n_time))
 
-        total_sample_size = full_samples.shape[0]*500*8
-        print(total_sample_size)
-        print(mean_device_memory)
-
-        mult = 0.4
-        if total_sample_size >= mult*mean_device_memory:
-            print('WARNING: total sample size is greater than {}% of the mean device memory. This may cause an OOM error. So we will split the computation into several calls to psolve'.format(mult*100))
-            sols = []
-            n_rounds = 4
-            for i in range(n_rounds):
-                sub_samples = full_samples[int(i*full_samples.shape[0]/n_rounds):int((i+1)*full_samples.shape[0]/n_rounds), :]
-                reshaped_sub_sample = sub_samples.reshape((n_devices, int(sub_samples.shape[0]/n_devices), sub_samples.shape[-1]))
-                sol = psolve_traj(dfrx_ode, y0, reshaped_sub_sample, args.max_time, times, ERK_indices)
-
-                # reshape back to (n_samples, n_species, n_timepoints)
-                n_dev, n_samp_per_dev, n_time = sol.shape
-                sol = np.array(sol).reshape((n_dev*n_samp_per_dev, n_time))
-                sols.append(np.array(sol))
-                print('Completed round {} of {}'.format(i+1, n_rounds))
-            
-            sol = np.concatenate(sols, axis=0)
-            print(sol.shape)
-
-            np.save(args.savedir + '{}_morris_traj.npy'.format(args.model), sol)
-        else:
-            sol = psolve_traj(dfrx_ode, y0, reshaped_sample, args.max_time, times, ERK_indices)
-            # reshape back to (n_samples, n_species, n_timepoints)
-            n_dev, n_samp_per_dev, n_time = sol.shape
-            sol = sol.reshape((n_dev*n_samp_per_dev, n_time))
-
-            # save the steady-state values
-            jnp.save(args.savedir + '{}_morris_traj.npy'.format(args.model), sol)
+        # save the steady-state values
+        jnp.save(args.savedir + '{}_morris_traj.npy'.format(args.model), sol)
     elif not args.full_trajectory and args.ERK_state_indices is not None:
         print('Solving for steady-states.')
         sol = psolve_ss(dfrx_ode, y0, reshaped_sample, args.max_time)
