@@ -83,26 +83,26 @@ class huang_ferrell_1996(eqx.Module):
     
 
     def get_nominal_params(self): # as defined in the original paper
-        Km1 = 300.0 #nM
-        Km2 = 300.0 #nM
-        Km3 = 300.0 #nM
-        Km4 = 300.0 #nM
-        Km5 = 300.0 #nM
-        Km6 = 300.0 #nM
-        Km7 = 300.0 #nM
-        Km8 = 300.0 #nM
-        Km9 = 300.0 #nM
-        Km10 = 300.0 #nM
-        a1 = 1.0 #1/s
-        a2 = 1.0 #1/s
-        a3 = 1.0 #1/s
-        a4 = 1.0 #1/s
-        a5 = 1.0 #1/s
-        a6 = 1.0 #1/s
-        a7 = 1.0 #1/s
-        a8 = 1.0 #1/s
-        a9 = 1.0 #1/s
-        a10 = 1.0 #1/s
+        Km1 = 0.3 #nM
+        Km2 = 0.3 #nM
+        Km3 = 0.3 #nM
+        Km4 = 0.3 #nM
+        Km5 = 0.3 #nM
+        Km6 = 0.3 #nM
+        Km7 = 0.3 #nM
+        Km8 = 0.3 #nM
+        Km9 = 0.3 #nM
+        Km10 = 0.3 #nM
+        a1 = 1000.0 #1/s
+        a2 = 1000.0 #1/s
+        a3 = 1000.0 #1/s
+        a4 = 1000.0 #1/s
+        a5 = 1000.0 #1/s
+        a6 = 1000.0 #1/s
+        a7 = 1000.0 #1/s
+        a8 = 1000.0 #1/s
+        a9 = 1000.0 #1/s
+        a10 = 1000.0 #1/s
         d1 = 10.0 #nM/s
         d2 = 10.0 #nM/s
         d3 = 10.0 #nM/s
@@ -146,13 +146,13 @@ class huang_ferrell_1996(eqx.Module):
             'k8': a8*Km8 - d8, #nM/s
             'k9': a9*Km9 - d9, #nM/s
             'k10': a10*Km10 - d10, #nM/s
-            'MKKK_tot': 3.0, #nM
-            'MKK_tot': 1.2*1e3, #uM
-            'MAPK_tot': 1.2*1e3, #uM
-            'E2_tot': 0.3, #nM
-            'MKKPase_tot': 0.3, #nM
-            'MAPKPase_tot': 120.0, #nM
-            'E1_tot': 0.01, #nM THIS IS VARIED OVER A WIDE RANGE AS IT IS THE INPUT!
+            'MKKK_tot': 0.003, #nM
+            'MKK_tot': 1.2, #nM
+            'MAPK_tot': 1.2, #nM
+            'E2_tot': 3e-4, #nM
+            'MKKPase_tot': 3e-4, #nM
+            'MAPKPase_tot': 0.12, #nM
+            'E1_tot': 1e-5, #nM THIS IS VARIED OVER A WIDE RANGE AS IT IS THE INPUT!
         }
 
         p_list = [p_dict[key] for key in p_dict.keys()]
