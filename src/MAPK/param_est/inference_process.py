@@ -51,7 +51,7 @@ def parse_args():
     parser.add_argument("-data_file", type=str, help="path to the data file. Should be a CSV with one column of inputs and another of outputs data.")
     parser.add_argument("-nsamples", type=int, default=1000, help="Number of samples to posterior samples to draw. Defaults to 1000.")
     parser.add_argument("-savedir", type=str, help="Path to save results. Defaults to current directory.")
-    parser.add_argument("-input_state", type=str, default=EGF, help="Name of EGF input in the state vector. Defaults to EGF.")
+    parser.add_argument("-input_state", type=str, default='EGF', help="Name of EGF input in the state vector. Defaults to EGF.")
     parser.add_argument("-EGF_conversion_factor", type=float, default=1.0, help="Conversion factor to convert EGF from nM to other units. Defaults to 1.")
     parser.add_argument("-ERK_states", type=str, default=None, help="Names of ERK species to use for inference. Defaults to None.")
     parser.add_argument("-t1", type=int, default=None, help="Time to simulate the model. Defaults to None.")
@@ -81,7 +81,7 @@ def main():
     inputs, data = load_data(args.data_file)
 
     # convert EGF to required units
-    inputs = inputs * args.EGF_conversion_factor
+    inputs_native_units = inputs * args.EGF_conversion_factor
 
     # get the params to sample
     analyze_params = args.free_params.split(',')
@@ -96,7 +96,7 @@ def main():
     prior_param_dict = set_prior_params(list(p_dict.keys()), plist, free_param_idxs)
 
     # make initial conditions that reflect the inputs
-    y0_EGF_ins = construct_y0_EGF_inputs(inputs, np.array([y0]), EGF_idx)
+    y0_EGF_ins = construct_y0_EGF_inputs(inputs_native_units, np.array([y0]), EGF_idx)
 
     # construct the pymc model
     pymc_model = build_pymc_model(prior_param_dict, data, y0_EGF_ins, 
