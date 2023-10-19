@@ -8,6 +8,7 @@ import preliz as pz
 import arviz as az
 import os
 import sys
+import json
 import pymc as pm
 import jax.numpy as jnp
 import jax
@@ -21,7 +22,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 plt.style.use('~/.matplotlib/custom.mplstyle')
 # custom plotting helper funcs
-sys.path.insert(0, '~/.matplotlib/')
+sys.path.insert(0, '/Users/natetest/.matplotlib/')
 sys.path.insert(0, '/home/nlinden/.matplotlib/')
 import plotting_helper_funcs as plt_func
 
@@ -247,7 +248,7 @@ def smc_pymc(model, mapk_model_name, savedir, nsamples=2000,
                                   cores=ncores, progressbar=False)
 
     # save the samples
-    az.to_json(idata, savedir + mapk_model_name + '_smc_samples.json')
+    idata.to_json(savedir + mapk_model_name + '_smc_samples.json')
 
     return idata
 
@@ -319,9 +320,10 @@ def plot_sampling_trace_diagnoses(posterior_idata, savedir, mapk_model_name, sam
     plt.savefig(savedir + mapk_model_name + '_'+ sampling_type + '_traceplot.pdf',)
 
     # compute the effective sample size and rhat statistics
-    ess = az.ess(posterior_idata)
-    rhat = az.rhat(posterior_idata)
+    diagnoses = {}
+    diagnoses['ess'] = az.ess(posterior_idata).to_dict()
+    diagnoses['rhat'] = az.rhat(posterior_idata).to_dict()
 
     # save the diagnoses
-    az.to_json(ess, savedir + mapk_model_name + '_'+ sampling_type + '_ess.json')
-    az.to_json(rhat, savedir + mapk_model_name + '_'+ sampling_type + '_rhat.json')
+    with open(savedir + mapk_model_name + '_' + sampling_type + '_diagnoses.json', 'w') as f:
+        json.dump(diagnoses, f)
