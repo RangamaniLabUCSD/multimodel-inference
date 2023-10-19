@@ -111,6 +111,9 @@ def main():
     posterior_idata = smc_pymc(pymc_model, args.model, args.savedir, 
                 nsamples=args.nsamples, ncores=args.ncores)
     
+    # trace plots and diagnostics
+    plot_sampling_trace_diagnoses(posterior_idata, args.savedir, args.model)
+    
     # posterior predictive sampling
     create_posterior_predictive(pymc_model, posterior_idata, args.model, data, 
                                 inputs, args.savedir)

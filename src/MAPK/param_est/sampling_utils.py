@@ -5,6 +5,7 @@
 import numpy as np
 import pandas as pd
 import preliz as pz
+import arviz as az
 import os
 import sys
 import pymc as pm
@@ -310,3 +311,17 @@ def create_posterior_predictive(model, posterior_idata, mapk_model_name, data, i
     np.save(savedir + mapk_model_name + '_posterior_predictive_samples.npy', posterior_llike)
 
     return fig, ax
+
+def plot_sampling_trace_diagnoses(posterior_idata, savedir, mapk_model_name, sampling_type='smc'):
+
+    # plot the traces with arviz
+    az.plot_trace(posterior_idata, compact=False)
+    plt.savefig(savedir + mapk_model_name + '_'+ sampling_type + '_traceplot.pdf',)
+
+    # compute the effective sample size and rhat statistics
+    diagnosis = {}
+    diagnosis['ess'] = az.ess(posterior_idata)
+    diagnosis['rhat'] = az.rhat(posterior_idata)
+
+    # save the diagnosis
+    np.savez(diagnosis, savedir + mapk_model_name + '_'+ sampling_type + '_diagnosis.npz')
