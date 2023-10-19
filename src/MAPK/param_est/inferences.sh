@@ -27,7 +27,7 @@ python inference_process.py -model orton_2009 -free_params  -data_file ../../../
 python inference_process.py -model vonKriegsheim_2009 -free_params k42,k4,k30,k68,k29,k32,k34 -data_file ../../../results/MAPK/HF_96_synthetic_data.csv -nsamples 2000 -savedir ../../../results/MAPK/param_est/ -t1 3600 -input_state EGF -EGF_conversion_factor 6.048 -ERK_states ppERK,ppERK_15,ppERKn
 
 # Shin 2014
-python inference_process.py -model shin_2014 -free_params kc47,kc43,kd39,kc45,ERK_tot,ki39,kc41 -data_file ../../../results/MAPK/HF_96_synthetic_data.csv -nsamples 2000 -savedir ../../../results/MAPK/param_est/ -input_stat EGF -EGF_conversion_factor 0.001 -ERK_states pp_ERK -t1 540
+python inference_process.py -model shin_2014 -free_params kc47,kc43,kd39,kc45,ERK_tot,ki39,kc41 -data_file ../../../results/MAPK/HF_96_synthetic_data.csv -nsamples 4000 -savedir ../../../results/MAPK/param_est/ -input_stat EGF -EGF_conversion_factor 0.001 -ERK_states pp_ERK -t1 540
 
 # Ryu 2015
 python inference_process.py -model ryu_2015 -free_params D2,T_dusp,K_dusp,K2,dusp_ind -data_file ../../../results/MAPK/HF_96_synthetic_data.csv -nsamples 2000 -savedir ../../../results/MAPK/param_est/ -input_stat EGF -EGF_conversion_factor 6.048 -ERK_states ERK_star -t1 540
