@@ -319,9 +319,9 @@ def plot_sampling_trace_diagnoses(posterior_idata, savedir, mapk_model_name, sam
     plt.savefig(savedir + mapk_model_name + '_'+ sampling_type + '_traceplot.pdf',)
 
     # compute the effective sample size and rhat statistics
-    diagnosis = {}
-    diagnosis['ess'] = az.ess(posterior_idata)
-    diagnosis['rhat'] = az.rhat(posterior_idata)
+    ess = az.ess(posterior_idata)
+    rhat = az.rhat(posterior_idata)
 
     # save the diagnosis
-    np.savez(diagnosis, savedir + mapk_model_name + '_'+ sampling_type + '_diagnosis.npz')
+    np.savez(savedir + mapk_model_name + '_'+ sampling_type + '_diagnosis.npz',
+            ess=ess, rhat=rhat)
