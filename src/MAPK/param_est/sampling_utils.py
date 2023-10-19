@@ -16,6 +16,14 @@ from pytensor.graph import Apply, Op
 from pytensor.link.jax.dispatch import jax_funcify
 import diffrax
 
+import matplotlib.pyplot as plt
+import seaborn as sns
+plt.style.use('~/.matplotlib/custom.mplstyle')
+# custom plotting helper funcs
+sys.path.insert(0, '/Users/natetest/.matplotlib/')
+import plotting_helper_funcs as plt_func
+
+
 # tell jax to use 64bit floats
 jax.config.update("jax_enable_x64", True)
 
@@ -79,6 +87,16 @@ def construct_y0_EGF_inputs(EGF_vals, y0, EGF_idx):
     y0_EGF_inputs[:, EGF_idx] = EGF_vals
 
     return y0_EGF_inputs
+
+def load_data(data_file):
+    """ Loads the data from the specified file.
+    """
+    # load the data
+    data_df = pd.read_csv(data_file)
+    inputs = np.array(data_df['stimulus'].to_numpy())
+    data = data_df['response'].to_numpy()
+
+    return inputs, data
 
     
 def set_prior_params(param_names, nominal_params, free_param_idxs, prior_family={'Gamma':['alpha', 'beta']}, upper_mult=1.9, lower_mult=0.1, prob_mass_bounds=0.95):
@@ -196,3 +214,97 @@ def build_pymc_model(prior_param_dict, data, y0_EGF_inputs,
         llike = pm.Normal("llike", mu=prediction, sigma=data_sigma, observed=data)
 
     return model
+
+def plot_stimulus_response_curve(samples, data, inputs, input_name='EGF stimulus', 
+                                 output_name='% maximal ERK activity',
+                                 data_std=0.1):
+    dat = {}
+    for i,input in enumerate(inputs):
+        dat[input] = samples[:,i]
+
+    data_df = pd.DataFrame(dat)
+
+    fig, ax = plt.subplots()
+    sns.boxplot(data=data_df, color='k', ax=ax, whis=(2.5, 97.5), fill=False, 
+                native_scale=True, log_scale=(10, 0), fliersize=0)
+    ax.set_xlabel(input_name)
+    ax.set_ylabel(output_name)
+
+    errors = data_std*np.squeeze(np.ones_like(data))
+    ax.scatter(inputs, data, color='r', marker='x', s=50, zorder=10)
+    ax.errorbar(inputs, np.squeeze(data), yerr=errors, color='r', fmt='x', markersize=7, zorder=10)
+
+    return fig, ax
+
+def smc_pymc(model, mapk_model_name, savedir, nsamples=2000, 
+             seed=np.random.default_rng(seed=123), ncores=None):
+    """ Function to run SMC sampling using PyMC and the independent Metropolis-Hastings kernel."""
+    with model:
+        idata = pm.smc.sample_smc(draws=nsamples, random_seed=seed, chains=None,
+                                  cores=ncores, progressbar=False)
+
+    # save the samples
+    idata.to_netcdf(savedir + mapk_model_name + '_smc_samples.nc')
+
+    return idata
+
+def mcmc_numpyro_nuts(model, mapk_model_name, savedir, nsamples=2000, 
+                      seed=np.random.default_rng(seed=123), ncores=None):
+    """ Function to run NUTS sampling using Numpyro."""
+    with model:
+        idata = pm.sampling.jax.sample_numpyro_nuts(draws=nsamples, 
+                    random_seed=seed, chains=4, idata_kwargs={'log_likelihood': True})
+    
+    # save the samples
+    idata.to_netcdf(savedir + mapk_model_name + '_mcmc_numpyro_samples.nc')
+
+def create_prior_predictive(model, mapk_model_name, data, inputs, savedir, 
+                            nsamples=100, seed=np.random.default_rng(seed=123)):
+    """ Creates prior predictive samples plot of the stimulus response curve.
+    """
+
+    # sample from the prior predictive
+    with model:
+        prior_predictive = pm.sample_prior_predictive(nsamples, random_seed=seed)
+
+    # extract llike values
+    prior_llike = np.squeeze(prior_predictive.prior_predictive['llike'].values)
+
+    # generate the plot
+    fig, ax = plot_stimulus_response_curve(prior_llike, data, inputs)
+
+    # save the figure
+    fig.savefig(savedir + mapk_model_name + '_prior_predictive.pdf', 
+                bbox_inches='tight', transparent=True)
+
+    # save the samples
+    np.save(savedir + mapk_model_name + '_prior_predictive_samples.npy', prior_llike,)
+
+    return fig, ax
+
+def create_posterior_predictive(model, posterior_idata, mapk_model_name, data, inputs, savedir, 
+            seed=np.random.default_rng(seed=123)):
+    """ Creates prior predictive samples plot of the stimulus response curve.
+    """
+
+    # sample from the prior predictive
+    with model:
+        posterior_predictive = pm.sample_posterior_predictive(posterior_idata, model=model, 
+                                                              random_seed=seed)
+
+    # extract llike values
+    posterior_llike = np.squeeze(posterior_predictive.posterior_predictive['llike'].values)
+    nchains,nsamples,ninputs=posterior_llike.shape
+    posterior_llike = np.reshape(posterior_llike, (nchains*nsamples, ninputs))
+
+    # generate the plot
+    fig, ax = plot_stimulus_response_curve(posterior_llike, data, inputs)
+
+    # save the figure
+    fig.savefig(savedir + mapk_model_name + '_posterior_predictive.pdf', 
+                bbox_inches='tight', transparent=True)
+
+    # save the samples
+    np.save(savedir + mapk_model_name + '_posterior_predictive_samples.npy', posterior_llike)
+
+    return fig, ax
