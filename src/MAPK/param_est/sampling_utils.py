@@ -247,7 +247,7 @@ def smc_pymc(model, mapk_model_name, savedir, nsamples=2000,
                                   cores=ncores, progressbar=False)
 
     # save the samples
-    idata.to_json(savedir + mapk_model_name + '_smc_samples.json')
+    az.to_json(idata, savedir + mapk_model_name + '_smc_samples.json')
 
     return idata
 
@@ -259,7 +259,7 @@ def mcmc_numpyro_nuts(model, mapk_model_name, savedir, nsamples=2000,
                     random_seed=seed, chains=4, idata_kwargs={'log_likelihood': True})
     
     # save the samples
-    idata.to_json(savedir + mapk_model_name + '_mcmc_numpyro_samples.json')
+    az.to_json(idata, savedir + mapk_model_name + '_mcmc_numpyro_samples.json')
 
 def create_prior_predictive(model, mapk_model_name, data, inputs, savedir, 
                             nsamples=100, seed=np.random.default_rng(seed=123)):
