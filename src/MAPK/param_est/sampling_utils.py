@@ -70,7 +70,7 @@ def ERK_stim_response(params, model_dfrx_ode, max_time, y0_EGF_inputs, output_st
     # sum over the output states
     erk_acts = jnp.sum(ss[:, output_states], axis=1)
     # return erk_acts/jnp.max(erk_acts), erk_acts
-    return erk_acts/jnp.max(erk_acts)
+    return erk_acts/jnp.max(erk_acts), erk_acts
 
     
 def construct_y0_EGF_inputs(EGF_vals, y0, EGF_idx):
@@ -79,62 +79,6 @@ def construct_y0_EGF_inputs(EGF_vals, y0, EGF_idx):
     y0_EGF_inputs[:, EGF_idx] = EGF_vals
 
     return y0_EGF_inputs
-
-def build_pymc_model(param_names, prior_param_dict, data, y0_EGF_inputs, 
-                    output_states, max_time, model_dfrx_ode, model=None, 
-                    simulator=ERK_stim_response, data_sigma=0.1):
-    """ Builds a pymc model object for the MAPK models.
-
-    Constructs priors for the model, and uses the ERK_stim_response function to 
-    generate the stimulus response function and likelihood.
-    """
-
-    # define the jax functions for the simulator and vjp
-    def sol_op_jax(*params):
-        prediction, _ = simulator(params, model_dfrx_ode, max_time, 
-                                  y0_EGF_inputs, output_states)
-        return prediction
-    
-    def vjp_sol_op_jax(args, output_grads):
-        _, vjpfun = jax.vjp(sol_op_jax, args)
-        return vjpfun(output_grads)
-    
-    # get the jitted versions
-    sol_op_jax_jitted = jax.jit(sol_op_jax)
-    vjp_sol_op_jax_jitted = jax.jit(vjp_sol_op_jax)
-
-    # construct Ops and register with jax_funcify
-    sol_op = SolOp(sol_op_jax_jitted)
-    vjp_sol_op = VJPSolOp(vjp_sol_op_jax_jitted) 
-
-    @jax_funcify.register(SolOp)
-    def sol_op_jax_funcify(op, **kwargs):
-        return sol_op_jax
-
-    @jax_funcify.register(VJPSolOp)
-    def vjp_sol_op_jax_funcify(op, **kwargs):
-        return vjp_sol_op_jax
-
-    if model is None:
-        model = pm.Model()
-    
-    with model:
-        # loop over free params and construct the priors
-        for key, value in prior_param_dict.items():
-            # create PyMC variables for each parameters in the model
-            exec(key + ' = ' + value)
-    
-        # construct list of parameters to pass to the simulator function
-        param_list = tuple(map(eval, param_names))
-
-        # predict dose response
-        prediction = sol_op(*param_list)
-
-        # assume a normal model for the data
-        # sigma specified by the data_sigma param to this function
-        llike = pm.Normal("llike", mu=prediction, sigma=data_sigma, observed=data)
-
-    return model
 
     
 def set_prior_params(param_names, nominal_params, free_param_idxs, prior_family={'Gamma':['alpha', 'beta']}, upper_mult=1.9, lower_mult=0.1, prob_mass_bounds=0.95):
@@ -185,3 +129,70 @@ def set_prior_params(param_names, nominal_params, free_param_idxs, prior_family=
             prior_param_dict[param] = 'pm.ConstantData("' + param + '", ' + str(nominal_params[i]) + ')'
 
     return prior_param_dict
+
+
+def build_pymc_model(prior_param_dict, data, y0_EGF_inputs, 
+                    output_states, max_time, model_dfrx_ode, model=None, 
+                    simulator=ERK_stim_response, data_sigma=0.1):
+    """ Builds a pymc model object for the MAPK models.
+
+    Constructs priors for the model, and uses the ERK_stim_response function to 
+    generate the stimulus response function and likelihood.
+    """
+
+    #################################
+    # Create jax functions to solve # 
+    #################################
+    def sol_op_jax(*params):
+        pred, _ = simulator(params, model_dfrx_ode, max_time, y0_EGF_inputs, output_states)
+        return jnp.vstack((pred))
+
+    # get the jitted versions
+    sol_op_jax_jitted = jax.jit(sol_op_jax)
+
+    ############################################
+    # Create pytensor Op and register with jax # 
+    ############################################
+    class StimRespOp(Op):
+        def make_node(self, *inputs):
+            # Convert our inputs to symbolic variables
+            inputs = [pt.as_tensor_variable(inp) for inp in inputs]
+            # Assume the output to always be a float64 matrix
+            outputs = [pt.matrix()]
+            return Apply(self, inputs, outputs)
+
+        def perform(self, node, inputs, outputs):
+            result = sol_op_jax_jitted(*inputs)
+            outputs[0][0] = np.asarray(result, dtype="float64")
+        
+        def grad(self, inputs, output_grads):
+            raise NotImplementedError("PyTensor gradient of StimRespOp not implemented")
+
+
+    # construct Ops and register with jax_funcify
+    sol_op = StimRespOp()
+
+    @jax_funcify.register(StimRespOp)
+    def sol_op_jax_funcify(op, **kwargs):
+        return sol_op_jax
+    
+    ############################
+    # Construct the PyMC model # 
+    ############################
+    model = pm.Model()
+    with model:
+        # loop over free params and construct the priors
+        priors = []
+        for key, value in prior_param_dict.items():
+            # create PyMC variables for each parameters in the model
+            prior = eval(value)
+            priors.append(prior)
+
+        # predict dose response
+        prediction = sol_op(*priors)
+
+        # assume a normal model for the data
+        # sigma specified by the data_sigma param to this function
+        llike = pm.Normal("llike", mu=prediction, sigma=data_sigma, observed=data)
+
+    return model
