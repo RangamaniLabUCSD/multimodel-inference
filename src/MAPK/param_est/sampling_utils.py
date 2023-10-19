@@ -94,7 +94,7 @@ def load_data(data_file):
     # load the data
     data_df = pd.read_csv(data_file)
     inputs = np.array(data_df['stimulus'].to_numpy())
-    data = data_df['response'].to_numpy()
+    data = np.vstack((data_df['response'].to_numpy()))
 
     return inputs, data
 
@@ -241,10 +241,10 @@ def smc_pymc(model, mapk_model_name, savedir, nsamples=2000,
     """ Function to run SMC sampling using PyMC and the independent Metropolis-Hastings kernel."""
     with model:
         idata = pm.smc.sample_smc(draws=nsamples, random_seed=seed, chains=None,
-                                  cores=ncores, progressbar=False)
+                                  cores=ncores, progressbar=True)
 
     # save the samples
-    idata.to_netcdf(savedir + mapk_model_name + '_smc_samples.nc')
+    idata.to_json(savedir + mapk_model_name + '_smc_samples.json')
 
     return idata
 
@@ -256,7 +256,7 @@ def mcmc_numpyro_nuts(model, mapk_model_name, savedir, nsamples=2000,
                     random_seed=seed, chains=4, idata_kwargs={'log_likelihood': True})
     
     # save the samples
-    idata.to_netcdf(savedir + mapk_model_name + '_mcmc_numpyro_samples.nc')
+    idata.to_json(savedir + mapk_model_name + '_mcmc_numpyro_samples.json')
 
 def create_prior_predictive(model, mapk_model_name, data, inputs, savedir, 
                             nsamples=100, seed=np.random.default_rng(seed=123)):
