@@ -322,6 +322,6 @@ def plot_sampling_trace_diagnoses(posterior_idata, savedir, mapk_model_name, sam
     ess = az.ess(posterior_idata)
     rhat = az.rhat(posterior_idata)
 
-    # save the diagnosis
-    np.savez(savedir + mapk_model_name + '_'+ sampling_type + '_diagnosis.npz',
-            ess=ess, rhat=rhat)
+    # save the diagnoses
+    az.to_json(ess, savedir + mapk_model_name + '_'+ sampling_type + '_ess.json')
+    az.to_json(rhat, savedir + mapk_model_name + '_'+ sampling_type + '_rhat.json')
