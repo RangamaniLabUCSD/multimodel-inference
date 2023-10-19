@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 plt.style.use('~/.matplotlib/custom.mplstyle')
 # custom plotting helper funcs
-sys.path.insert(0, '/Users/natetest/.matplotlib/')
+sys.path.insert(0, '~/.matplotlib/')
 import plotting_helper_funcs as plt_func
 
 
