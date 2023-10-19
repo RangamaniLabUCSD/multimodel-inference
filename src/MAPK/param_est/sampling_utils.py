@@ -241,7 +241,7 @@ def smc_pymc(model, mapk_model_name, savedir, nsamples=2000,
     """ Function to run SMC sampling using PyMC and the independent Metropolis-Hastings kernel."""
     with model:
         idata = pm.smc.sample_smc(draws=nsamples, random_seed=seed, chains=None,
-                                  cores=ncores, progressbar=True)
+                                  cores=ncores, progressbar=False)
 
     # save the samples
     idata.to_json(savedir + mapk_model_name + '_smc_samples.json')
