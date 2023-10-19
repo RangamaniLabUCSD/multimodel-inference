@@ -208,7 +208,7 @@ class levchenko_2000(eqx.Module):
             'MAPKstarstar': 0.0, # uM 
             'MAPKstar_MAPKPase': 0.0, # uM 
             'MAPKstarstar_MAPKPase': 0.0, # uM 
-            'C1': 0.0, # uM
+            'C1': 0.1, #0.0, # uM
             'C2': 0.0, # uM
             'C3': 0.0, # uM
             'C4': 0.0, # uM
