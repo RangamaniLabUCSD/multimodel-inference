@@ -109,7 +109,7 @@ def main():
     
     # SMC sampling
     posterior_idata = smc_pymc(pymc_model, args.model, args.savedir, 
-                nsamples=args.nsamples)
+                nsamples=args.nsamples, ncores=args.ncores)
     
     # posterior predictive sampling
     create_posterior_predictive(pymc_model, posterior_idata, args.model, data, 
