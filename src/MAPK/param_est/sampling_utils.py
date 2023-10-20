@@ -284,6 +284,9 @@ def create_prior_predictive(model, mapk_model_name, data, inputs, savedir,
     # save the samples
     np.save(savedir + mapk_model_name + '_prior_predictive_samples.npy', prior_llike,)
 
+    # save the idata
+    az.to_json(prior_predictive, savedir + mapk_model_name + '_prior_predictive_idata.json')
+
     return fig, ax
 
 def create_posterior_predictive(model, posterior_idata, mapk_model_name, data, inputs, savedir, 
