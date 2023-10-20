@@ -94,7 +94,8 @@ def main():
     ERK_indices = [state_names.index(s) for s in args.ERK_states.split(',')]
 
     # construct the strings to make priors and constants
-    prior_param_dict = set_prior_params(list(p_dict.keys()), plist, free_param_idxs)
+    prior_param_dict = set_prior_params(list(p_dict.keys()), plist, free_param_idxs,
+                                        upper_mult=100, lower_mult=0.01)
 
     # make initial conditions that reflect the inputs
     y0_EGF_ins = construct_y0_EGF_inputs(inputs_native_units, np.array([y0]), EGF_idx)
