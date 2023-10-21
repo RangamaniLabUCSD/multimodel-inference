@@ -94,7 +94,8 @@ def main():
     ERK_indices = [state_names.index(s) for s in args.ERK_states.split(',')]
 
     # construct the strings to make priors and constants
-    prior_param_dict = set_prior_params(list(p_dict.keys()), plist, free_param_idxs)
+    prior_param_dict = set_prior_params(list(p_dict.keys()), plist, free_param_idxs,
+                                        upper_mult=100, lower_mult=0.01)
 
     # make initial conditions that reflect the inputs
     y0_EGF_ins = construct_y0_EGF_inputs(inputs_native_units, np.array([y0]), EGF_idx)
@@ -107,16 +108,16 @@ def main():
     create_prior_predictive(pymc_model, args.model, data, inputs, args.savedir, 
                             nsamples=500)
     
-    # # SMC sampling
-    # posterior_idata = smc_pymc(pymc_model, args.model, args.savedir, 
-    #             nsamples=args.nsamples, ncores=args.ncores)
+    # SMC sampling
+    posterior_idata = smc_pymc(pymc_model, args.model, args.savedir, 
+                nsamples=args.nsamples, ncores=args.ncores)
     
-    # # trace plots and diagnostics
-    # plot_sampling_trace_diagnoses(posterior_idata, args.savedir, args.model)
+    # trace plots and diagnostics
+    plot_sampling_trace_diagnoses(posterior_idata, args.savedir, args.model)
     
-    # # posterior predictive sampling
-    # create_posterior_predictive(pymc_model, posterior_idata, args.model, data, 
-    #                             inputs, args.savedir)
+    # posterior predictive sampling
+    create_posterior_predictive(pymc_model, posterior_idata, args.model, data, 
+                                inputs, args.savedir)
 
     
     print('Completed {}'.format(args.model))
