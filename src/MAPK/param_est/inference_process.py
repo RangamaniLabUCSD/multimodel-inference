@@ -109,10 +109,10 @@ def main():
                             nsamples=500)
     
     # SMC sampling
-    # posterior_idata = smc_pymc(pymc_model, args.model, args.savedir, 
-    #             nsamples=args.nsamples, ncores=args.ncores)
-    posterior_idata = mcmc_numpyro_nuts(pymc_model, args.model, args.savedir, nsamples=10000, 
-                      seed=np.random.default_rng(seed=123))
+    posterior_idata = smc_pymc(pymc_model, args.model, args.savedir, 
+                nsamples=args.nsamples, ncores=args.ncores)
+    # posterior_idata = mcmc_numpyro_nuts(pymc_model, args.model, args.savedir, nsamples=10000, 
+    #                   seed=np.random.default_rng(seed=123))
     
     # trace plots and diagnostics
     plot_sampling_trace_diagnoses(posterior_idata, args.savedir, args.model)
