@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/bin/bash
 
 # Kholodenko 2000
 python inference_process.py -model kholodenko_2000 -free_params K8,v10,v9,K7,K9,KI,MAPK_total,K10 -data_file ../../../results/MAPK/HF_96_synthetic_data.csv -nsamples 200 -ncores 8 -savedir ../../../results/MAPK/param_est/ -t1 4800 -input_state Input -ERK_states MAPK_PP
