@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Kholodenko 2000
-python inference_process.py -model kholodenko_2000 -free_params K8,v10,v9,K7,K9,KI,MAPK_total,K10 -data_file ../../../results/MAPK/HF_96_synthetic_data.csv -nsamples 200 -ncores 8 -savedir ../../../results/MAPK/param_est/ -t1 4800 -input_state Input -ERK_states MAPK_PP
+#python inference_process.py -model kholodenko_2000 -free_params K8,v10,v9,K7,K9,KI,MAPK_total,K10 -data_file ../../../results/MAPK/HF_96_synthetic_data.csv -nsamples 200 -ncores 8 -savedir ../../../results/MAPK/param_est/ -t1 4800 -input_state Input -ERK_states MAPK_PP
 
 # Birghtman and Fell 2000
 python inference_process.py -model brightman_fell_2000 -free_params kn14,K_24,kn16,V_26,V_24,kn12,k15,k_13,K_25,K_26,k17 -data_file ../../../results/MAPK/HF_96_synthetic_data.csv -nsamples 200 -ncores 8 -savedir ../../../results/MAPK/param_est/ -t1 360 -input_state L -EGF_conversion_factor 1e-7 -ERK_states ERKPP
