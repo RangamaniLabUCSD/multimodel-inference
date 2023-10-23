@@ -10,6 +10,7 @@ import os
 import sys
 import json
 import pymc as pm
+from pymc.sampling.jax import sample_numpyro_nuts
 import jax.numpy as jnp
 import jax
 import pytensor
@@ -241,11 +242,11 @@ def plot_stimulus_response_curve(samples, data, inputs, input_name='EGF stimulus
     return fig, ax
 
 def smc_pymc(model, mapk_model_name, savedir, nsamples=2000, 
-             seed=np.random.default_rng(seed=123), ncores=None):
+             seed=np.random.default_rng(seed=123), ncores=None, threshold=0.5,):
     """ Function to run SMC sampling using PyMC and the independent Metropolis-Hastings kernel."""
     with model:
         idata = pm.smc.sample_smc(draws=nsamples, random_seed=seed, chains=None,
-                                  cores=ncores, progressbar=True)
+                                  cores=ncores, progressbar=True, threshold=threshold,)
 
     # save the samples
     idata.to_json(savedir + mapk_model_name + '_smc_samples.json')
@@ -256,8 +257,8 @@ def mcmc_numpyro_nuts(model, mapk_model_name, savedir, nsamples=2000,
                       seed=np.random.default_rng(seed=123), ncores=None):
     """ Function to run NUTS sampling using Numpyro."""
     with model:
-        idata = pm.sampling.jax.sample_numpyro_nuts(draws=nsamples, 
-                    random_seed=seed, chains=4, idata_kwargs={'log_likelihood': True})
+        idata = sample_numpyro_nuts(draws=nsamples, 
+                    random_seed=seed, chains=4, idata_kwargs={'log_likelihood': True}, progressbar=True,chain_method='parallel',)
     
     # save the samples
     az.to_json(idata, savedir + mapk_model_name + '_mcmc_numpyro_samples.json')

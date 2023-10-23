@@ -104,13 +104,13 @@ def main():
     pymc_model = build_pymc_model(prior_param_dict, data, y0_EGF_ins, 
                     ERK_indices, args.t1, diffrax.ODETerm(model))
     
-    # prior predictive sampling
+    # # prior predictive sampling
     create_prior_predictive(pymc_model, args.model, data, inputs, args.savedir, 
                             nsamples=500)
     
     # SMC sampling
     posterior_idata = smc_pymc(pymc_model, args.model, args.savedir, 
-                nsamples=args.nsamples, ncores=args.ncores)
+                nsamples=args.nsamples, ncores=args.ncores, threshold=0.7)
     # posterior_idata = mcmc_numpyro_nuts(pymc_model, args.model, args.savedir, nsamples=10000, 
     #                   seed=np.random.default_rng(seed=123))
     
