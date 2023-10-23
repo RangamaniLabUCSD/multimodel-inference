@@ -104,7 +104,7 @@ def main():
     pymc_model = build_pymc_model(prior_param_dict, data, y0_EGF_ins, 
                     ERK_indices, args.t1, diffrax.ODETerm(model))
     
-    # # prior predictive sampling
+    # prior predictive sampling
     create_prior_predictive(pymc_model, args.model, data, inputs, args.savedir, 
                             nsamples=500)
     
