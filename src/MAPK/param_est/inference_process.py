@@ -110,7 +110,7 @@ def main():
     
     # SMC sampling
     posterior_idata = smc_pymc(pymc_model, args.model, args.savedir, 
-                nsamples=args.nsamples, ncores=args.ncores, threshold=0.7)
+                nsamples=args.nsamples, ncores=args.ncores, threshold=0.85)
     # posterior_idata = mcmc_numpyro_nuts(pymc_model, args.model, args.savedir, nsamples=10000, 
     #                   seed=np.random.default_rng(seed=123))
     
