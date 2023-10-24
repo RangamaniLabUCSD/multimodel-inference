@@ -242,11 +242,11 @@ def plot_stimulus_response_curve(samples, data, inputs, input_name='EGF stimulus
     return fig, ax
 
 def smc_pymc(model, mapk_model_name, savedir, nsamples=2000, 
-             seed=np.random.default_rng(seed=123), ncores=None, threshold=0.5,):
+             seed=np.random.default_rng(seed=123), ncores=None, threshold=0.5,chains=None):
     """ Function to run SMC sampling using PyMC and the independent Metropolis-Hastings kernel."""
     with model:
         idata = pm.smc.sample_smc(draws=nsamples, random_seed=seed, chains=None,
-                                  cores=ncores, progressbar=True, threshold=threshold,)
+                                  cores=ncores, progressbar=True, threshold=threshold,chains=chains)
 
     # save the samples
     idata.to_json(savedir + mapk_model_name + '_smc_samples.json')
