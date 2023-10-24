@@ -30,7 +30,7 @@ import plotting_helper_funcs as plt_func
 
 # tell jax to use 64bit floats
 jax.config.update("jax_enable_x64", True)
-jax.config.update("jax_platform_name", "cpu")
+# jax.config.update("jax_platform_name", "cpu")
 
 sys.path.append('../')
 from utils import *
@@ -331,3 +331,8 @@ def plot_sampling_trace_diagnoses(posterior_idata, savedir, mapk_model_name, sam
     # save the diagnoses
     with open(savedir + mapk_model_name + '_' + sampling_type + '_diagnoses.json', 'w') as f:
         json.dump(diagnoses, f)
+
+def plot_sampling_trace(posterior_idata, savedir, mapk_model_name, sampling_type='MCMC_NUTS'):
+    # plot the traces with arviz
+    az.plot_trace(posterior_idata, compact=False)
+    plt.savefig(savedir + mapk_model_name + '_'+ sampling_type + '_traceplot.pdf',)
