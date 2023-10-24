@@ -1,5 +1,5 @@
 from os import environ
-# environ['OMP_NUM_THREADS'] = '1'
+environ['OMP_NUM_THREADS'] = '1'
 environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 import jax
@@ -8,8 +8,6 @@ import numpy as np
 import diffrax
 import sys
 import argparse
-
-from SALib.sample import morris as morris_sample
 
 sys.path.append("../models/")
 from huang_ferrell_1996 import *
@@ -104,9 +102,9 @@ def main():
     pymc_model = build_pymc_model(prior_param_dict, data, y0_EGF_ins, 
                     ERK_indices, args.t1, diffrax.ODETerm(model))
     
-    # prior predictive sampling
-    create_prior_predictive(pymc_model, args.model, data, inputs, args.savedir, 
-                            nsamples=500)
+    # # prior predictive sampling
+    # create_prior_predictive(pymc_model, args.model, data, inputs, args.savedir, 
+    #                         nsamples=500)
     
     # MCMC sampling
     posterior_idata = mcmc_numpyro_nuts(pymc_model, args.model, args.savedir, nsamples=args.nsamples, 
