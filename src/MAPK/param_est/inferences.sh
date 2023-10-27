@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # Kholodenko 2000
-python inference_process.py -model kholodenko_2000 -free_params K8,v10,v9,K7,K9,KI,MAPK_total,K10 -data_file ../../../results/MAPK/HF_96_synthetic_data.csv -nsamples 1000 -ncores 1 -savedir ../../../results/MAPK/param_est/ -t1 4800 -input_state Input -ERK_states MAPK_PP
+#python inference_process.py -model kholodenko_2000 -free_params K8,v10,v9,K7,K9,KI,MAPK_total,K10 -data_file ../../../results/MAPK/HF_96_synthetic_data.csv -nsamples 1000 -ncores 1 -savedir ../../../results/MAPK/param_est/ -t1 4800 -input_state Input -ERK_states MAPK_PP
 
 # von Kriegsheim 2009
-python inference_process.py -model vonKriegsheim_2009 -free_params k42,k4,k30,k68,k29,k32,k34 -data_file ../../../results/MAPK/HF_96_synthetic_data.csv -nsamples 1000 -savedir ../../../results/MAPK/param_est/ -t1 3600 -input_state EGF -EGF_conversion_factor 6.048 -ERK_states ppERK,ppERK_15,ppERKn
+#python inference_process.py -model vonKriegsheim_2009 -free_params k42,k4,k30,k68,k29,k32,k34 -data_file ../../../results/MAPK/HF_96_synthetic_data.csv -nsamples 1000 -savedir ../../../results/MAPK/param_est/ -t1 3600 -input_state EGF -EGF_conversion_factor 6.048 -ERK_states ppERK,ppERK_15,ppERKn
 
 # Shin 2014
 python inference_process.py -model shin_2014 -free_params kc47,kc43,kd39,kc45,ERK_tot,ki39,kc41 -data_file ../../../results/MAPK/HF_96_synthetic_data.csv -nsamples 1000 -savedir ../../../results/MAPK/param_est/ -input_stat EGF -EGF_conversion_factor 0.001 -ERK_states pp_ERK -t1 540
