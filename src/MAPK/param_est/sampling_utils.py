@@ -57,7 +57,7 @@ def solve_ss(model_dfrx_ode, y0, params, t1):
         stepsize_controller=stepsize_controller,
         discrete_terminating_event=event,
         args=params,
-        max_steps=6000,
+        max_steps=600000,
         throw=False,)
     
     return jnp.array(sol.ys)
@@ -65,6 +65,32 @@ def solve_ss(model_dfrx_ode, y0, params, t1):
 # vmap steady state solving over the different inputs it over the parameters
 #   this means vmapping over the y0 and assuming everything else is fixed
 vsolve_ss = jax.vmap(solve_ss, in_axes=(None, 0, None, None))
+
+@jax.jit
+def solve_traj(model_dfrx_ode, y0, params, t1, ERK_indices):
+    """ simulates a model over the specified time interval and returns the 
+    calculated steady-state values.
+    Returns an array of shape (n_species, 1) """
+    dt0=1e-3
+    solver = diffrax.Kvaerno5()
+    stepsize_controller=diffrax.PIDController(rtol=1e-6, atol=1e-6)
+    t0 = 0.0
+
+    sol = diffrax.diffeqsolve(
+        model_dfrx_ode, 
+        solver, 
+        t0, t1, dt0, 
+        tuple(y0), 
+        stepsize_controller=stepsize_controller,
+        args=params,
+        max_steps=600000,
+        throw=False,)
+    
+    return jnp.sum(jnp.array(sol.ys)[ERK_indices, :], axis=0)
+
+# vmap steady state solving over the different inputs it over the parameters
+#   this means vmapping over the y0 and assuming everything else is fixed
+vsolve_traj = jax.vmap(solve_traj, in_axes=(None, 0, None, None, None))
 
 def ERK_stim_response(params, model_dfrx_ode, max_time, y0_EGF_inputs, output_states):
     """ function to compute the ERK response to EGF stimulation
@@ -84,6 +110,22 @@ def ERK_stim_response(params, model_dfrx_ode, max_time, y0_EGF_inputs, output_st
     erk_acts = jnp.sum(ss[:, output_states], axis=1)
     # return erk_acts/jnp.max(erk_acts), erk_acts
     return erk_acts/jnp.max(erk_acts), erk_acts
+
+def ERK_stim_trajectory_set(params, model_dfrx_ode, max_time, y0_EGF_inputs, output_states):
+    """ function to compute the ERK response to EGF stimulation
+        Args:
+            difrx_model (diffrax.Model): diffrax model object
+            EGF_inputs (np.ndarray): array of EGF inputs to simulate
+            output_states (list): list of output states to sum over
+            maxtime (int): max time to simulate the model
+        Returns:
+            normalized_ERK_response (np.ndarray): array of ERK trajectories to each EGF input
+    """
+    # vmap solve over all initial conditions
+    traj = vsolve_traj(model_dfrx_ode, y0_EGF_inputs, params, max_time, output_states)
+    traj = jnp.squeeze(traj)
+
+    return traj/jnp.max(jnp.max(traj)), traj
 
     
 def construct_y0_EGF_inputs(EGF_vals, y0, EGF_idx):

@@ -16,7 +16,7 @@ python inference_process.py -model ryu_2015 -free_params D2,T_dusp,K_dusp,K2,dus
 python inference_process.py -model kochanczyk_2017 -free_params q1,q2,q6,d2,q4 -data_file ../../../results/MAPK/HF_96_synthetic_data.csv -nsamples 1000 -ncores 1 -savedir ../../../results/MAPK/param_est/ -input_stat EGF -EGF_conversion_factor 6048 -ERK_states ERKSPP -t1 7200
 
 # Birghtman and Fell 2000
-python inference_process.py -model brightman_fell_2000 -free_params kn14,K_24,kn16,V_26,V_24,kn12,k15,k_13,K_25,K_26,k17 -data_file ../../../results/MAPK/HF_96_synthetic_data.csv -nsamples 1000 -ncores 1 -savedir ../../../results/MAPK/param_est/ -t1 360 -input_state L -EGF_conversion_factor 1e-7 -ERK_states ERKPP
+python inference_process.py -model brightman_fell_2000 -free_params kn14,K_24,kn16,V_26,V_24,kn12,k15,k_13,K_25,K_26,k17 -data_file ../../../results/MAPK/HF_96_synthetic_data.csv -nsamples 1000 -ncores 1 -savedir ../../../results/MAPK/param_est/ -t1 500 -input_state L -EGF_conversion_factor 602214 -ERK_states ERKPP
 
 # Hornberg 2005
 # DOES NOT REACH SUSTAINED SS in prior predictive samples
