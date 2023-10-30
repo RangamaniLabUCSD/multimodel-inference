@@ -70,7 +70,7 @@ def main():
 
     # try calling the model
     try:
-        model = eval(args.model + '(transient=False)')
+        model = eval(args.model + '(transient=True)')
     except:
         print('Warning Model {} not found. Skipping this.'.format(args.model))
 
