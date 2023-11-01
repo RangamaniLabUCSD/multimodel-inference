@@ -12,17 +12,20 @@ class levchenko_2000(eqx.Module):
         RAFact, RAF, RAF_RAFact, RAFstar, RAFstar_RAFPase, MEK, MEK_RAFstar, MEKstar, \
             MEKstar_MEKPase, MEKstar_RAFstar, MEKstarstar, MEKstarstar_MEKPase, \
             MAPK, MAPK_MEKstarstar, MAPKstar, MAPKstar_MEKstarstar, MAPKstarstar, \
-            MAPKstar_MAPKPase, MAPKstarstar_MAPKPase, C1, C2, C3, C4, C5, C6, \
-            C7, C8, C9 = y
+            MAPKstar_MAPKPase, MAPKstarstar_MAPKPase, C2, C3, C4, \
+            C5, C6, C7, C8, C9 = y
         
         # unpack parameters
         a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, d1, d2, d3, d4, d5, d6, d7, d8, \
             d9, d10, k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, kOn1, kOn2, kOff1, \
-            kOff2, kOff3, kOff4, RAFPase, MEKPase, MAPKPase = args
+            kOff2, kOff3, kOff4, RAFPase, MEKPase, MAPKPase, total_scaffold = args
 
         # define additional parameters
         kr1 = k5
         kr2 = k9 
+
+        # algrebraic equations for C1
+        C1 = total_scaffold - (C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9)
 
         # fluxes
         J1 = a1*RAF*RAFact
@@ -115,7 +118,7 @@ class levchenko_2000(eqx.Module):
         d_MAPKstarstar = -J34 + J35 + J25 + J36
         d_MAPKstar_MAPKPase = J31  - J32 - J28
         d_MAPKstarstar_MAPKPase = J34 - J33 - J35
-        d_C1 = -J37 - J38 + J39 + J40 + J41 + J42
+        # d_C1 = -J37 - J38 + J39 + J40 + J41 + J42
         d_C2 = J37 + J43 + J44 - J39 - J45 - J46
         d_C3 = -J47 + J48 - J41 + J49 + J46
         d_C4 = J51 + J38 + J52 - J40 - J53
@@ -130,8 +133,8 @@ class levchenko_2000(eqx.Module):
                 d_MEK_RAFstar, d_MEKstar, d_MEKstar_MEKPase, d_MEKstar_RAFstar, 
                 d_MEKstarstar, d_MEKstarstar_MEKPase, d_MAPK, d_MAPK_MEKstarstar, 
                 d_MAPKstar, d_MAPKstar_MEKstarstar, d_MAPKstarstar, 
-                d_MAPKstar_MAPKPase, d_MAPKstarstar_MAPKPase, d_C1, d_C2, d_C3, 
-                d_C4, d_C5, d_C6, d_C7, d_C8, d_C9)
+                d_MAPKstar_MAPKPase, d_MAPKstarstar_MAPKPase, # d_C1, 
+                d_C2, d_C3, d_C4, d_C5, d_C6, d_C7, d_C8, d_C9)
     
 
     def get_nominal_params(self):
@@ -177,6 +180,7 @@ class levchenko_2000(eqx.Module):
             'RAFPase': 0.3, #uM
             'MEKPase': 0.2, #uM
             'MAPKPase': 0.3, #uM
+            'total_scaffold': 0.1, #uM -- total scaffold conc (C1 + C2 + ... + C9)
         }
 
         p_list = [p_dict[key] for key in p_dict.keys()]
@@ -208,7 +212,7 @@ class levchenko_2000(eqx.Module):
             'MAPKstarstar': 0.0, # uM 
             'MAPKstar_MAPKPase': 0.0, # uM 
             'MAPKstarstar_MAPKPase': 0.0, # uM 
-            'C1': 0.1, #0.0, # uM
+            # 'C1': 0.1, #0.0, # uM
             'C2': 0.0, # uM
             'C3': 0.0, # uM
             'C4': 0.0, # uM
