@@ -56,6 +56,8 @@ def parse_args():
     parser.add_argument("-input", type=float, default=0.1, help="Input EGF")    
     parser.add_argument("-n_samples", type=int, default=256, help="Number of samples to generate. Defaults to 256. Must be a factor of 2.")
     parser.add_argument("-multiplier", type=float, default=0.25, help="Multiplier to use for the Morris sampling. Must be between 0 and 1.")
+    parser.add_argument("-lower", type=float, default=None, help="Multiplier to use for the lower bound of Morris sampling.")
+    parser.add_argument("-upper", type=float, default=None, help="Multiplier to use for the upper bounds of Morris sampling.")
     parser.add_argument("--full_trajectory", action='store_true', help="Flag to save full active ERK trajectory. Omit to compute/save the steady-state of all states.")
     parser.add_argument("-ERK_state_indices", type=str, default=None, help="State indices to sum over to get total ERK activation.")
     args=parser.parse_args()
@@ -163,7 +165,13 @@ def main():
     analyze_nominal_params = jnp.array([pdict[p] for p in analyze_params])
 
     # define the bounds
-    bounds = [[p*(1-args.multiplier), p*(1+args.multiplier)] for p in analyze_nominal_params]
+    if args.lower is not None and args.upper is not None:
+        bounds = [[p*args.lower, p*args.upper] for p in analyze_nominal_params]
+        for i,p in enumerate(analyze_nominal_params):
+            if p == 0.0:
+                bounds[i] = [1e-4, 1.0]
+    else:
+        bounds = [[p*(1-args.multiplier), p*(1+args.multiplier)] for p in analyze_nominal_params]
 
     # set up the problem dictionary for SALib
     problem = {
