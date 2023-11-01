@@ -11,7 +11,7 @@ XLA_PYTHON_CLIENT_PREALLOCATE=false python gsa_sample.py kholodenko_2000 -analyz
 
 # LEVCHENKO 2000
 # run on cortex
-XLA_PYTHON_CLIENT_PREALLOCATE=false python gsa_sample.py levchenko_2000 -analyze_params kOff1,kOn1,d8,RAFPase,k2,k6,k10,MEKPase,a2,kOn2,k3,d7,d9,d6,a10,kOff3,a9,a8,a3,a5,d3,d5,a6,k7,kOff4,d2,d10,a1,a4,k9,k5,k8,k4,d1,kOff2,a7,MAPKPase,d4,k1 -n_samples 256 -savedir ../../../results/MAPK/gsa/ -max_time 1000 -input_state RAFact -input 0.0001 -ERK_state_indices 16 --full_trajectory -lower 1e-2 -upper 1e2
+XLA_PYTHON_CLIENT_PREALLOCATE=false python gsa_sample.py levchenko_2000 -analyze_params kOff1,a2,kOn1,k10,RAFPase,k4,k6,kOff4,kOn2,total_scaffold,d7,d9,d3,a3,a10,kOff3,k8,k5,a9,a8,a5,d8,d5,a6,k7,d2,a7,d10,a1,a4,k9,d6,k2,d1,k3,MEKPase,kOff2,MAPKPase,d4,k1 -n_samples 256 -savedir ../../../results/MAPK/gsa/ -max_time 1000 -input_state RAFact -input 0.0001 -ERK_state_indices 16 --full_trajectory -lower 1e-2 -upper 1e2
 
 # Hatakeyama 2003
 XLA_PYTHON_CLIENT_PREALLOCATE=false python gsa_sample.py hatakeyama_2003 -analyze_params k21,k20,kb29,kf9,kb24,kb3,kb23,kf25,kb1,kb2,kf24,kb7,kf8,k19,kf34,k22,kb5,kf6,kf3,kb6 -n_samples 256 -savedir ../../../results/MAPK/gsa/ -max_time 3600 -input_state HRG --full_trajectory -ERK_state_indices 32 -lower 1e-2 -upper 1e2
