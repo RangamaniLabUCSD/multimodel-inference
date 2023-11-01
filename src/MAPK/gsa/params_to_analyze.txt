@@ -2,7 +2,7 @@ huang_ferrell_1996: MKK_tot,a3,k7,a4,d3,d10,d2,a2,d6,a8,a1,E2_tot,a7,a9,k5,a6,d1
 
 kholodenko_2000: K8,v10,v9,K7,K9,KI,MAPK_total,K10
 
-levchenko_2000: kOff1,kOn1,d8,RAFPase,k2,k6,k10,MEKPase,a2,kOn2,k3,d7,d9,d6,a10,kOff3,a9,a8,a3,a5,d3,d5,a6,k7,kOff4,d2,d10,a1,a4,k9,k5,k8,k4,d1,kOff2,a7,MAPKPase,d4,k1
+levchenko_2000: kOff1,a2,kOn1,k10,RAFPase,k4,k6,kOff4,kOn2,total_scaffold,d7,d9,d3,a3,a10,kOff3,k8,k5,a9,a8,a5,d8,d5,a6,k7,d2,a7,d10,a1,a4,k9,d6,k2,d1,k3,MEKPase,kOff2,MAPKPase,d4,k1
 
 brightman_fell_2000: kn14,K_24,kn16,V_26,kn1,k3,V_24,kn12,k15,k_13,kn7,kn11,K_25,k2_4,K_26,k17,K_23,DT
 
