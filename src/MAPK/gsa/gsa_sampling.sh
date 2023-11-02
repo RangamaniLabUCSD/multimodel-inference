@@ -1,7 +1,7 @@
 #!/usr/bin/bash
 
 # Huang Ferrell 1996
-XLA_PYTHON_CLIENT_PREALLOCATE=false python gsa_sample.py huang_ferrell_1996 -analyze_params MKK_tot,a3,k7,a4,d3,d10,d2,a2,d6,a8,a1,E2_tot,a7,a9,k5,a6,d1,d9,d5,k8,d8,k4,k6,k9,k3,d7,a10,MAPK_tot,k2,d4,a5,MKKK_tot,k10,MKKPase_tot,k1 -n_samples 256 -savedir ../../../results/MAPK/gsa/ -max_time 3000 -input_param E1_tot --full_trajectory -lower 1e-2 -upper 1e2 -ERK_state_indices -1,-2
+XLA_PYTHON_CLIENT_PREALLOCATE=false python gsa_sample.py huang_ferrell_1996 -analyze_params MKK_tot,a3,k7,a4,d3,d10,d2,a2,d6,a8,a1,E2_tot,a7,a9,k5,a6,d1,d9,d5,k8,d8,k4,k6,k9,k3,d7,a10,MAPK_tot,k2,d4,a5,MKKK_tot,k10,MKKPase_tot,k1 -n_samples 256 -savedir ../../../results/MAPK/gsa/ -max_time 3000 -input_param E1_tot --full_trajectory -lower 1e-2 -upper 1e2 -ERK_state_indices 13,14
 
 # Kholodenko 2000
 # XLA_PYTHON_CLIENT_PREALLOCATE=false python gsa_sample.py kholodenko_2000 -analyze_params K8,v10,v9,K7,K9,KI,MAPK_total,K10 -n_samples 256 -savedir ../../../results/MAPK/gsa/ -max_time 2400 -input_state Input --full_trajectory -ERK_state_indices -1 -lower 1e-2 -upper 1e2
@@ -17,7 +17,7 @@ XLA_PYTHON_CLIENT_PREALLOCATE=false python gsa_sample.py huang_ferrell_1996 -ana
 # XLA_PYTHON_CLIENT_PREALLOCATE=false python gsa_sample.py hatakeyama_2003 -analyze_params k21,k20,kb29,kf9,kb24,kb3,kb23,kf25,kb1,kb2,kf24,kb7,kf8,k19,kf34,k22,kb5,kf6,kf3,kb6 -n_samples 256 -savedir ../../../results/MAPK/gsa/ -max_time 3600 -input_state HRG --full_trajectory -ERK_state_indices 32 -lower 1e-2 -upper 1e2
 
 # Hornberg 2005
-# XLA_PYTHON_CLIENT_PREALLOCATE=false python gsa_sample.py hornberg_2005 -analyze_params k42,k28,k52,kd50,k20,k6,kd45,k3,k18,k17,k25,k48,kd48,kd127,kd3,kd10,kd40,k61,kd5,k33,k16,kd22,kd4,kd34,kd44,k15,kd32,k10b,kd49,kd57,kd20,k21,k40,kd52,kd58,kd1,k8,kd53,kd35,k37,kd56,kd42,kd6,kd126,k35,kd23,kd33,kd47,kd55,kd25,kd18,kd19,k32,kd28,kd37,k44,kd8,kd17,k2,k19,k50,k41,k13,k34,kd21,kd41,k60,k126,k23,k29,kd29,kd2,k4,k58,k22,kd63,kd24,k56,k36 -n_samples 256 -savedir ../../../results/MAPK/gsa/ -max_time 6000 -input_state c1 -input 1e-9 --full_trajectory -ERK_state_indices 58,82 -lower 1e-2 -upper 1e2
+XLA_PYTHON_CLIENT_PREALLOCATE=false python gsa_sample.py hornberg_2005 -analyze_params kkd1,k2,kd2,k3,kd3,k4,kd4,k5,kd5,k6,kd6,k8,kd8,k10b,kd10,k13,kd13,k15,kd15,k16,kd63,k17,kd17,k18,kd18,k19,kd19,k20,kd20,k21,kd21,k22,kd22,k23,kd23,kd24,k25,kd25,k28,kd28,k29,kd29,k32,kd32,k33,kd33,k34,kd34,k35,kd35,k36,kd36,k37,kd37,k40,kd40,k41,kd41,k42,kd42,k43,kd43,k44,kd52,k45,kd45,k47,kd47,k48,kd48,k49,kd49,k50,kd50,k52,kd44,k53,kd53,k55,kd55,k56,kd56,k57,kd57,k58,kd58,k60,kd60,k61,kd61,k126,kd126,k127,kd127 -n_samples 256 -savedir ../../../results/MAPK/gsa/ -max_time 6000 -input_state c1 -input 1e-9 --full_trajectory -ERK_state_indices 58,82 -lower 1e-2 -upper 1e2
 
 # Orton 2009
 XLA_PYTHON_CLIENT_PREALLOCATE=false python gsa_sample.py orton_2009 -analyze_params km_Erk_Activation,k1_C3G_Deactivation,km_Erk_Deactivation,k1_Akt_Deactivation,k1_P90Rsk_Deactivation,k1_PI3K_Deactivation,k1_Sos_Deactivation -n_samples 256 -savedir ../../../results/MAPK/gsa/ -max_time 720 -input_state EGF -input 60221 --full_trajectory -lower 1e-2 -upper 1e2 -ERK_state_indices 15
@@ -26,10 +26,10 @@ XLA_PYTHON_CLIENT_PREALLOCATE=false python gsa_sample.py orton_2009 -analyze_par
 # XLA_PYTHON_CLIENT_PREALLOCATE=false python gsa_sample.py vonKriegsheim_2009 -analyze_params k42,k37,k4,k27,k45,k30,k43,k48,k5,k14,k28,k39,k46,k63,k68,k55,k29,k41,k25,k7,k13,k2,k40,k6,k18,k56,k32,k38,k10,k34 -n_samples 256 -savedir ../../../results/MAPK/gsa/ -max_time 1800 -input_state EGF -input 0.6048 --full_trajectory -ERK_state_indices 26,28,29 --full_trajectory -lower 1e-2 -upper 1e2
 
 # Shin 2014
-XLA_PYTHON_CLIENT_PREALLOCATE=false python gsa_sample.py shin_2014 -analyze_params kc47,kc43,kd39,kc45,ERK_tot,ki39,kc41 -n_samples 256 -savedir ../../../results/MAPK/gsa/ -max_time 540 -input_state EGF -input 1e-4 --full_trajectory -lower 1e-2 -upper 1e2 -ERK_state_indices -1
+# XLA_PYTHON_CLIENT_PREALLOCATE=false python gsa_sample.py shin_2014 -analyze_params kc47,kc43,kd39,kc45,ERK_tot,ki39,kc41 -n_samples 256 -savedir ../../../results/MAPK/gsa/ -max_time 540 -input_state EGF -input 1e-4 --full_trajectory -lower 1e-2 -upper 1e2 -ERK_state_indices -1
 
 # Ryu 2015
-XLA_PYTHON_CLIENT_PREALLOCATE=false python gsa_sample.py ryu_2015 -analyze_params D2,T_dusp,K_dusp,K2,dusp_ind -n_samples 256 -savedir ../../../results/MAPK/gsa/ -max_time 540 -input_state EGF -input 0.6048 --full_trajectory -lower 1e-2 -upper 1e2 -ERK_state_indices 10
+# XLA_PYTHON_CLIENT_PREALLOCATE=false python gsa_sample.py ryu_2015 -analyze_params D2,T_dusp,K_dusp,K2,dusp_ind -n_samples 256 -savedir ../../../results/MAPK/gsa/ -max_time 540 -input_state EGF -input 0.6048 --full_trajectory -lower 1e-2 -upper 1e2 -ERK_state_indices 10
 
 # Kochańczyk 2017
 XLA_PYTHON_CLIENT_PREALLOCATE=false python gsa_sample.py kochanczyk_2017 -analyze_params k3,q1,q3,q2,u3,d1,q6,u2b,u1a,d2,u2a,q5,u1b,q4 -n_samples 256 -savedir ../../../results/MAPK/gsa/ -max_time 3600 -input_state EGF -input 604.8 --full_trajectory -lower 1e-2 -upper 1e2 -ERK_state_indices 24
