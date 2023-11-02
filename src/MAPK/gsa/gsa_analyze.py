@@ -261,10 +261,10 @@ def main():
     loaddir = '../../../results/MAPK/gsa/'
 
     # HUANG FERRELL 1996
-    # model_name = 'huang_ferrell_1996'
-    # qoi_lambda = lambda x: x[:,-1]
-    # params_to_analyze = ['MKK_tot','a3','k7','a4','d3','d10','d2','a2','d6','a8','a1','E2_tot','a7','a9','k5','a6','d1','d9','d5','k8','d8','k4','k6','k9','k3','d7','a10','MAPK_tot','k2','d4','a5','MKKK_tot','k10','MKKPase_tot','k1']
-    # run_analysis(model_name, qoi_lambda, params_to_analyze, loaddir, savedir, lower=1e-2, upper=1e2)
+    model_name = 'huang_ferrell_1996'
+    qoi_lambda = lambda x: x[:,-1]
+    params_to_analyze = ['MKK_tot','a3','k7','a4','d3','d10','d2','a2','d6','a8','a1','E2_tot','a7','a9','k5','a6','d1','d9','d5','k8','d8','k4','k6','k9','k3','d7','a10','MAPK_tot','k2','d4','a5','MKKK_tot','k10','MKKPase_tot','k1']
+    run_analysis(model_name, qoi_lambda, params_to_analyze, loaddir, savedir, lower=1e-2, upper=1e2)
 
     # # KHOLODENKO 2000
     # model_name = 'kholodenko_2000'
@@ -296,35 +296,35 @@ def main():
     # params_to_analyze = ['kd1','k2','kd2','k3','kd3','k4','kd4','k5','kd5','k6','kd6','k8','kd8','k10b','kd10','k13','kd13','k15','kd15','k16','kd63','k17','kd17','k18','kd18','k19','kd19','k20','kd20','k21','kd21','k22','kd22','k23','kd23','kd24','k25','kd25','k28','kd28','k29','kd29','k32','kd32','k33','kd33','k34','kd34','k35','kd35','k36','kd36','k37','kd37','k40','kd40','k41','kd41','k42','kd42','k43','kd43','k44','kd52','k45','kd45','k47','kd47','k48','kd48','k49','kd49','k50','kd50','k52','kd44','k53','kd53','k55','kd55','k56','kd56','k57','kd57','k58','kd58','k60','kd60','k61','kd61','k126','kd126','k127','kd127',]
     # run_analysis(model_name, qoi_lambda, params_to_analyze, loaddir, savedir, lower=1e-2, upper=1e2)
 
-    # # ORTON 2009
-    # model_name = 'orton_2009'
-    # qoi_lambda = lambda x: x[:,-1]
-    # params_to_analyze = ['km_Erk_Activation','k1_C3G_Deactivation','km_Erk_Deactivation','k1_Akt_Deactivation','k1_P90Rsk_Deactivation','k1_PI3K_Deactivation','k1_Sos_Deactivation']
-    # run_analysis(model_name, qoi_lambda, params_to_analyze, loaddir, savedir, lower=1e-2, upper=1e2)
-
-    # # VON KRIEGSHEIM 2009
-    model_name = 'vonKriegsheim_2009'
+    # ORTON 2009
+    model_name = 'orton_2009'
     qoi_lambda = lambda x: x[:,-1]
-    params_to_analyze = ['k42','k37','k4','k27','k45','k30','k43','k48','k5','k14','k28','k39','k46','k63','k68','k55','k29','k41','k25','k7','k13','k2','k40','k6','k18','k56','k32','k38','k10','k34']
+    params_to_analyze = ['km_Erk_Activation','k1_C3G_Deactivation','km_Erk_Deactivation','k1_Akt_Deactivation','k1_P90Rsk_Deactivation','k1_PI3K_Deactivation','k1_Sos_Deactivation']
     run_analysis(model_name, qoi_lambda, params_to_analyze, loaddir, savedir, lower=1e-2, upper=1e2)
 
-    # # SHIN 2014
-    # model_name = 'shin_2014'
+    # # VON KRIEGSHEIM 2009
+    # model_name = 'vonKriegsheim_2009'
     # qoi_lambda = lambda x: x[:,-1]
-    # params_to_analyze = ['kc47','kc43','kd39','kc45','ERK_tot','ki39','kc41']
+    # params_to_analyze = ['k42','k37','k4','k27','k45','k30','k43','k48','k5','k14','k28','k39','k46','k63','k68','k55','k29','k41','k25','k7','k13','k2','k40','k6','k18','k56','k32','k38','k10','k34']
     # run_analysis(model_name, qoi_lambda, params_to_analyze, loaddir, savedir, lower=1e-2, upper=1e2)
 
-    # # RYU 2015
-    # model_name = 'ryu_2015'
-    # qoi_lambda = lambda x: x[:,-1]
-    # params_to_analyze = ['D2','T_dusp','K_dusp','K2','dusp_ind']
-    # run_analysis(model_name, qoi_lambda, params_to_analyze, loaddir, savedir, lower=1e-2, upper=1e2)
+    # SHIN 2014
+    model_name = 'shin_2014'
+    qoi_lambda = lambda x: x[:,-1]
+    params_to_analyze = ['kc47','kc43','kd39','kc45','ERK_tot','ki39','kc41']
+    run_analysis(model_name, qoi_lambda, params_to_analyze, loaddir, savedir, lower=1e-2, upper=1e2)
 
-    # # KOCHANCZYK 2017
-    # model_name = 'kochanczyk_2017'
-    # qoi_lambda = lambda x: x[:,-1]
-    # params_to_analyze = ['k3','q1','q3','q2','u3','d1','q6','u2b','u1a','d2','u2a','q5','u1b','q4']
-    # run_analysis(model_name, qoi_lambda, params_to_analyze, loaddir, savedir, lower=1e-2, upper=1e2)
+    # RYU 2015
+    model_name = 'ryu_2015'
+    qoi_lambda = lambda x: x[:,-1]
+    params_to_analyze = ['D2','T_dusp','K_dusp','K2','dusp_ind']
+    run_analysis(model_name, qoi_lambda, params_to_analyze, loaddir, savedir, lower=1e-2, upper=1e2)
+
+    # KOCHANCZYK 2017
+    model_name = 'kochanczyk_2017'
+    qoi_lambda = lambda x: x[:,-1]
+    params_to_analyze = ['k3','q1','q3','q2','u3','d1','q6','u2b','u1a','d2','u2a','q5','u1b','q4']
+    run_analysis(model_name, qoi_lambda, params_to_analyze, loaddir, savedir, lower=1e-2, upper=1e2)
 
     # # BIRTWISTLE 2007
     # loaddir = '../../../results/MAPK/gsa/'
