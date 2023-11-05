@@ -42,12 +42,13 @@ def solve_ss(model_dfrx_ode, y0, params, t1):
     calculated steady-state values.
     Returns an array of shape (n_species, 1) """
     dt0=1e-3
-    event_rtol=1e-8
-    event_atol=1e-8
+    event_rtol=1e-6
+    event_atol=1e-6
     solver = diffrax.Kvaerno5()
     event=diffrax.SteadyStateEvent(event_rtol, event_atol)
     stepsize_controller=diffrax.PIDController(rtol=1e-6, atol=1e-6)
     t0 = 0.0
+    t1 = jnp.inf
 
     sol = diffrax.diffeqsolve(
         model_dfrx_ode, 
@@ -75,7 +76,6 @@ def solve_traj(model_dfrx_ode, y0, params, t1, ERK_indices):
     solver = diffrax.Kvaerno5()
     stepsize_controller=diffrax.PIDController(rtol=1e-6, atol=1e-6)
     t0 = 0.0
-    t1 = jnp.inf
 
     sol = diffrax.diffeqsolve(
         model_dfrx_ode, 
