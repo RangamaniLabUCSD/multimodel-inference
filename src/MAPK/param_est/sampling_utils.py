@@ -75,15 +75,18 @@ def solve_traj(model_dfrx_ode, y0, params, t1, ERK_indices):
     solver = diffrax.Kvaerno5()
     stepsize_controller=diffrax.PIDController(rtol=1e-6, atol=1e-6)
     t0 = 0.0
+    t1 = jnp.inf
 
     sol = diffrax.diffeqsolve(
         model_dfrx_ode, 
         solver, 
-        t0, t1, dt0, 
+        t0, 
+        t1, 
+        dt0, 
         tuple(y0), 
         stepsize_controller=stepsize_controller,
         args=params,
-        max_steps=600000,
+        max_steps=6000,
         throw=False,)
     
     return jnp.sum(jnp.array(sol.ys)[ERK_indices, :], axis=0)
