@@ -177,9 +177,13 @@ def set_prior_params(param_names, nominal_params, free_param_idxs, prior_family=
         if i in free_param_idxs: # check if we are dealing with a free parameter
             # get the nominal value
             nominal_val = nominal_params[i]
-            # get the upper and lower bounds
-            upper = nominal_val*upper_mult
-            lower = nominal_val*lower_mult
+            if nominal_val == 0:
+                upper = 1.0
+                lower = 1e-4
+            else:
+                # get the upper and lower bounds
+                upper = nominal_val*upper_mult
+                lower = nominal_val*lower_mult
 
             # use preliz.maxent to find the prior parameters for the specified family
             prior_fam = prior_family_list[free_param_idxs.index(i)]
