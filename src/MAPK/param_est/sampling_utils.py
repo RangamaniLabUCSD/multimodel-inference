@@ -30,7 +30,7 @@ import plotting_helper_funcs as plt_func
 
 # tell jax to use 64bit floats
 jax.config.update("jax_enable_x64", True)
-# jax.config.update("jax_platform_name", "cpu")
+jax.config.update("jax_platform_name", "cpu")
 
 sys.path.append('../')
 from utils import *
@@ -43,7 +43,7 @@ def solve_ss(model_dfrx_ode, y0, params, t1):
     Returns an array of shape (n_species, 1) """
     dt0=1e-3
     event_rtol=1e-6
-    event_atol=1e-6
+    event_atol=1e-5
     solver = diffrax.Kvaerno5()
     event=diffrax.SteadyStateEvent(event_rtol, event_atol)
     stepsize_controller=diffrax.PIDController(rtol=1e-6, atol=1e-6)
