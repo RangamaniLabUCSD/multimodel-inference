@@ -30,7 +30,7 @@ import plotting_helper_funcs as plt_func
 
 # tell jax to use 64bit floats
 jax.config.update("jax_enable_x64", True)
-jax.config.update("jax_platform_name", "cpu")
+# jax.config.update("jax_platform_name", "cpu")
 
 sys.path.append('../')
 from utils import *
@@ -304,11 +304,11 @@ def smc_pymc(model, mapk_model_name, savedir, nsamples=2000,
     return idata
 
 def mcmc_numpyro_nuts(model, mapk_model_name, savedir, nsamples=2000, 
-                      seed=np.random.default_rng(seed=123), ncores=None):
+                      seed=np.random.default_rng(seed=123), nchains=1):
     """ Function to run NUTS sampling using Numpyro."""
     with model:
         idata = sample_numpyro_nuts(draws=nsamples, 
-                    random_seed=seed, chains=4, idata_kwargs={'log_likelihood': True}, progressbar=True,chain_method='parallel',)
+                    random_seed=seed, chains=nchains, idata_kwargs={'log_likelihood': True}, progressbar=True,chain_method='parallel',)
     
     # save the samples
     az.to_json(idata, savedir + mapk_model_name + '_mcmc_numpyro_samples.json')
