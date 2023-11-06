@@ -304,11 +304,11 @@ def smc_pymc(model, mapk_model_name, savedir, nsamples=2000,
     return idata
 
 def mcmc_numpyro_nuts(model, mapk_model_name, savedir, nsamples=2000, 
-                      seed=np.random.default_rng(seed=123), nchains=1):
+                      seed=np.random.default_rng(seed=123), nchains=1,chain_method='parallel'):
     """ Function to run NUTS sampling using Numpyro."""
     with model:
         idata = sample_numpyro_nuts(draws=nsamples, 
-                    random_seed=seed, chains=nchains, idata_kwargs={'log_likelihood': True}, progressbar=True,chain_method='parallel',)
+                    random_seed=seed, chains=nchains, idata_kwargs={'log_likelihood': True}, progressbar=True,chain_method=chain_method,)
     
     # save the samples
     az.to_json(idata, savedir + mapk_model_name + '_mcmc_numpyro_samples.json')
