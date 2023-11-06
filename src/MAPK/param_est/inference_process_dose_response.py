@@ -1,5 +1,5 @@
 from os import environ
-# environ['OMP_NUM_THREADS'] = '1'
+environ['OMP_NUM_THREADS'] = '1'
 #environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 import jax
@@ -105,14 +105,14 @@ def main():
                     ERK_indices, args.t1, diffrax.ODETerm(model))
     
     # prior predictive sampling
-    create_prior_predictive(pymc_model, args.model, data, inputs, args.savedir, 
-                            nsamples=500)
+    # create_prior_predictive(pymc_model, args.model, data, inputs, args.savedir, 
+    #                         nsamples=500)
     
     # SMC sampling
-    posterior_idata = smc_pymc(pymc_model, args.model, args.savedir, 
-                nsamples=args.nsamples, ncores=args.ncores, threshold=0.85, chains=4)
-    # posterior_idata = mcmc_numpyro_nuts(pymc_model, args.model, args.savedir, nsamples=10000, 
-    #                   seed=np.random.default_rng(seed=123))
+    # posterior_idata = smc_pymc(pymc_model, args.model, args.savedir, 
+    #             nsamples=args.nsamples, ncores=args.ncores, threshold=0.85, chains=4,)
+    posterior_idata = mcmc_numpyro_nuts(pymc_model, args.model, args.savedir, nsamples=10000, 
+                      seed=np.random.default_rng(seed=123), nchains=4, chain_method='vectorized')
     
     # trace plots and diagnostics
     plot_sampling_trace_diagnoses(posterior_idata, args.savedir, args.model)
