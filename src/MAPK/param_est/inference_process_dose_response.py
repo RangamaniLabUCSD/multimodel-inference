@@ -55,7 +55,7 @@ def parse_args():
     parser.add_argument("-input_state", type=str, default='EGF', help="Name of EGF input in the state vector. Defaults to EGF.")
     parser.add_argument("-EGF_conversion_factor", type=float, default=1.0, help="Conversion factor to convert EGF from nM to other units. Defaults to 1.")
     parser.add_argument("-ERK_states", type=str, default=None, help="Names of ERK species to use for inference. Defaults to None.")
-    parser.add_argument("-t1", type=int, default=None, help="Time to simulate the model. Defaults to None.")
+    parser.add_argument("-t1", type=int, default=jnp.inf, help="Time to simulate the model. Defaults to None.")
     parser.add_argument("-prior_family", type=str, default="[['Gamma()',['alpha', 'beta']]]", help="Prior family to use. Defaults to uniform.")
     parser.add_argument("-ncores", type=int, default=None, help="Number of cores to use for multiprocessing. Defaults to None which will use all available cores.")
     

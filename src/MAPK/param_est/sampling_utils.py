@@ -49,7 +49,6 @@ def solve_ss(model_dfrx_ode, y0, params, t1):
     event=diffrax.SteadyStateEvent(event_rtol, event_atol)
     stepsize_controller=diffrax.PIDController(rtol=1e-6, atol=1e-6)
     t0 = 0.0
-    t1 = jnp.inf
 
     sol = diffrax.diffeqsolve(
         model_dfrx_ode, 
@@ -187,6 +186,8 @@ def set_prior_params(model_name, param_names, nominal_params, free_param_idxs, p
                 # get the upper and lower bounds
                 upper = nominal_val*upper_mult
                 lower = nominal_val*lower_mult
+                
+                print(param, upper, lower)
 
             # use preliz.maxent to find the prior parameters for the specified family
             prior_fam = prior_family_list[free_param_idxs.index(i)]
@@ -214,6 +215,46 @@ def set_prior_params(model_name, param_names, nominal_params, free_param_idxs, p
                     tmp += (fixed_param + ', ')
             prior_param_dict[param] = tmp + ')'
             print(prior_param_dict[param])
+        else:
+            # set the prior parameters to the nominal value
+            prior_param_dict[param] = 'pm.ConstantData("' + param + '", ' + str(nominal_params[i]) + ')'
+
+    return prior_param_dict
+
+def set_priors(model_name, param_names, nominal_params, free_param_idxs, prior_family=[['Gamma()',['alpha', 'beta']]], upper_mult=1.9, lower_mult=0.1, prob_mass_bounds=0.95,          
+    saveplot=True, savedir=None):
+    """ Sets the prior parameters for the MAPK models.
+        Inputs:
+            - param_names (list): list of parameter names
+            - nominal_params (np.ndarray): array of nominal parameter values
+            - free_param_idxs (list): list of indices of the free parameters
+            - prior_family (str): prior family to use for the parameters. If a string will use that family for all free parameters, otherwise should be a list of strings of the same length as free_param_idxs. Each string should correspond to a pm.Distribution and pz.Distribution object, e.g., Gamma which is the default familly.
+            - upper_mult (float): multiplier for the upper bound of the prior
+            - lower_mult (float): multiplier for the lower bound of the prior
+        Returns:
+            - prior_param_dict (dict): dictionary of prior parameters for the model in syntax to use exec to set them in a pymc model object
+    """
+
+    if savedir is None:
+        savedir = os.getcwd() + '/'
+
+    # determine if a string or list of strings was passed for the prior family
+    prior_family = eval(prior_family)
+    if len(prior_family) == 1:
+        prior_family_list = prior_family*len(free_param_idxs)
+    else:
+        prior_family_list = prior_family
+    
+    # set the prior parameters
+    prior_param_dict = {}
+    for i, param in enumerate(param_names):
+        if i in free_param_idxs: # check if we are dealing with a free parameter
+            
+            prior = prior_family_list[free_param_idxs.index(i)]
+            
+            family, params = prior[0].split('(')
+            tmp = 'pm.' + family + "('" + param + "', " + params
+            prior_param_dict[param] = tmp
         else:
             # set the prior parameters to the nominal value
             prior_param_dict[param] = 'pm.ConstantData("' + param + '", ' + str(nominal_params[i]) + ')'
@@ -309,12 +350,12 @@ def plot_stimulus_response_curve(samples, data, inputs, input_name='EGF stimulus
     return fig, ax
 
 def smc_pymc(model, mapk_model_name, savedir, nsamples=2000, 
-             seed=np.random.default_rng(seed=123), ncores=None, threshold=0.5,chains=None):
+             seed=np.random.default_rng(seed=123), ncores=None, threshold=0.5,chains=None, correlation_threshold=0.01):
     """ Function to run SMC sampling using PyMC and the independent Metropolis-Hastings kernel."""
     with model:
         idata = pm.smc.sample_smc(draws=nsamples, random_seed=seed, chains=chains,
                                   cores=ncores, progressbar=True, threshold=threshold,
-                                  idata_kwargs={'log_likelihood': True},)
+                                  idata_kwargs={'log_likelihood': True},correlation_threshold=correlation_threshold,)
 
     # save the samples
     idata.to_json(savedir + mapk_model_name + '_smc_samples.json')
