@@ -149,28 +149,30 @@ def load_data(data_file):
     return inputs, data
 
     
-def set_prior_params(param_names, nominal_params, free_param_idxs, prior_family={'Gamma':['alpha', 'beta']}, upper_mult=1.9, lower_mult=0.1, prob_mass_bounds=0.95):
+def set_prior_params(model_name, param_names, nominal_params, free_param_idxs, prior_family=[['Gamma()',['alpha', 'beta']]], upper_mult=1.9, lower_mult=0.1, prob_mass_bounds=0.95,          
+    saveplot=True, savedir=None):
     """ Sets the prior parameters for the MAPK models.
         Inputs:
             - param_names (list): list of parameter names
             - nominal_params (np.ndarray): array of nominal parameter values
             - free_param_idxs (list): list of indices of the free parameters
-            - prior_family (str): prior family to use for the parameters. If a string wil use that family for all free parameters, otherwise should be a list of strings of the same length as free_param_idxs. Each string should correspond to a pm.Distribution and pz.Distribution object, e.g., Gamma which is the default familly.
+            - prior_family (str): prior family to use for the parameters. If a string will use that family for all free parameters, otherwise should be a list of strings of the same length as free_param_idxs. Each string should correspond to a pm.Distribution and pz.Distribution object, e.g., Gamma which is the default familly.
             - upper_mult (float): multiplier for the upper bound of the prior
             - lower_mult (float): multiplier for the lower bound of the prior
         Returns:
             - prior_param_dict (dict): dictionary of prior parameters for the model in syntax to use exec to set them in a pymc model object
     """
 
-    # determine if a string or list of strings was passed for the prior family
-    if len(prior_family) == 1:
-        prior_family_list = [list(prior_family.keys())[0]]*len(free_param_idxs)
-    else:
-        if len(prior_family) != len(free_param_idxs):
-            raise ValueError('prior_family must be a string or a list of strings with the same length as free_param_idxs')
-        else:
-            prior_family_list = list(prior_family.keys())
+    if savedir is None:
+        savedir = os.getcwd() + '/'
 
+    # determine if a string or list of strings was passed for the prior family
+    prior_family = eval(prior_family)
+    if len(prior_family) == 1:
+        prior_family_list = prior_family*len(free_param_idxs)
+    else:
+        prior_family_list = prior_family
+    
     # set the prior parameters
     prior_param_dict = {}
     for i, param in enumerate(param_names):
@@ -187,15 +189,30 @@ def set_prior_params(param_names, nominal_params, free_param_idxs, prior_family=
 
             # use preliz.maxent to find the prior parameters for the specified family
             prior_fam = prior_family_list[free_param_idxs.index(i)]
-            dist_family = eval('pz.' + prior_fam + '()')
-            results = pz.maxent(dist_family, lower, upper, prob_mass_bounds, plot=False)[1] # for some reason the [0] element is None
+            
+            dist_family = eval('pz.' + prior_fam[0])
+            fig, ax = plt_func.get_sized_fig_ax(2.0,2.0)
+            ax, results = pz.maxent(dist_family, lower, upper, prob_mass_bounds, plot=saveplot, ax=ax) # for some reason the [0] element is None
+
+            # save the plot
+            if saveplot:
+                ax.set_xscale('log')
+                ax.set_title(param)
+                fig.savefig(savedir + model_name + param + '_prior.pdf', bbox_inches='tight', transparent=True)
 
             # set the prior parameters
-            tmp = 'pm.' + prior_fam + '("' + param + '",'
-            for i, hyper_param in enumerate(prior_family[prior_fam]):
+            prior_fam_name = prior_fam[0].strip(')').split('(')[0]
+            fixed_params = prior_fam[0].strip(')').split('(')[1].split(',')
+            
+            tmp = 'pm.' + prior_fam_name + '("' + param + '",'
+            for i, hyper_param in enumerate(prior_fam[1]):
                 tmp += hyper_param + '=' + str(results.x[i]) + ', '
-
+            
+            for fixed_param in fixed_params:
+                if len(fixed_param) > 0:
+                    tmp += (fixed_param + ', ')
             prior_param_dict[param] = tmp + ')'
+            print(prior_param_dict[param])
         else:
             # set the prior parameters to the nominal value
             prior_param_dict[param] = 'pm.ConstantData("' + param + '", ' + str(nominal_params[i]) + ')'
@@ -278,7 +295,7 @@ def plot_stimulus_response_curve(samples, data, inputs, input_name='EGF stimulus
 
     data_df = pd.DataFrame(dat)
 
-    fig, ax = plt.subplots()
+    fig, ax = plt_func.get_sized_fig_ax(6.0, 4.0)
     sns.boxplot(data=data_df, color='k', ax=ax, whis=(2.5, 97.5), fill=False, 
                 native_scale=True, log_scale=(10, 0), fliersize=0)
     ax.set_xlabel(input_name)

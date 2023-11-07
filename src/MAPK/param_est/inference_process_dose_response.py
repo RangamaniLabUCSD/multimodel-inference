@@ -56,6 +56,7 @@ def parse_args():
     parser.add_argument("-EGF_conversion_factor", type=float, default=1.0, help="Conversion factor to convert EGF from nM to other units. Defaults to 1.")
     parser.add_argument("-ERK_states", type=str, default=None, help="Names of ERK species to use for inference. Defaults to None.")
     parser.add_argument("-t1", type=int, default=None, help="Time to simulate the model. Defaults to None.")
+    parser.add_argument("-prior_family", type=str, default="[['Gamma()',['alpha', 'beta']]]", help="Prior family to use. Defaults to uniform.")
     parser.add_argument("-ncores", type=int, default=None, help="Number of cores to use for multiprocessing. Defaults to None which will use all available cores.")
     
     args=parser.parse_args()
@@ -94,8 +95,9 @@ def main():
     ERK_indices = [state_names.index(s) for s in args.ERK_states.split(',')]
 
     # construct the strings to make priors and constants
-    prior_param_dict = set_prior_params(list(p_dict.keys()), plist, free_param_idxs,
-                                        upper_mult=100, lower_mult=0.01)
+    prior_param_dict = set_prior_params(args.model, list(p_dict.keys()), plist, free_param_idxs,
+                                        upper_mult=100, lower_mult=0.01,prior_family=args.prior_family,
+                                        savedir=args.savedir)
 
     # make initial conditions that reflect the inputs
     y0_EGF_ins = construct_y0_EGF_inputs(inputs_native_units, np.array([y0]), EGF_idx)
@@ -105,14 +107,14 @@ def main():
                     ERK_indices, args.t1, diffrax.ODETerm(model))
     
     # prior predictive sampling
-    # create_prior_predictive(pymc_model, args.model, data, inputs, args.savedir, 
-    #                         nsamples=500)
+    create_prior_predictive(pymc_model, args.model, data, inputs, args.savedir, 
+                            nsamples=500)  
     
     # SMC sampling
-    # posterior_idata = smc_pymc(pymc_model, args.model, args.savedir, 
-    #             nsamples=args.nsamples, ncores=args.ncores, threshold=0.85, chains=4,)
-    posterior_idata = mcmc_numpyro_nuts(pymc_model, args.model, args.savedir, nsamples=10000, 
-                      seed=np.random.default_rng(seed=123), nchains=4, chain_method='vectorized')
+    posterior_idata = smc_pymc(pymc_model, args.model, args.savedir, 
+                nsamples=args.nsamples, ncores=args.ncores, threshold=0.85, chains=4,)
+    # posterior_idata = mcmc_numpyro_nuts(pymc_model, args.model, args.savedir, nsamples=10000, 
+    #                   seed=np.random.default_rng(seed=123), nchains=4, chain_method='vectorized')
     
     # trace plots and diagnostics
     plot_sampling_trace_diagnoses(posterior_idata, args.savedir, args.model)
