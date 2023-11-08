@@ -96,7 +96,7 @@ def main():
 
     # construct the strings to make priors and constants
     prior_param_dict = set_prior_params(args.model, list(p_dict.keys()), plist, free_param_idxs,
-                                        upper_mult=100, lower_mult=0.01,prior_family=args.prior_family,
+                                        upper_mult=10, lower_mult=0.1,prior_family=args.prior_family,
                                         savedir=args.savedir)
 
     # make initial conditions that reflect the inputs
