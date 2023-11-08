@@ -1,3 +1,3 @@
 Locally Identifiable parameters:
-a8, k2, a9, a2, Pase, x5, k4, x22, d10, x25, x13, x18, a5, k7, x24, d3, x8, d4, k10, k5, a7, x11, d2, kOff1, x23, kOn1, x19, kOff3, a6, x21, x3, d9, x4, x2, x15, kOff4, kOff2, k3, x10, x20, act, x27, k8, x9, x12, a4, x7, x17, d6, x16, d8, k6, a3, kOn2, a1, d7, k1, a10, k9, x1, x26, d1, d5, x14, x6, 
+kOff1, a2, x28, kOn1, k10, RAFPase, x6, k4, k6, kOff4, kOn2, x18, total_scaffold, x17, x26, d7, x12, x19, x9, x25, d9, x4, d3, x15, a3, a10, kOff3, k8, k5, x5, x10, x1, x7, a9, x11, x27, a8, x23, a5, d8, d5, a6, k7, x22, x3, d2, a7, x21, d10, x14, a1, a4, k9, d6, x16, x8, k2, d1, k3, MEKPase, kOff2, MAPKPase, x24, d4, k1, x13, x2, 
 Nonidentifiable parameters:
