@@ -59,8 +59,7 @@ def parse_args():
     parser.add_argument("-t1", type=int, default=jnp.inf, help="Time to simulate the model. Defaults to None.")
     parser.add_argument("-prior_family", type=str, default="[['Gamma()',['alpha', 'beta']]]", help="Prior family to use. Defaults to uniform.")
     parser.add_argument("-ncores", type=int, default=1, help="Number of cores to use for multiprocessing. Defaults to None which will use all available cores.")
-    #parser.add_argument("-prior_sample", type=bool, default=True, help="Perform prior predictive sampling? Defaults to True.")
-    parser.add_argument("--prior_sample", action='store_false',default=True) 
+    parser.add_argument("--skip_prior_sample", action='store_false',default=True) 
 
     
     args=parser.parse_args()
