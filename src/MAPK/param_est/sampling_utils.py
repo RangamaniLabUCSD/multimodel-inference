@@ -1,7 +1,7 @@
 # Utilities to enable sampling for the MAPK models
 # Nathaniel Linden (UCSD)
 # 10-16-2023
-
+import pdb
 import numpy as np
 import pandas as pd
 import preliz as pz
@@ -31,7 +31,6 @@ import plotting_helper_funcs as plt_func
 
 # tell jax to use 64bit floats
 jax.config.update("jax_enable_x64", True)
-jax.config.update("jax_platform_name", "cpu")
 
 sys.path.append('../')
 from utils import *
@@ -350,7 +349,7 @@ def plot_stimulus_response_curve(samples, data, inputs, input_name='EGF stimulus
     return fig, ax
 
 def smc_pymc(model, mapk_model_name, savedir, nsamples=2000, 
-             seed=np.random.default_rng(seed=123), ncores=None, threshold=0.5,chains=None, correlation_threshold=0.01):
+             seed=np.random.default_rng(seed=123), ncores=1, threshold=0.5,chains=None, correlation_threshold=0.01):
     """ Function to run SMC sampling using PyMC and the independent Metropolis-Hastings kernel."""
     with model:
         idata = pm.smc.sample_smc(draws=nsamples, random_seed=seed, chains=chains,
