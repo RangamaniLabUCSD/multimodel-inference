@@ -1,3 +1,4 @@
+import pdb
 from os import environ
 environ['OMP_NUM_THREADS'] = '1'
 #environ['CUDA_VISIBLE_DEVICES'] = '0'
@@ -36,9 +37,9 @@ jax.config.update("jax_enable_x64", True)
 jax.config.update("jax_platform_name", "cpu")
 
 # print out device count
-n_devices = jax.local_device_count() 
-print(jax.devices())
-print('Using {} jax devices'.format(n_devices))
+# n_devices = jax.local_device_count() 
+# print(jax.devices())
+# print('Using {} jax devices'.format(n_devices))
 
 ##############################
 # def arg parsers to take inputs from the command line
@@ -57,7 +58,9 @@ def parse_args():
     parser.add_argument("-ERK_states", type=str, default=None, help="Names of ERK species to use for inference. Defaults to None.")
     parser.add_argument("-t1", type=int, default=jnp.inf, help="Time to simulate the model. Defaults to None.")
     parser.add_argument("-prior_family", type=str, default="[['Gamma()',['alpha', 'beta']]]", help="Prior family to use. Defaults to uniform.")
-    parser.add_argument("-ncores", type=int, default=None, help="Number of cores to use for multiprocessing. Defaults to None which will use all available cores.")
+    parser.add_argument("-ncores", type=int, default=1, help="Number of cores to use for multiprocessing. Defaults to None which will use all available cores.")
+    parser.add_argument("-prior_sample", type=bool, default=True, help="Perform prior predictive sampling? Defaults to True.")
+
     
     args=parser.parse_args()
     return args
@@ -68,7 +71,7 @@ def main():
     """
     args = parse_args()
     print('Processing model {}.'.format(args.model))
-
+    
     # try calling the model
     try:
         model = eval(args.model + '(transient=False)')
@@ -106,11 +109,13 @@ def main():
     pymc_model = build_pymc_model(prior_param_dict, data, y0_EGF_ins, 
                     ERK_indices, args.t1, diffrax.ODETerm(model))
     
-    # prior predictive sampling
-    create_prior_predictive(pymc_model, args.model, data, inputs, args.savedir, 
-                            nsamples=500)  
+    # # prior predictive sampling
+    if args.prior_sample:
+        create_prior_predictive(pymc_model, args.model, data, inputs, args.savedir, 
+                                nsamples=500)
     
     # SMC sampling
+    # pdb.set_trace()
     posterior_idata = smc_pymc(pymc_model, args.model, args.savedir, 
                 nsamples=args.nsamples, ncores=args.ncores, threshold=0.85, chains=4,)
     # posterior_idata = mcmc_numpyro_nuts(pymc_model, args.model, args.savedir, nsamples=10000, 
