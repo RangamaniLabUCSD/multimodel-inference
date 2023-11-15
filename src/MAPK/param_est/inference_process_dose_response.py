@@ -110,8 +110,7 @@ def main():
                     ERK_indices, args.t1, diffrax.ODETerm(model))
     
     # # prior predictive sampling
-    if args.prior_sample:
-        print(args.prior_sample)
+    if args.skip_prior_sample:
         create_prior_predictive(pymc_model, args.model, data, inputs, args.savedir, 
                                 nsamples=500)
     
