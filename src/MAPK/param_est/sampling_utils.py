@@ -10,6 +10,7 @@ import os
 import sys
 import json
 import pymc as pm
+import pymc_experimental as pmx
 from pymc.sampling.jax import sample_numpyro_nuts
 import jax.numpy as jnp
 import jax
@@ -31,6 +32,7 @@ import plotting_helper_funcs as plt_func
 
 # tell jax to use 64bit floats
 jax.config.update("jax_enable_x64", True)
+jax.config.update("jax_platform_name", "cpu")
 
 sys.path.append('../')
 from utils import *
@@ -360,6 +362,15 @@ def smc_pymc(model, mapk_model_name, savedir, nsamples=2000,
     idata.to_json(savedir + mapk_model_name + '_smc_samples.json')
 
     return idata
+
+def VI_pathfinder(model, mapk_model_name, savedir,  seed=np.random.default_rng(seed=123),
+                  maxiter=30, maxcor=10, maxls=1000, gtol=1e-08, ftol=1e-05):
+    """ Function to run variational inference using PyMC and the Pathfinder immplementation from Blackjax. REQUIRES pymc_experimental"""
+    with model:
+        idata = pmx.fit(method="pathfinder", maxiter=maxiter, maxcor=maxcor, maxls=maxls, gtol=gtol, ftol=ftol, random_seed=seed,)
+
+    # save the samples
+    az.to_json(idata, savedir + mapk_model_name + '_VI_samples.json')
 
 def mcmc_numpyro_nuts(model, mapk_model_name, savedir, nsamples=2000, 
                       seed=np.random.default_rng(seed=123), nchains=1,chain_method='parallel'):
