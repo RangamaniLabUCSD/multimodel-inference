@@ -114,8 +114,8 @@ def main():
     
     # SMC sampling
     # pdb.set_trace()
-    posterior_idata = smc_pymc(pymc_model, args.model, args.savedir, 
-                nsamples=args.nsamples, ncores=args.ncores, threshold=0.85, chains=4,)
+    # posterior_idata = smc_pymc(pymc_model, args.model, args.savedir, 
+    #             nsamples=args.nsamples, ncores=args.ncores, threshold=0.85, chains=4,)
     # posterior_idata = mcmc_numpyro_nuts(pymc_model, args.model, args.savedir, nsamples=10000, 
     #                   seed=np.random.default_rng(seed=123), nchains=4, chain_method='vectorized')
     posterior_idata = VI_pathfinder(pymc_model, args.model, args.savedir, maxiter=30,)
