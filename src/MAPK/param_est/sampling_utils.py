@@ -394,7 +394,7 @@ def build_pymc_model_ABC(prior_param_dict, data, y0_EGF_inputs,
 
         # assume a normal model for the data
         # sigma specified by the data_sigma param to this function
-        llike = pm.Simulator("llike", mu=prediction, priors, observed=data)
+        llike = pm.Simulator("llike", prediction, priors, observed=data)
 
     return model
 
