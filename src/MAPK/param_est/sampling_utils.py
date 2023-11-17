@@ -390,7 +390,7 @@ def build_pymc_model_ABC(prior_param_dict, data, y0_EGF_inputs,
             priors.append(prior)
 
         # predict dose response
-        prediction = lambda rng, priors: sol_op(*priors)
+        prediction = lambda rng, priors, size: sol_op(*priors)
 
         # assume a normal model for the data
         # sigma specified by the data_sigma param to this function
