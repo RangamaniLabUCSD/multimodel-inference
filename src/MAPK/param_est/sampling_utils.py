@@ -70,7 +70,7 @@ def solve_ss(model_dfrx_ode, y0, params, t1):
 vsolve_ss = jax.vmap(solve_ss, in_axes=(None, 0, None, None))
 
 @jax.jit
-def solve_traj(model_dfrx_ode, y0, params, t1, ERK_indices):
+def solve_traj(model_dfrx_ode, y0, params, t1, ERK_indices, times):
     """ simulates a model over the specified time interval and returns the 
     calculated steady-state values.
     Returns an array of shape (n_species, 1) """
@@ -78,6 +78,7 @@ def solve_traj(model_dfrx_ode, y0, params, t1, ERK_indices):
     solver = diffrax.Kvaerno5()
     stepsize_controller=diffrax.PIDController(rtol=1e-6, atol=1e-6)
     t0 = 0.0
+    saveat=diffrax.SaveAt(ts=times)
 
     sol = diffrax.diffeqsolve(
         model_dfrx_ode, 
@@ -87,15 +88,16 @@ def solve_traj(model_dfrx_ode, y0, params, t1, ERK_indices):
         dt0, 
         tuple(y0), 
         stepsize_controller=stepsize_controller,
+        saveat=saveat,
         args=params,
-        max_steps=6000,
+        max_steps=600000,
         throw=False,)
     
     return jnp.sum(jnp.array(sol.ys)[ERK_indices, :], axis=0)
 
 # vmap steady state solving over the different inputs it over the parameters
 #   this means vmapping over the y0 and assuming everything else is fixed
-vsolve_traj = jax.vmap(solve_traj, in_axes=(None, 0, None, None, None))
+vsolve_traj = jax.vmap(solve_traj, in_axes=(None, 0, None, None, None, None))
 
 def ERK_stim_response(params, model_dfrx_ode, max_time, y0_EGF_inputs, output_states):
     """ function to compute the ERK response to EGF stimulation
@@ -327,6 +329,72 @@ def build_pymc_model(prior_param_dict, data, y0_EGF_inputs,
         # assume a normal model for the data
         # sigma specified by the data_sigma param to this function
         llike = pm.Normal("llike", mu=prediction, sigma=data_sigma, observed=data)
+
+    return model
+
+def build_pymc_model_ABC(prior_param_dict, data, y0_EGF_inputs, 
+                    output_states, max_time, model_dfrx_ode, model=None, 
+                    simulator=ERK_stim_response, data_sigma=0.1):
+    """ Builds a pymc model object for the MAPK models.
+
+    Constructs priors for the model, and uses the ERK_stim_response function to 
+    generate the stimulus response function and likelihood.
+    """
+
+    #################################
+    # Create jax functions to solve # 
+    #################################
+    def sol_op_jax(*params):
+        pred, _ = simulator(params, model_dfrx_ode, max_time, y0_EGF_inputs, output_states)
+        return jnp.vstack((pred))
+
+    # get the jitted versions
+    sol_op_jax_jitted = jax.jit(sol_op_jax)
+
+    ############################################
+    # Create pytensor Op and register with jax # 
+    ############################################
+    class StimRespOp(Op):
+        def make_node(self, *inputs):
+            # Convert our inputs to symbolic variables
+            inputs = [pt.as_tensor_variable(inp) for inp in inputs]
+            # Assume the output to always be a float64 matrix
+            outputs = [pt.matrix()]
+            return Apply(self, inputs, outputs)
+
+        def perform(self, node, inputs, outputs):
+            result = sol_op_jax_jitted(*inputs)
+            outputs[0][0] = np.asarray(result, dtype="float64")
+        
+        def grad(self, inputs, output_grads):
+            raise NotImplementedError("PyTensor gradient of StimRespOp not implemented")
+
+
+    # construct Ops and register with jax_funcify
+    sol_op = StimRespOp()
+
+    @jax_funcify.register(StimRespOp)
+    def sol_op_jax_funcify(op, **kwargs):
+        return sol_op_jax
+    
+    ############################
+    # Construct the PyMC model # 
+    ############################
+    model = pm.Model()
+    with model:
+        # loop over free params and construct the priors
+        priors = []
+        for key, value in prior_param_dict.items():
+            # create PyMC variables for each parameters in the model
+            prior = eval(value)
+            priors.append(prior)
+
+        # predict dose response
+        prediction = lambda rng, priors: sol_op(*priors)
+
+        # assume a normal model for the data
+        # sigma specified by the data_sigma param to this function
+        llike = pm.Simulator("llike", mu=prediction, priors, observed=data)
 
     return model
 
