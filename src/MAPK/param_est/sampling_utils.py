@@ -33,7 +33,7 @@ import plotting_helper_funcs as plt_func
 
 # tell jax to use 64bit floats
 jax.config.update("jax_enable_x64", True)
-jax.config.update("jax_platform_name", "cpu")
+# jax.config.update("jax_platform_name", "cpu")
 
 sys.path.append('../')
 from utils import *
@@ -118,6 +118,26 @@ def ERK_stim_response(params, model_dfrx_ode, max_time, y0_EGF_inputs, output_st
     # return erk_acts/jnp.max(erk_acts), erk_acts
     return erk_acts/jnp.max(erk_acts), erk_acts
 
+def ERK_stim_response_scan(params, model_dfrx_ode, max_time, y0_EGF_inputs, output_states):
+    """ function to compute the ERK response to EGF stimulation
+        Args:
+            difrx_model (diffrax.Model): diffrax model object
+            EGF_inputs (np.ndarray): array of EGF inputs to simulate
+            output_states (list): list of output states to sum over
+            maxtime (int): max time to simulate the model
+        Returns:
+            normalized_ERK_response (np.ndarray): array of ERK responses to each EGF input
+    """
+    # vmap solve over all initial conditions
+    solve = lambda carry, y0: (carry, solve_ss(model_dfrx_ode, y0, params, max_time))
+    _, ss = jax.lax.scan(solve, None, y0_EGF_inputs)
+    ss = jnp.squeeze(ss)
+
+    # sum over the output states
+    erk_acts = jnp.sum(ss[:, output_states], axis=1)
+    # return erk_acts/jnp.max(erk_acts), erk_acts
+    return erk_acts/jnp.max(erk_acts), erk_acts
+
 def ERK_stim_trajectory_set(params, model_dfrx_ode, max_time, y0_EGF_inputs, output_states):
     """ function to compute the ERK response to EGF stimulation
         Args:
@@ -133,8 +153,7 @@ def ERK_stim_trajectory_set(params, model_dfrx_ode, max_time, y0_EGF_inputs, out
     traj = jnp.squeeze(traj)
 
     return traj/jnp.max(jnp.max(traj)), traj
-
-    
+  
 def construct_y0_EGF_inputs(EGF_vals, y0, EGF_idx):
     n_repeats = len(EGF_vals)
     y0_EGF_inputs = np.repeat(y0, n_repeats, axis=0)
@@ -151,7 +170,6 @@ def load_data(data_file):
     data = np.vstack((data_df['response'].to_numpy()))
 
     return inputs, data
-
     
 def set_prior_params(model_name, param_names, nominal_params, free_param_idxs, prior_family=[['Gamma()',['alpha', 'beta']]], upper_mult=1.9, lower_mult=0.1, prob_mass_bounds=0.95,          
     saveplot=True, savedir=None):
@@ -265,7 +283,6 @@ def set_priors(model_name, param_names, nominal_params, free_param_idxs, prior_f
 
     return prior_param_dict
 
-
 def build_pymc_model(prior_param_dict, data, y0_EGF_inputs, 
                     output_states, max_time, model_dfrx_ode, model=None, 
                     simulator=ERK_stim_response, data_sigma=0.1):
@@ -332,72 +349,6 @@ def build_pymc_model(prior_param_dict, data, y0_EGF_inputs,
 
     return model
 
-def build_pymc_model_ABC(prior_param_dict, data, y0_EGF_inputs, 
-                    output_states, max_time, model_dfrx_ode, model=None, 
-                    simulator=ERK_stim_response, data_sigma=0.1):
-    """ Builds a pymc model object for the MAPK models.
-
-    Constructs priors for the model, and uses the ERK_stim_response function to 
-    generate the stimulus response function and likelihood.
-    """
-
-    #################################
-    # Create jax functions to solve # 
-    #################################
-    def sol_op_jax(*params):
-        pred, _ = simulator(params, model_dfrx_ode, max_time, y0_EGF_inputs, output_states)
-        return jnp.vstack((pred))
-
-    # get the jitted versions
-    sol_op_jax_jitted = jax.jit(sol_op_jax)
-
-    ############################################
-    # Create pytensor Op and register with jax # 
-    ############################################
-    class StimRespOp(Op):
-        def make_node(self, *inputs):
-            # Convert our inputs to symbolic variables
-            inputs = [pt.as_tensor_variable(inp) for inp in inputs]
-            # Assume the output to always be a float64 matrix
-            outputs = [pt.matrix()]
-            return Apply(self, inputs, outputs)
-
-        def perform(self, node, inputs, outputs):
-            result = sol_op_jax_jitted(*inputs)
-            outputs[0][0] = np.asarray(result, dtype="float64")
-        
-        def grad(self, inputs, output_grads):
-            raise NotImplementedError("PyTensor gradient of StimRespOp not implemented")
-
-
-    # construct Ops and register with jax_funcify
-    sol_op = StimRespOp()
-
-    @jax_funcify.register(StimRespOp)
-    def sol_op_jax_funcify(op, **kwargs):
-        return sol_op_jax
-    
-    ############################
-    # Construct the PyMC model # 
-    ############################
-    model = pm.Model()
-    with model:
-        # loop over free params and construct the priors
-        priors = []
-        for key, value in prior_param_dict.items():
-            # create PyMC variables for each parameters in the model
-            prior = eval(value)
-            priors.append(prior)
-
-        # predict dose response
-        prediction = lambda rng, priors: sol_op(*priors)
-
-        # assume a normal model for the data
-        # sigma specified by the data_sigma param to this function
-        llike = pm.Simulator("llike", mu=prediction, priors, observed=data)
-
-    return model
-
 def plot_stimulus_response_curve(samples, data, inputs, input_name='EGF stimulus', 
                                  output_name='% maximal ERK activity',
                                  data_std=0.1):
@@ -431,25 +382,6 @@ def smc_pymc(model, mapk_model_name, savedir, nsamples=2000,
     idata.to_json(savedir + mapk_model_name + '_smc_samples.json')
 
     return idata
-
-def VI_pathfinder(model, mapk_model_name, savedir,  seed=np.random.default_rng(seed=123),
-                  maxiter=30, maxcor=10, maxls=1000, gtol=1e-08, ftol=1e-05):
-    """ Function to run variational inference using PyMC and the Pathfinder immplementation from Blackjax. REQUIRES pymc_experimental"""
-    with model:
-        idata = pmx.fit(method="pathfinder", maxiter=maxiter, maxcor=maxcor, maxls=maxls, gtol=gtol, ftol=ftol, random_seed=seed,)
-
-    # save the samples
-    az.to_json(idata, savedir + mapk_model_name + '_VI_samples.json')
-
-def mcmc_numpyro_nuts(model, mapk_model_name, savedir, nsamples=2000, 
-                      seed=np.random.default_rng(seed=123), nchains=1,chain_method='parallel'):
-    """ Function to run NUTS sampling using Numpyro."""
-    with model:
-        idata = sample_numpyro_nuts(draws=nsamples, 
-                    random_seed=seed, chains=nchains, idata_kwargs={'log_likelihood': True}, progressbar=True,chain_method=chain_method,)
-    
-    # save the samples
-    az.to_json(idata, savedir + mapk_model_name + '_mcmc_numpyro_samples.json')
 
 def create_prior_predictive(model, mapk_model_name, data, inputs, savedir, 
                             nsamples=100, seed=np.random.default_rng(seed=123)):
