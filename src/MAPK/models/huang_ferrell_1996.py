@@ -10,10 +10,10 @@ class huang_ferrell_1996(eqx.Module):
 
     def __call__(self, t, y, args):
         # unpack state
-        MKKK_E1, MKKK_P, MKKK_P_E2, MKK_MKKK_P, MKK_P, MKK_P_MKKPase, MKK_P_MKKK_P, MKK_PP, MKK_PP_MKKPase, MAPK_MKK_PP, MAPK_P, MAPK_P_MAPKPase, MAPK_P_MKK_PP, MAPK_PP,  MAPK_PP_MAPKPase = y
+        E1,MKKK_E1, MKKK_P, MKKK_P_E2, MKK_MKKK_P, MKK_P, MKK_P_MKKPase, MKK_P_MKKK_P, MKK_PP, MKK_PP_MKKPase, MAPK_MKK_PP, MAPK_P, MAPK_P_MAPKPase, MAPK_P_MKK_PP, MAPK_PP,  MAPK_PP_MAPKPase = y
         
         # unnpack parameters
-        a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,d1,d2,d3,d4,d5,d6,d7,d8,d9,d10,k1,k2,k3,k4,k5,k6,k7,k8,k9,k10, MKKK_tot,MKK_tot,MAPK_tot,E2_tot,MKKPase_tot,MAPKPase_tot,E1_tot = args
+        a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,d1,d2,d3,d4,d5,d6,d7,d8,d9,d10,k1,k2,k3,k4,k5,k6,k7,k8,k9,k10, MKKK_tot,MKK_tot,MAPK_tot,E2_tot,MKKPase_tot,MAPKPase_tot = args
 
         MKKK = MKKK_tot - MKKK_P - MKKK_E1 - MKKK_P_E2
         MKK = MKK_tot - MKK_P - MKK_PP - MKK_MKKK_P - MKK_P_MKKK_P - MKK_P_MKKPase - MKK_PP_MKKPase - MAPK_MKK_PP - MAPK_P_MKK_PP
@@ -21,10 +21,6 @@ class huang_ferrell_1996(eqx.Module):
         MKKPase = MKKPase_tot - MKK_P_MKKPase - MKK_PP_MKKPase
         MAPKPase = MAPKPase_tot - MAPK_P_MAPKPase + MAPK_PP_MAPKPase
         E2 = E2_tot - MKKK_P_E2
-
-        trans_fun = lambda E1_tot, MKKK_E1: E1_tot - MKKK_E1
-        sus_fun = lambda E1_tot, MKKK_E1: E1_tot
-        E1 = cond(self.transient, trans_fun, sus_fun, E1_tot, MKKK_E1)
         
         # define fluxes
         J1 = a1*MKKK*E1
@@ -59,6 +55,10 @@ class huang_ferrell_1996(eqx.Module):
         J30 = d10*MAPK_PP_MAPKPase
 
         # ODE rhs
+        trans_fun = lambda J1, J2, J4: J2 + J4 - J1
+        sus_fun = lambda J1, J2, J4: 0.0
+        d_E1 = cond(self.transient, trans_fun, sus_fun, J1, J2, J4)
+
         d_MKKK_E1 = J1 - J2 - J4
         d_MKKK_P = -J5 + J6 + J4 + J7 + J8 - J9 + J10 + J11 - J12
         d_MKKK_P_E2 = J5 - J6 - J3
@@ -75,7 +75,7 @@ class huang_ferrell_1996(eqx.Module):
         d_MAPK_PP = -J29 + J30 + J23
         d_MAPK_PP_MAPKPase = J29 - J30 - J28
 
-        return (d_MKKK_E1, d_MKKK_P, d_MKKK_P_E2, d_MKK_MKKK_P, 
+        return (d_E1, d_MKKK_E1, d_MKKK_P, d_MKKK_P_E2, d_MKK_MKKK_P, 
                 d_MKK_P, d_MKK_P_MKKPase, d_MKK_P_MKKK_P, d_MKK_PP, 
                 d_MKK_PP_MKKPase, d_MAPK_MKK_PP, d_MAPK_P, 
                 d_MAPK_P_MAPKPase, d_MAPK_P_MKK_PP, d_MAPK_PP, 
@@ -152,7 +152,7 @@ class huang_ferrell_1996(eqx.Module):
             'E2_tot': 3e-4, #nM
             'MKKPase_tot': 3e-4, #nM
             'MAPKPase_tot': 0.12, #nM
-            'E1_tot': 1e-5, #nM THIS IS VARIED OVER A WIDE RANGE AS IT IS THE INPUT!
+            # 'E1_tot': 1e-5, #nM THIS IS VARIED OVER A WIDE RANGE AS IT IS THE INPUT!
         }
 
         p_list = [p_dict[key] for key in p_dict.keys()]
@@ -161,6 +161,7 @@ class huang_ferrell_1996(eqx.Module):
 
     def get_initial_conditions(self):
         ic_dict = {
+            'E1':  1e-5, # #nM THIS IS VARIED OVER A WIDE RANGE AS IT
             'MKKK_E1': 0.0,
             'MKKK_P': 0.0,
             'MKKK_P_E2': 0.0,
