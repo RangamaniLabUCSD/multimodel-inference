@@ -10,8 +10,6 @@ import diffrax
 import sys
 import argparse
 
-from SALib.sample import morris as morris_sample
-
 sys.path.append("../models/")
 from huang_ferrell_1996 import *
 from bhalla_iyengar_1999 import *
