@@ -10,7 +10,7 @@ import os
 import sys
 import json
 import pymc as pm
-import pymc_experimental as pmx
+# import pymc_experimental as pmx
 from pymc.sampling.jax import sample_numpyro_nuts
 import jax.numpy as jnp
 import jax
