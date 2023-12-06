@@ -33,7 +33,26 @@ plt.style.use('custom')
 from plotting_helper_funcs import *
 
 # load DIFFRAX PYTENSOR OP CODE
+sys.path.insert(0, './param_est/')
 from diffrax_ODE_PyTensor import *
+
+# import models
+sys.path.insert(0, '../models/')
+from huang_ferrell_1996 import *
+from bhalla_iyengar_1999 import *
+from kholodenko_2000 import *
+from levchenko_2000 import *
+from brightman_fell_2000 import *
+from schoeberl_2002 import *
+from hatakeyama_2003 import *
+from hornberg_2005 import *
+from birtwistle_2007 import *
+from orton_2009 import *
+from vonKriegsheim_2009 import *
+from shin_2014 import *
+from ryu_2015 import *
+from kochanczyk_2017 import *
+from dessauges_2022 import *
 
 ###############################################################################
 #### General Utils ####
@@ -204,7 +223,7 @@ vsolve_traj = jax.vmap(solve_traj, in_axes=(None, 0, None, None, None, None))
 # vmap traj solving over the parameters
 vsolve_params_traj = jax.vmap(solve_traj, in_axes=(None, None, 0, None, None, None))
 
-def plot_stimulus_response_curve(samples, data, inputs, box_color='k', data_color='r', input_name='EGF stimulus', 
+def plot_stimulus_response_curve_pretty(samples, data, inputs, box_color='k', data_color='r', input_name='EGF stimulus', 
                                  output_name='% maximal ERK activity',
                                  data_std=0.1, width=6.0, height=3.0, scatter_marker_size=50, data_marker_size=7):
     dat = {}
@@ -213,7 +232,7 @@ def plot_stimulus_response_curve(samples, data, inputs, box_color='k', data_colo
 
     data_df = pd.DataFrame(dat)
 
-    fig, ax = plt_func.get_sized_fig_ax(width, height)
+    fig, ax = get_sized_fig_ax(width, height)
     sns.boxplot(data=data_df, color=box_color, ax=ax, whis=(2.5, 97.5), fill=True, 
                 native_scale=True, log_scale=(10, 0), fliersize=0, width=0.65)
     ax.set_xlabel(input_name)
@@ -389,7 +408,7 @@ def set_prior_params(model_name, param_names, nominal_params, free_param_idxs, p
             prior_fam = prior_family_list[free_param_idxs.index(i)]
             
             dist_family = eval('pz.' + prior_fam[0])
-            fig, ax = plt_func.get_sized_fig_ax(2.0,2.0)
+            fig, ax = get_sized_fig_ax(2.0,2.0)
             ax, results = pz.maxent(dist_family, lower, upper, prob_mass_bounds, plot=saveplot, ax=ax) # for some reason the [0] element is None
 
             # save the plot
@@ -564,7 +583,7 @@ def plot_stimulus_response_curve(samples, data, inputs, input_name='EGF stimulus
 
     data_df = pd.DataFrame(dat)
 
-    fig, ax = plt_func.get_sized_fig_ax(6.0, 4.0)
+    fig, ax = get_sized_fig_ax(6.0, 4.0)
     sns.boxplot(data=data_df, color='k', ax=ax, whis=(2.5, 97.5), fill=False, 
                 native_scale=True, log_scale=(10, 0), fliersize=0)
     ax.set_xlabel(input_name)
@@ -715,8 +734,8 @@ def plot_trajectory_metric_hist(trajectory, metric_func, metric_name, width=1.0,
     return fig, ax
 
 def make_traj_plots(model_name, display_name, inputs, n_traj, trajs, times,  
-    figure_savedir, HF_trajs, show_ylabels=True, show_xlabels=True,
-    show_EGF_title=True, show_title=True):
+    figure_savedir, HF_trajs, HF_times, show_ylabels=True, show_xlabels=True,
+    show_EGF_title=True, show_title=True, maxT = 120.0,):
     traj_plot_width = 1.75
     traj_plot_height = 0.75
     cb = sns.color_palette("crest", n_colors=len(inputs))
@@ -727,7 +746,7 @@ def make_traj_plots(model_name, display_name, inputs, n_traj, trajs, times,
         traj = trajs[input]
         s_fig, s_ax = plot_trajectories(traj, times, n_traj, display_name, color=cb[idx], width=traj_plot_width, height=traj_plot_height,)
         s_ax.set_ylim([0.0, 1.0])
-        s_ax.set_xlim([0.0, 120.0])
+        s_ax.set_xlim([0.0, maxT])
 
         # format processing
         if show_EGF_title & show_title:
@@ -743,6 +762,8 @@ def make_traj_plots(model_name, display_name, inputs, n_traj, trajs, times,
         if not show_ylabels:
             s_ax.set_yticklabels('')
             s_ax.set_ylabel('')
+        else:
+            s_ax.set_yticklabels([0.0, 0.5, 1.0], fontsize=8.0)
         
         s_fig.savefig(os.path.join(figure_savedir, model_name+'_spaghetti_EGF_{}.pdf'.format(input)), transparent=True)
 
@@ -768,9 +789,9 @@ def make_traj_plots(model_name, display_name, inputs, n_traj, trajs, times,
                 errorbar=('pi', 95), # percentile interval form 2.5th to 97.5th
                 ax=ax)
         ax.set_ylim([0.0, 1.0])
-        ax.set_xlim([0.0, 120.0])
+        ax.set_xlim([0.0, maxT])
 
-        ax.plot(np.linspace(0.0, 1000.0, len(HF_trajs[idx])), HF_trajs[idx], 'k--', linewidth=2.0)
+        ax.plot(HF_times, np.squeeze(HF_trajs[idx]), 'k--', linewidth=2.0)
 
         # format processing
         if show_xlabels:
@@ -780,9 +801,11 @@ def make_traj_plots(model_name, display_name, inputs, n_traj, trajs, times,
             ax.set_xticklabels(ticks, fontsize=8)
         else:
             ax.set_xticklabels('')
+            ax.set_xlabel('')
 
         if show_ylabels:
             ax.set_ylabel('ERK activity', fontsize=10.0)
+            ax.set_yticklabels([0.0, 0.5, 1.0], fontsize=8.0)
         else:
             ax.set_yticklabels('')
 
@@ -792,9 +815,4 @@ def make_traj_plots(model_name, display_name, inputs, n_traj, trajs, times,
         elif show_title:
             s_ax.set_title(display_name, fontsize=10.0)
         
-
         fig.savefig(os.path.join(figure_savedir, model_name+'_credible_EGF_{}.pdf'.format(input)), transparent=True)
-
-    # plot the traces with arviz
-    az.plot_trace(posterior_idata, compact=False)
-    plt.savefig(savedir + mapk_model_name + '_'+ sampling_type + '_traceplot.pdf',)
