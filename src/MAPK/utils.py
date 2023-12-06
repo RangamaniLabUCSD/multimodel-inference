@@ -244,7 +244,8 @@ def plot_stimulus_response_curve_pretty(samples, data, inputs, box_color='k', da
 
     return fig, ax
     
-def ERK_stim_response(params, model_dfrx_ode, max_time, y0_EGF_inputs, output_states):
+def ERK_stim_response(params, model_dfrx_ode, max_time, y0_EGF_inputs, 
+                      output_states, normalization_func=None):
     """ function to compute the ERK response to EGF stimulation
         Args:
             difrx_model (diffrax.Model): diffrax model object
@@ -260,8 +261,11 @@ def ERK_stim_response(params, model_dfrx_ode, max_time, y0_EGF_inputs, output_st
 
     # sum over the output states
     erk_acts = jnp.sum(ss[:, output_states], axis=1)
-    # return erk_acts/jnp.max(erk_acts), erk_acts
-    return erk_acts/jnp.max(erk_acts), erk_acts
+    
+    if normalization_func is None:
+        return erk_acts/jnp.max(erk_acts), erk_acts
+    else:
+        return erk_acts/normalization_func(params, y0_EGF_inputs[0]), erk_acts
 
 def ERK_stim_response_scan(params, model_dfrx_ode, max_time, y0_EGF_inputs, output_states):
     """ function to compute the ERK response to EGF stimulation
