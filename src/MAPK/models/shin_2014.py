@@ -96,3 +96,8 @@ class shin_2014(eqx.Module):
 
         return param_dict, param_list
 
+    def get_total_ERK(self, params, y0):
+        "returns total ERK concentration "
+        pdict, _ = self.get_nominal_params()
+        ERK_tot_idx = list(pdict.keys()).index('ERK_tot')
+        return params[ERK_tot_idx]
