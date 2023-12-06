@@ -182,3 +182,9 @@ class huang_ferrell_1996(eqx.Module):
         ic_tup = tuple([ic_dict[key] for key in ic_dict.keys()])
 
         return ic_dict, ic_tup
+    
+    def get_total_ERK(self, params, y0):
+        "returns total ERK concentration "
+        pdict, _ = self.get_nominal_params()
+        ERK_tot_idx = list(pdict.keys()).index('MAPK_tot')
+        return params[ERK_tot_idx]
