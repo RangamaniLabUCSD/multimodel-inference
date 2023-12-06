@@ -59,7 +59,6 @@ def solve_ss(model_dfrx_ode, y0, params, t1):
         tuple(y0), 
         stepsize_controller=stepsize_controller,
         discrete_terminating_event=event,
-        args=params,
         max_steps=600000,
         throw=False,)
     
