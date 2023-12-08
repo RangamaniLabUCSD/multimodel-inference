@@ -739,9 +739,8 @@ def plot_trajectory_metric_hist(trajectory, metric_func, metric_name, width=1.0,
 
 def make_traj_plots(model_name, display_name, inputs, n_traj, trajs, times,  
     figure_savedir, HF_trajs, HF_times, show_ylabels=True, show_xlabels=True,
-    show_EGF_title=True, show_title=True, maxT = 120.0, additional_naming=''):
-    traj_plot_width = 1.75
-    traj_plot_height = 0.75
+    show_EGF_title=True, show_title=True, maxT = 120.0, additional_naming='', traj_plot_width = 1.75, traj_plot_height = 0.75):
+    
     cb = sns.color_palette("crest", n_colors=len(inputs))
 
     # spaghetti plots
