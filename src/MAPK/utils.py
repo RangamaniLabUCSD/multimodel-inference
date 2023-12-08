@@ -305,7 +305,7 @@ def ERK_stim_trajectory_set(params, model_dfrx_ode, max_time, y0_EGF_inputs, out
 
 def get_trajectories(model_name, idata, ntraj, max_time, 
                             time_conversion, ntimes, EGF_state_name, 
-                            EGF_conversion_factor, ERK_state_names, inputs, data_savedir,):
+                            EGF_conversion_factor, ERK_state_names, inputs, data_savedir,stim_type='False'):
     # TODO: add doc string
 
     # get the trajectories
@@ -315,7 +315,7 @@ def get_trajectories(model_name, idata, ntraj, max_time,
     for input in inputs:
         trajs[input], converted_times, param_samples = generate_trajectories(model_name, idata, ntraj, max_time,
                             time_conversion, ntimes, input, EGF_conversion_factor,
-                            EGF_state_name, ERK_state_names, param_samples)
+                            EGF_state_name, ERK_state_names, param_samples, stim_type=stim_type)
         # save raw traj
         np.save(os.path.join(data_savedir, model_name, 'EGF_{}.npy'.format(input)), trajs[input])
         global_max = np.max([global_max, np.max(trajs[input])])
