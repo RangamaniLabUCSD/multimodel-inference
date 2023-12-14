@@ -305,7 +305,7 @@ def ERK_stim_trajectory_set(params, model_dfrx_ode, max_time, y0_EGF_inputs, out
 
 def get_trajectories(model_name, idata, ntraj, max_time, 
                             time_conversion, ntimes, EGF_state_name, 
-                            EGF_conversion_factor, ERK_state_names, inputs, data_savedir,):
+                            EGF_conversion_factor, ERK_state_names, inputs, data_savedir,stim_type='False', additional_naming=''):
     # TODO: add doc string
 
     # get the trajectories
@@ -315,12 +315,12 @@ def get_trajectories(model_name, idata, ntraj, max_time,
     for input in inputs:
         trajs[input], converted_times, param_samples = generate_trajectories(model_name, idata, ntraj, max_time,
                             time_conversion, ntimes, input, EGF_conversion_factor,
-                            EGF_state_name, ERK_state_names, param_samples)
+                            EGF_state_name, ERK_state_names, param_samples, stim_type=stim_type)
         # save raw traj
-        np.save(os.path.join(data_savedir, model_name, 'EGF_{}.npy'.format(input)), trajs[input])
+        np.save(os.path.join(data_savedir, model_name, additional_naming+'EGF_{}.npy'.format(input)), trajs[input])
         global_max = np.max([global_max, np.max(trajs[input])])
 
-    np.save(os.path.join(data_savedir, model_name, 'PARAMS.npy'), param_samples)
+    np.save(os.path.join(data_savedir, model_name, additional_naming+'PARAMS.npy'), param_samples)
     
     # # normalize & save normalized trajs
     # trajs_norm = {}
@@ -712,7 +712,7 @@ def sustained_activity_metric(trajectory, index_of_interest, max_val=None):
 
     return (trajectory[index_of_interest] - trajectory[0])/(max_val - trajectory[0])
 
-def normalize_trajs(trajectory_dict, conv_factor, model_name, data_savedir):
+def normalize_trajs(trajectory_dict, conv_factor, model_name, data_savedir, additional_naming=''):
     traj_norm = {}
     for key in trajectory_dict.keys():
         if conv_factor.shape == ():
@@ -721,7 +721,7 @@ def normalize_trajs(trajectory_dict, conv_factor, model_name, data_savedir):
         else:
             traj_norm[key] = np.divide(trajectory_dict[key], conv_factor)
 
-        np.save(os.path.join(data_savedir, model_name, 'EGF_normalized_{}.npy'.format(key)), traj_norm[key])
+        np.save(os.path.join(data_savedir, model_name, additional_naming+'EGF_normalized_{}.npy'.format(key)), traj_norm[key])
     return traj_norm
 
 def plot_trajectory_metric_hist(trajectory, metric_func, metric_name, width=1.0, height=1.0, color='k', fig=None, ax=None):
@@ -739,9 +739,8 @@ def plot_trajectory_metric_hist(trajectory, metric_func, metric_name, width=1.0,
 
 def make_traj_plots(model_name, display_name, inputs, n_traj, trajs, times,  
     figure_savedir, HF_trajs, HF_times, show_ylabels=True, show_xlabels=True,
-    show_EGF_title=True, show_title=True, maxT = 120.0,):
-    traj_plot_width = 1.75
-    traj_plot_height = 0.75
+    show_EGF_title=True, show_title=True, maxT = 120.0, additional_naming='', traj_plot_width = 1.75, traj_plot_height = 0.75):
+
     cb = sns.color_palette("crest", n_colors=len(inputs))
 
     # spaghetti plots
@@ -769,7 +768,7 @@ def make_traj_plots(model_name, display_name, inputs, n_traj, trajs, times,
         else:
             s_ax.set_yticklabels([0.0, 0.5, 1.0], fontsize=8.0)
         
-        s_fig.savefig(os.path.join(figure_savedir, model_name+'_spaghetti_EGF_{}.pdf'.format(input)), transparent=True)
+        s_fig.savefig(os.path.join(figure_savedir, additional_naming+model_name+'_spaghetti_EGF_{}.pdf'.format(input)), transparent=True)
 
         # mean + 95% credible plot
         tr_dict =  {'run':{}, 'timepoint':{}, 'ERK_act':{}}
@@ -819,4 +818,4 @@ def make_traj_plots(model_name, display_name, inputs, n_traj, trajs, times,
         elif show_title:
             s_ax.set_title(display_name, fontsize=10.0)
         
-        fig.savefig(os.path.join(figure_savedir, model_name+'_credible_EGF_{}.pdf'.format(input)), transparent=True)
+        fig.savefig(os.path.join(figure_savedir, additional_naming+model_name+'_credible_EGF_{}.pdf'.format(input)), transparent=True)

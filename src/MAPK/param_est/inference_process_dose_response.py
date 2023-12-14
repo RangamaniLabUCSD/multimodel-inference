@@ -28,7 +28,7 @@ from kochanczyk_2017 import *
 from dessauges_2022 import *
 
 sys.path.append("../")
-from sampling_utils import *
+from utils import *
 
 # tell jax to use 64bit floats
 jax.config.update("jax_enable_x64", True)
