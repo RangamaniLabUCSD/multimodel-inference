@@ -91,7 +91,7 @@ def parse_identifiability_results(path_to_ID_txt):
 
     return identifiabile, non_identifiable
 
-def load_smc_samples_to_idata(samples_json):
+def load_smc_samples_to_idata(samples_json, sample_time=False):
     """ Load SMC samples from json file to arviz InferenceData object """
     with open(samples_json, 'r') as f:
         data = json.load(f)
@@ -113,7 +113,10 @@ def load_smc_samples_to_idata(samples_json):
 
     sample_stats = data['sample_stats']
 
-    return idata, sample_stats
+    if sample_time:
+        return idata, sample_stats, data['sample_stats_attrs']['_t_sampling']
+    else:
+        return idata, sample_stats
  
 def construct_y0_EGF_inputs(EGF_vals, y0, EGF_idx):
     n_repeats = len(EGF_vals)
