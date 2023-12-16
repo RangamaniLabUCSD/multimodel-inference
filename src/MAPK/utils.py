@@ -125,7 +125,7 @@ def construct_y0_EGF_inputs(EGF_vals, y0, EGF_idx):
 
     return y0_EGF_inputs
 
-def load_data(data_file):
+def load_data(data_file, data_std=False, time=False):
     """ Loads the data from the specified file.
     """
     # load the data
@@ -133,7 +133,18 @@ def load_data(data_file):
     inputs = np.array(data_df['stimulus'].to_numpy())
     data = np.vstack((data_df['response'].to_numpy()))
 
-    return inputs, data
+    if data_std and time:
+        data_std = np.vstack((data_df['response_std'].to_numpy()))
+        time = np.array(data_df['time'].to_numpy())
+        return inputs, data, data_std, time
+    if time and not data_std:
+        time = np.array(data_df['time'].to_numpy())
+        return inputs, data, time
+    if data_std and not time:
+        data_std = np.vstack((data_df['response_std'].to_numpy()))
+        return inputs, data, data_std
+    else:
+        return inputs, data
 
 def get_param_subsample(idata, n_traj, p_dict):
     dat = idata.posterior.to_dict() # convert to dictionary
@@ -305,6 +316,20 @@ def ERK_stim_trajectory_set(params, model_dfrx_ode, max_time, y0_EGF_inputs, out
     traj = jnp.squeeze(traj)
 
     return traj/jnp.max(jnp.max(traj)), traj
+
+def ERK_stim_trajectory(params, model_dfrx_ode, y0_EGF_input, output_states, times):
+    """ function to compute the ERK response to EGF stimulation
+        Args:
+            difrx_model (diffrax.Model): diffrax model object
+            EGF_inputs (np.ndarray): array of EGF inputs to simulate
+            output_states (list): list of output states to sum over
+            maxtime (int): max time to simulate the model
+        Returns:
+            normalized_ERK_response (np.ndarray): array of ERK trajectories to each EGF input
+    """
+    traj = jnp.squeeze(solve_traj(model_dfrx_ode, y0_EGF_input, params, times[-1], output_states, times))
+
+    return (traj - traj.min())/(traj.max() - traj.min()), traj
 
 def get_trajectories(model_name, idata, ntraj, max_time, 
                             time_conversion, ntimes, EGF_state_name, 
