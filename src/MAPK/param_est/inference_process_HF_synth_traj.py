@@ -101,12 +101,10 @@ def main():
     ERK_indices = [state_names.index(s) for s in args.ERK_states.split(',')]
 
     # construct the strings to make priors and constants
-    prior_param_dict = set_prior_params(args.model, list(p_dict.keys()), plist, free_param_idxs,
-                                        upper_mult=100, lower_mult=0.01,prior_family=args.prior_family,
-                                        savedir=args.savedir)
+    prior_param_dict = set_prior_params(args.model, list(p_dict.keys()), plist, free_param_idxs, upper_mult=100, lower_mult=0.01, prior_family=args.prior_family, savedir=args.savedir)
     
-    # make simulator lambda that solves at correct times with the time coversion factor taken into account
-    ERK_stim_traj = lambda p,model, max_time, y0, output_states: model.solve(p, model, y0, output_states, times=times*args.time_conversion_factor)
+    # make simulator lambda function that solves at correct times with the time conversion factor taken into account
+    ERK_stim_traj = lambda p,model, max_time, y0, output_states: ERK_stim_trajectory_set(p, model, max_time, y0_EGF_inputs, output_states, times*args.time_conversion_factor)
 
     # make initial conditions that reflect the inputs
     y0_EGF_ins = construct_y0_EGF_inputs(inputs_native_units, np.array([y0]), EGF_idx)
