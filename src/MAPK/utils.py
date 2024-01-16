@@ -146,6 +146,30 @@ def load_data(data_file, data_std=False, time=False):
     else:
         return inputs, data
 
+def load_data_json(data_file, data_std=False, time=False):
+    """ Loads the data from the specified json data file.
+    """
+    # load the data
+    with open(data_file, 'r') as file:
+        data_dict = json.load(file)
+    
+    inputs = np.array(data_dict['stimulus'])
+    data = np.array(data_dict['response'])
+
+    if data_std and time:
+        data_std = np.array(data_dict['response_std'])
+        time = np.array(data_dict['time'])
+        return inputs, data, data_std, time
+    if time and not data_std:
+        time = np.array(data_dict['time'])
+        return inputs, data, time
+    if data_std and not time:
+        data_std = np.array(data_dict['response_std'])
+        return inputs, data, data_std
+    else:
+        return inputs, data
+
+
 def get_param_subsample(idata, n_traj, p_dict):
     dat = idata.posterior.to_dict() # convert to dictionary
     free_params = list(dat['data_vars'].keys()) # figure out which params are free
