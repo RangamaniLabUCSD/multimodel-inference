@@ -119,18 +119,10 @@ def main():
                     simulator=ERK_stim_trajectory, data_sigma=data_std)
     
     # SMC sampling
-<<<<<<< HEAD:src/MAPK/param_est/inference_process_dose_response_NUTS.py
-    # pdb.set_trace()
-    # posterior_idata = smc_pymc(pymc_model, args.model, args.savedir, 
-    #             nsamples=args.nsamples, ncores=args.ncores, threshold=0.85, chains=4,)
-    posterior_idata = mcmc_numpyro_nuts(pymc_model, args.model, args.savedir, nsamples=100, 
-                      seed=np.random.default_rng(seed=123), nchains=2, chain_method='parallel')
-=======
     posterior_idata = smc_pymc(pymc_model, args.model, args.savedir, 
                 nsamples=args.nsamples, ncores=args.ncores, threshold=0.85, chains=4,)
     
     # Note: 20231215 - do not create prior or posterior predictive plots because the plotting code does not exist yet.
->>>>>>> 2283d81671bdca0885981b56ddb8bb003e1defc7:src/MAPK/param_est/inference_process_HF_synth_traj.py
     
     # trace plots and diagnostics
     plot_sampling_trace_diagnoses(posterior_idata, args.savedir, args.model)
