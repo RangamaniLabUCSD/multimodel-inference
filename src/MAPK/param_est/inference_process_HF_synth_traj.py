@@ -106,7 +106,7 @@ def main():
                                         savedir=args.savedir)
     
     # make simulator lambda that solves at correct times with the time coversion factor taken into account
-    ERK_stim_trajectory = lambda p,model, y0, output_states: model.solve(p, model, y0, output_states, times=times*args.time_conversion_factor)
+    ERK_stim_traj = lambda p,model, max_time, y0, output_states: model.solve(p, model, y0, output_states, times=times*args.time_conversion_factor)
 
     # make initial conditions that reflect the inputs
     y0_EGF_ins = construct_y0_EGF_inputs(inputs_native_units, np.array([y0]), EGF_idx)
@@ -116,7 +116,7 @@ def main():
     #   build a model that runs the simulator three times for each input level
     pymc_model = build_pymc_model(prior_param_dict, data, y0_EGF_ins, 
                     ERK_indices, np.max(times), diffrax.ODETerm(model), 
-                    simulator=ERK_stim_trajectory, data_sigma=data_std)
+                    simulator=ERK_stim_traj, data_sigma=data_std)
     
     # SMC sampling
     posterior_idata = smc_pymc(pymc_model, args.model, args.savedir, 
