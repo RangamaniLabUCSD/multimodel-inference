@@ -32,11 +32,10 @@ from sampling_utils import *
 
 # tell jax to use 64bit floats
 jax.config.update("jax_enable_x64", True)
-jax.config.update("jax_platform_name", "cpu")
 
 # print out device count
 # n_devices = jax.local_device_count() 
-# print(jax.devices())
+print(jax.devices())
 # print('Using {} jax devices'.format(n_devices))
 
 ##############################

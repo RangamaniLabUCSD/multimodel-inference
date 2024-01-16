@@ -33,11 +33,11 @@ import plotting_helper_funcs as plt_func
 
 # tell jax to use 64bit floats
 jax.config.update("jax_enable_x64", True)
-jax.config.update("jax_platform_name", "cpu")
+#jax.config.update("jax_platform_name", "cpu")
 
 sys.path.append('../')
 from utils import *
-from diffrax_ODE_PyTensor import *
+#from diffrax_ODE_PyTensor import *
 
 @jax.jit
 def solve_ss(model_dfrx_ode, y0, params, t1):

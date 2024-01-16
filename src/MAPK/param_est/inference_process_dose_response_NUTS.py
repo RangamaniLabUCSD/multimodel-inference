@@ -116,7 +116,7 @@ def main():
     # posterior_idata = smc_pymc(pymc_model, args.model, args.savedir, 
     #             nsamples=args.nsamples, ncores=args.ncores, threshold=0.85, chains=4,)
     posterior_idata = mcmc_numpyro_nuts(pymc_model, args.model, args.savedir, nsamples=100, 
-                      seed=np.random.default_rng(seed=123), nchains=4, chain_method='parallel')
+                      seed=np.random.default_rng(seed=123), nchains=2, chain_method='parallel')
     
     # trace plots and diagnostics
     plot_sampling_trace_diagnoses(posterior_idata, args.savedir, args.model)
