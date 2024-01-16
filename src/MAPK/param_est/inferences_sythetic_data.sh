@@ -22,7 +22,7 @@ python inference_process_dose_response.py -model orton_2009 -free_params km_Erk_
 
 
 # von Kriegsheim 2009
-# TODO: running?
+# complete
 python inference_process_dose_response.py -model vonKriegsheim_2009 -free_params  k42,k37,k4,k27,k30,k5,k28,k68,k29,k41,k25,k7,k13,k2,k40,k32,k10,k34 -data_file ../../../results/MAPK/HF_96_synthetic_data.csv -nsamples 100 -savedir ../../../results/MAPK/param_est/ -input_state EGF -EGF_conversion_factor 6.048 -ERK_states ppERK,ppERK_15,ppERKn -prior_family "[['LogNormal(mu=-2.3025850929940455)',['sigma']],['LogNormal(mu=0.0)',['sigma']],['LogNormal(mu=-4.615220521841593)',['sigma']],['LogNormal(mu=-2.3025850929940455)',['sigma']],['LogNormal(mu=-4.605170185988091)',['sigma']],['LogNormal(mu=-8.517193191416238)',['sigma']],['LogNormal(mu=-2.3025850929940455)',['sigma']],['LogNormal(mu=-7.600902459542082)',['sigma']],['LogNormal(mu=-1.760260802168684)',['sigma']],['LogNormal(mu=-4.605170185988091)',['sigma']],['LogNormal(mu=-3.218875824868201)',['sigma']],['LogNormal(mu=-2.6621212692138103)',['sigma']],['LogNormal(mu=-2.1386266695649785)',['sigma']],['LogNormal(mu=-4.731867839034049)',['sigma']],['LogNormal(mu=0.22298353851284428)',['sigma']],['LogNormal(mu=-0.4177907577988013)',['sigma']],['LogNormal(mu=-1.458479730351939)',['sigma']],['LogNormal(mu=-4.605170185988091)',['sigma']]]" -t1 5400 -ncores 1 --skip_prior_sample
 
 # Shin 2014
