@@ -10,8 +10,6 @@ import diffrax
 import sys
 import argparse
 
-from SALib.sample import morris as morris_sample
-
 sys.path.append("../models/")
 from huang_ferrell_1996 import *
 from bhalla_iyengar_1999 import *
@@ -30,7 +28,7 @@ from kochanczyk_2017 import *
 from dessauges_2022 import *
 
 sys.path.append("../")
-from sampling_utils import *
+from utils import *
 
 # tell jax to use 64bit floats
 jax.config.update("jax_enable_x64", True)
