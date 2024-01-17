@@ -336,10 +336,14 @@ def ERK_stim_trajectory_set(params, model_dfrx_ode, max_time, y0_EGF_inputs, out
             normalized_ERK_response (np.ndarray): array of ERK trajectories to each EGF input
     """
     # vmap solve over all initial conditions
-    traj = vsolve_traj(model_dfrx_ode, y0_EGF_inputs, params, max_time, output_states, times)
+    traj = vsolve_traj(model_dfrx_ode, y0_EGF_inputs, params, max_time, output_states, times, max_input_index=-1)
     traj = jnp.squeeze(traj)
 
-    return traj/jnp.max(jnp.max(traj)), traj
+    # normalize to the max val
+    # return traj/jnp.max(jnp.max(traj)), traj
+
+    # normalize to highest value of the biggest stimulus
+    return traj/traj[max_input_index,-1]
 
 def ERK_stim_trajectory(params, model_dfrx_ode, y0_EGF_input, output_states, times):
     """ function to compute the ERK response to EGF stimulation

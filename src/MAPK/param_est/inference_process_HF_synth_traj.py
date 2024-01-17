@@ -104,10 +104,11 @@ def main():
     prior_param_dict = set_prior_params(args.model, list(p_dict.keys()), plist, free_param_idxs, upper_mult=100, lower_mult=0.01, prior_family=args.prior_family, savedir=args.savedir)
     
     # make simulator lambda function that solves at correct times with the time conversion factor taken into account
-    ERK_stim_traj = lambda p,model, max_time, y0, output_states: ERK_stim_trajectory_set(p, model, max_time, y0, output_states, times*args.time_conversion_factor)
+    ERK_stim_traj = lambda p,model, max_time, y0, output_states: ERK_stim_trajectory_set(p, model, max_time, y0, output_states, times*args.time_conversion_factor, max_input_idx)
 
     # make initial conditions that reflect the inputs
     y0_EGF_ins = construct_y0_EGF_inputs(inputs_native_units, np.array([y0]), EGF_idx)
+    max_input_idx = np.argmax(inputs_native_units) # get index of max input
 
     # construct the pymc model
     # Note: We do not use the build_pymc_model function, because we need to 
