@@ -59,8 +59,8 @@ def parse_args():
     parser.add_argument("-prior_family", type=str, default="[['Gamma()',['alpha', 'beta']]]", help="Prior family to use. Defaults to uniform.")
     parser.add_argument("-ncores", type=int, default=1, help="Number of cores to use for multiprocessing. Defaults to None which will use all available cores.")
     parser.add_argument("--skip_prior_sample", action='store_false',default=True) 
+    parser.add_argument("--skip_sample", action='store_false',default=True)
 
-    
     args=parser.parse_args()
     return args
 
@@ -117,13 +117,18 @@ def main():
                     simulator=ERK_stim_traj, data_sigma=data_std)
     
     # SMC sampling
-    posterior_idata = smc_pymc(pymc_model, args.model, args.savedir, 
-                nsamples=args.nsamples, ncores=args.ncores, threshold=0.85, chains=4,)
-    
-    # Note: 20231215 - do not create prior or posterior predictive plots because the plotting code does not exist yet.
+    if args.skip_sample:
+        posterior_idata = smc_pymc(pymc_model, args.model, args.savedir, 
+                    nsamples=args.nsamples, ncores=args.ncores, threshold=0.85, chains=4,)
+    else:
+        posterior_idata, _ = load_smc_samples_to_idata(args.savedir + args.model + '_smc_samples.json')
     
     # trace plots and diagnostics
     plot_sampling_trace_diagnoses(posterior_idata, args.savedir, args.model)
+
+    # posterior predictive samples
+    create_posterior_predictive(pymc_model, posterior_idata, args.model, data, inputs, args.savedir, 
+            trajectory=True, times=times, data_std=data_std)
     
     print('Completed {}'.format(args.model))
 

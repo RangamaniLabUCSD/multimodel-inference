@@ -679,7 +679,7 @@ def create_prior_predictive(model, mapk_model_name, data, inputs, savedir,
     return fig, ax
 
 def create_posterior_predictive(model, posterior_idata, mapk_model_name, data, inputs, savedir, 
-            seed=np.random.default_rng(seed=123)):
+            seed=np.random.default_rng(seed=123), trajectory=False, times=None, data_std=None):
     """ Creates prior predictive samples plot of the stimulus response curve.
     """
 
@@ -690,11 +690,21 @@ def create_posterior_predictive(model, posterior_idata, mapk_model_name, data, i
 
     # extract llike values
     posterior_llike = np.squeeze(posterior_predictive.posterior_predictive['llike'].values)
-    nchains,nsamples,ninputs=posterior_llike.shape
-    posterior_llike = np.reshape(posterior_llike, (nchains*nsamples, ninputs))
 
     # generate the plot
-    fig, ax = plot_stimulus_response_curve(posterior_llike, data, inputs)
+    if not trajectory:
+        # reshape accordingly
+        nchains,nsamples,ninputs=posterior_llike.shape
+        posterior_llike = np.reshape(posterior_llike, (nchains*nsamples, ninputs))
+
+        fig, ax = plot_stimulus_response_curve(posterior_llike, data, inputs)
+    else:
+        # reshape accordingly
+        nchains,nsamples,ninputs,ntime=posterior_llike.shape
+        posterior_llike = np.reshape(posterior_llike, (nchains*nsamples, ninputs, ntime))
+        print(posterior_llike.shape)
+        fig, ax = plot_trajectory_responses(posterior_llike, data, inputs, times,
+                                            savedir+mapk_model_name+'_legend_posterior_predictive.pdf', data_std=data_std)
 
     # save the figure
     fig.savefig(savedir + mapk_model_name + '_posterior_predictive.pdf', 
@@ -708,9 +718,12 @@ def create_posterior_predictive(model, posterior_idata, mapk_model_name, data, i
 ###############################################################################
 #### Trajectory Plotting and analysis ####
 ###############################################################################
-def plot_trajectories(trajectories, times, n_traj, display_name, color='k', width=6.0, height=3.0,):
+def plot_trajectories(trajectories, times, n_traj, display_name, color='k', width=6.0, height=3.0,
+                        fig=None, ax=None):
     # plot this
-    fig, ax = get_sized_fig_ax(width, height)
+    if fig is None or ax is None:
+        fig, ax = get_sized_fig_ax(width, height)
+
     for i in range(n_traj):
         ax.plot(times, trajectories[i,:], color=color, linewidth=0.5, alpha=0.5)
 
@@ -871,3 +884,49 @@ def make_traj_plots(model_name, display_name, inputs, n_traj, trajs, times,
             s_ax.set_title(display_name, fontsize=10.0)
         
         fig.savefig(os.path.join(figure_savedir, additional_naming+model_name+'_credible_EGF_{}.pdf'.format(input)), transparent=True)
+
+def plot_trajectory_responses(samples, data, inputs, times, legend_filename, input_name='EGF', 
+    output_name='% maximal ERK activity', data_std=0.1, data_downsample=3, colors=['c', 'g', 'b'], width=3.0, height=3.0):
+
+    fig, ax = get_sized_fig_ax(width, height)
+
+    nsamples, ninputs,_ = samples.shape
+
+    for idx in range(ninputs):
+            sample = samples[:,idx,:]
+            tr_dict =  {'run':{}, 'timepoint':{}, 'ERK_act':{}}
+            names = ['run'+str(i) for i in range(nsamples)]
+            idxs = np.linspace(0, (nsamples*times.shape[0]-1), nsamples*times.shape[0])
+            cnt = 0
+            for i in range(nsamples):
+                    for j in range(times.shape[0]):
+                            tr_dict['run'][int(idxs[cnt])] = names[i]
+                            tr_dict['timepoint'][int(idxs[cnt])] = times[j]
+                            tr_dict['ERK_act'][int(idxs[cnt])] = sample[i,j]
+                            cnt += 1
+            tr_df = pd.DataFrame.from_dict(tr_dict)
+
+            sns.lineplot(data=tr_df,
+                    x='timepoint',
+                    y='ERK_act',
+                    color=colors[idx],
+                    legend=True,
+                    label='[' + input_name + '] = {:.3f} (nM)'.format(inputs[idx]),
+                    errorbar=('pi', 95), # percentile interval form 2.5th to 97.5th
+                    ax=ax)
+
+    # ax.set_ylim([0.0, 1.0])
+    ax.set_xlim([0.0, max(times)])
+
+    # plot data
+    for idx,dat in enumerate(data):
+            ax.errorbar(times[::data_downsample], np.squeeze(dat)[::data_downsample], yerr=data_std[idx][::data_downsample], fmt='o', linewidth=1.0, markersize=0.1, color='k')
+
+    ax.set_xlabel('time (min)')
+    ax.set_ylabel(output_name)
+
+    leg = ax.legend(loc='right', bbox_to_anchor=(2.5,0.5))
+    export_legend(leg, filename=legend_filename)
+    leg.remove()
+
+    return fig, ax
