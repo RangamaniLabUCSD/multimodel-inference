@@ -343,7 +343,7 @@ def ERK_stim_trajectory_set(params, model_dfrx_ode, max_time, y0_EGF_inputs, out
     # return traj/jnp.max(jnp.max(traj)), traj
 
     # normalize to highest value of the biggest stimulus
-    return traj/traj[max_input_index,-1]
+    return traj/traj[max_input_index,-1], traj
 
 def ERK_stim_trajectory(params, model_dfrx_ode, y0_EGF_input, output_states, times):
     """ function to compute the ERK response to EGF stimulation
