@@ -58,6 +58,7 @@ def parse_args():
     parser.add_argument("-time_conversion_factor", type=int, default=1, help="Conversion factor to convert from seconds by division. Default is 1. Mins would be 60")
     parser.add_argument("-prior_family", type=str, default="[['Gamma()',['alpha', 'beta']]]", help="Prior family to use. Defaults to uniform.")
     parser.add_argument("-ncores", type=int, default=1, help="Number of cores to use for multiprocessing. Defaults to None which will use all available cores.")
+    parser.add_argument("-nchains", type=int, default=4, help="Number of chains to run. Defaults to 4.")
     parser.add_argument("--skip_prior_sample", action='store_false',default=True) 
     parser.add_argument("--skip_sample", action='store_false',default=True)
 
@@ -122,7 +123,7 @@ def main():
     # SMC sampling
     if args.skip_sample:
         posterior_idata = smc_pymc(pymc_model, args.model, args.savedir, 
-                    nsamples=args.nsamples, ncores=args.ncores, threshold=0.85, chains=4,)
+                    nsamples=args.nsamples, ncores=args.ncores, threshold=0.85, chains=args.nchains,)
     else:
         posterior_idata, _ = load_smc_samples_to_idata(args.savedir + args.model + '_smc_samples.json')
     
