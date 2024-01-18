@@ -114,7 +114,7 @@ def main():
     # Note: We do not use the build_pymc_model function, because we need to 
     #   build a model that runs the simulator three times for each input level
     pymc_model = build_pymc_model(prior_param_dict, data, y0_EGF_ins, 
-                    ERK_indices, np.max(times), diffrax.ODETerm(model), 
+                    ERK_indices, np.max(times**args.time_conversion_factor), diffrax.ODETerm(model), 
                     simulator=ERK_stim_traj, data_sigma=data_std)
     
     # SMC sampling
