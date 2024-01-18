@@ -656,7 +656,7 @@ def plot_stimulus_response_curve(samples, data, inputs, input_name='EGF stimulus
     return fig, ax
 
 def create_prior_predictive(model, mapk_model_name, data, inputs, savedir, 
-                            nsamples=100, seed=np.random.default_rng(seed=123)):
+            seed=np.random.default_rng(seed=123), trajectory=False, times=None, data_std=None, nsamples=100):
     """ Creates prior predictive samples plot of the stimulus response curve.
     """
 
@@ -667,18 +667,19 @@ def create_prior_predictive(model, mapk_model_name, data, inputs, savedir,
     # extract llike values
     prior_llike = np.squeeze(prior_predictive.prior_predictive['llike'].values)
 
-    # generate the plot
-    fig, ax = plot_stimulus_response_curve(prior_llike, data, inputs)
+        # generate the plot
+    if not trajectory:
+        fig, ax = plot_stimulus_response_curve(prior_llike, data, inputs)
+    else:
+        fig, ax = plot_trajectory_responses(prior_llike, data, inputs, times,
+                                            savedir+mapk_model_name+'_legend_prior_predictive.pdf', data_std=data_std)
 
     # save the figure
     fig.savefig(savedir + mapk_model_name + '_prior_predictive.pdf', 
                 bbox_inches='tight', transparent=True)
 
     # save the samples
-    np.save(savedir + mapk_model_name + '_prior_predictive_samples.npy', prior_llike,)
-
-    # save the idata
-    az.to_json(prior_predictive, savedir + mapk_model_name + '_prior_predictive_idata.json')
+    np.save(savedir + mapk_model_name + '_prior_predictive_samples.npy', prior_llike)
 
     return fig, ax
 
@@ -687,7 +688,7 @@ def create_posterior_predictive(model, posterior_idata, mapk_model_name, data, i
     """ Creates prior predictive samples plot of the stimulus response curve.
     """
 
-    # sample from the prior predictive
+    # sample from the posterior predictive
     with model:
         posterior_predictive = pm.sample_posterior_predictive(posterior_idata, model=model, 
                                                               random_seed=seed)

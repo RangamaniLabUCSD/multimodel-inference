@@ -120,6 +120,10 @@ def main():
                     ERK_indices, np.max(times**args.time_conversion_factor), diffrax.ODETerm(model), 
                     simulator=ERK_stim_traj, data_sigma=data_std)
     
+    if args.skip_prior_sample:
+        create_prior_predictive(pymc_model, args.model, data, inputs, args.savedir, 
+            trajectory=True, times=times/data_time_to_mins, data_std=data_std, nsamples=200)
+
     # SMC sampling
     if args.skip_sample:
         posterior_idata = smc_pymc(pymc_model, args.model, args.savedir, 
@@ -130,6 +134,7 @@ def main():
     # trace plots and diagnostics
     plot_sampling_trace_diagnoses(posterior_idata, args.savedir, args.model)
 
+    print(times)
     # posterior predictive samples
     create_posterior_predictive(pymc_model, posterior_idata, args.model, data, inputs, args.savedir, 
             trajectory=True, times=times/data_time_to_mins, data_std=data_std)
