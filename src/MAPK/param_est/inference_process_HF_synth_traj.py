@@ -55,7 +55,7 @@ def parse_args():
     parser.add_argument("-input_state", type=str, default='EGF', help="Name of EGF input in the state vector. Defaults to EGF.")
     parser.add_argument("-EGF_conversion_factor", type=float, default=1.0, help="Conversion factor to convert EGF from nM to other units. Defaults to 1.")
     parser.add_argument("-ERK_states", type=str, default=None, help="Names of ERK species to use for inference. Defaults to None.")
-    parser.add_argument("-time_conversion_factor", type=int, default=1, help="Conversion factor to convert from minutes. Default is 1. Seconds would be 60")
+    parser.add_argument("-time_conversion_factor", type=int, default=1, help="Conversion factor to convert from seconds by division. Default is 1. Mins would be 60")
     parser.add_argument("-prior_family", type=str, default="[['Gamma()',['alpha', 'beta']]]", help="Prior family to use. Defaults to uniform.")
     parser.add_argument("-ncores", type=int, default=1, help="Number of cores to use for multiprocessing. Defaults to None which will use all available cores.")
     parser.add_argument("--skip_prior_sample", action='store_false',default=True) 
@@ -86,7 +86,9 @@ def main():
         os.makedirs(args.savedir)
 
     # load the data
+    # HF96 model is in seconds, so times is in seconds, so we set the data_time_to_mins to 60
     inputs, data, data_std, times = load_data_json(args.data_file, data_std=True, time=True)
+    data_time_to_mins = 60
 
     # convert EGF to required units
     inputs_native_units = inputs * args.EGF_conversion_factor
@@ -104,7 +106,7 @@ def main():
     prior_param_dict = set_prior_params(args.model, list(p_dict.keys()), plist, free_param_idxs, upper_mult=100, lower_mult=0.01, prior_family=args.prior_family, savedir=args.savedir)
     
     # make simulator lambda function that solves at correct times with the time conversion factor taken into account
-    ERK_stim_traj = lambda p,model, max_time, y0, output_states: ERK_stim_trajectory_set(p, model, max_time, y0, output_states, times*args.time_conversion_factor, max_input_idx)
+    ERK_stim_traj = lambda p,model, max_time, y0, output_states: ERK_stim_trajectory_set(p, model, max_time, y0, output_states, times/args.time_conversion_factor, max_input_idx)
 
     # make initial conditions that reflect the inputs
     y0_EGF_ins = construct_y0_EGF_inputs(inputs_native_units, np.array([y0]), EGF_idx)
@@ -129,7 +131,7 @@ def main():
 
     # posterior predictive samples
     create_posterior_predictive(pymc_model, posterior_idata, args.model, data, inputs, args.savedir, 
-            trajectory=True, times=times, data_std=data_std)
+            trajectory=True, times=times/data_time_to_mins, data_std=data_std)
     
     print('Completed {}'.format(args.model))
 
