@@ -260,27 +260,6 @@ vsolve_traj = jax.vmap(solve_traj, in_axes=(None, 0, None, None, None, None))
 
 # vmap traj solving over the parameters
 vsolve_params_traj = jax.vmap(solve_traj, in_axes=(None, None, 0, None, None, None))
-
-def plot_stimulus_response_curve_pretty(samples, data, inputs, box_color='k', data_color='r', input_name='EGF stimulus', 
-                                 output_name='% maximal ERK activity',
-                                 data_std=0.1, width=6.0, height=3.0, scatter_marker_size=50, data_marker_size=7):
-    dat = {}
-    for i,input in enumerate(inputs):
-        dat[input] = samples[:,i]
-
-    data_df = pd.DataFrame(dat)
-
-    fig, ax = get_sized_fig_ax(width, height)
-    sns.boxplot(data=data_df, color=box_color, ax=ax, whis=(2.5, 97.5), fill=True, 
-                native_scale=True, log_scale=(10, 0), fliersize=0, width=0.65)
-    ax.set_xlabel(input_name)
-    ax.set_ylabel(output_name)
-
-    errors = data_std*np.squeeze(np.ones_like(data))
-    ax.scatter(inputs, data, color=data_color, marker='x', s=scatter_marker_size, zorder=10, label='synthetic data')
-    ax.errorbar(inputs, np.squeeze(data), yerr=errors, color=data_color, fmt='x', markersize=data_marker_size, zorder=10)
-
-    return fig, ax
     
 def ERK_stim_response(params, model_dfrx_ode, max_time, y0_EGF_inputs, 
                       output_states, normalization_func=None):
@@ -634,24 +613,53 @@ def plot_sampling_trace(posterior_idata, savedir, mapk_model_name, sampling_type
 
 ###############################################################################
 #### Dose Response Plotting ####
-###############################################################################
-def plot_stimulus_response_curve(samples, data, inputs, input_name='EGF stimulus', 
-    output_name='% maximal ERK activity', data_std=0.1):
+# ###############################################################################
+def plot_stimulus_response_curve(samples, data, inputs, box_color='k', data_color='r', input_name='EGF stimulus', 
+                                 output_name='% maximal ERK activity',data_std=0.1,
+                                 yticklabels=True,xticklabels=True,ylabel=True, xlabel=True, title=None,
+                                 width=6.0, height=3.0, scatter_marker_size=50, data_marker_size=7):
     dat = {}
     for i,input in enumerate(inputs):
         dat[input] = samples[:,i]
 
     data_df = pd.DataFrame(dat)
 
-    fig, ax = get_sized_fig_ax(6.0, 4.0)
-    sns.boxplot(data=data_df, color='k', ax=ax, whis=(2.5, 97.5), fill=False, 
-                native_scale=True, log_scale=(10, 0), fliersize=0)
+    fig, ax = get_sized_fig_ax(width, height)
+    sns.boxplot(data=data_df, color=box_color, ax=ax, whis=(2.5, 97.5), fill=True, 
+                native_scale=True, log_scale=(10, 0), fliersize=0, width=0.65)
     ax.set_xlabel(input_name)
     ax.set_ylabel(output_name)
 
     errors = data_std*np.squeeze(np.ones_like(data))
-    ax.scatter(inputs, data, color='r', marker='x', s=50, zorder=10)
-    ax.errorbar(inputs, np.squeeze(data), yerr=errors, color='r', fmt='x', markersize=7, zorder=10)
+    ax.scatter(inputs, data, color=data_color, marker='x', s=scatter_marker_size, zorder=10, label='synthetic data')
+    ax.errorbar(inputs, np.squeeze(data), yerr=errors, color=data_color, fmt='x', markersize=data_marker_size, zorder=10)
+
+    # ticks, labels, and limits
+    ax.set_ylim([-0.25, 1.25])
+    ax.set_yticks([0, 0.5, 1.0])
+    if yticklabels:
+        ax.set_yticklabels(['0', '50', '100'])
+    else:
+        ax.set_yticklabels(['', '', ''])
+
+    ax.set_xticks([1e-3, 1e-2, 1e-1])
+    if xticklabels:
+        ax.set_xticklabels([1e-3, 1e-2, 1e-1])
+    else:
+        ax.set_xticklabels(['', '', ''])
+    
+    if xlabel:
+        ax.set_xlabel(input_name)
+    else:
+        ax.set_xlabel('')
+    
+    if ylabel:
+        ax.set_ylabel(output_name)
+    else:
+        ax.set_ylabel('')
+    
+    if title is not None:
+        ax.set_title(title)
 
     return fig, ax
 
@@ -935,3 +943,74 @@ def plot_trajectory_responses(samples, data, inputs, times, legend_filename, inp
     leg.remove()
 
     return fig, ax
+
+def pretty_plot_posterior_trajectories(post_preds, data, data_std, times, color, 
+                                       EGF_levels, savedir, model_name, data_time_to_mins=60, 
+                                       y_ticks=[[0.0, 5e-3], [0.0, 0.5], [0.0, 1.0]],
+                                       ylim=[[0.0, 5.5e-3], [0.0, 0.7], [0.0, 1.2]],
+                                       width=1.1, height=0.5):
+        # get dims
+        n_traj, n_stim, n_times = post_preds.shape
+
+        # loop over the stimuli and make a plot for each
+        for stim_idx in range(n_stim):
+                # mean + 95% credible plot
+                tr_dict =  {'run':{}, 'timepoint':{}, 'ERK_act':{}}
+                names = ['run'+str(i) for i in range(n_traj)]
+                idxs = np.linspace(0, (n_traj*times.shape[0]-1), n_traj*times.shape[0])
+                cnt = 0
+
+                for i in range(n_traj):
+                        for j in range(times.shape[0]):
+                                tr_dict['run'][int(idxs[cnt])] = names[i]
+                                tr_dict['timepoint'][int(idxs[cnt])] = times[j]/data_time_to_mins
+                                tr_dict['ERK_act'][int(idxs[cnt])] = post_preds[i,stim_idx,j]
+                                cnt += 1
+                tr_df = pd.DataFrame.from_dict(tr_dict)
+
+                # make new axes and plot
+                fig, ax = get_sized_fig_ax(width, height)
+                sns.lineplot(data=tr_df,
+                        x='timepoint',
+                        y='ERK_act',
+                        color=color,
+                        legend=False,
+                        alpha=1.0,
+                        errorbar=('pi', 95), # percentile interval form 2.5th to 97.5th
+                        ax=ax,
+                        err_kws={'alpha':0.75,'edgecolor':'k','linewidth':0.5})
+                
+                # set xlims
+                ax.set_xlim([0.0, max(times)/data_time_to_mins])
+
+                # set x_ticks and labels only on bottom row
+                if stim_idx+1 == n_stim:
+                        ax.set_xticks([0.0, 0.5*max(times)/data_time_to_mins, max(times)/data_time_to_mins])
+                        ax.set_xticklabels([0.0, 0.5*max(times)/data_time_to_mins, max(times)/data_time_to_mins])
+                        ax.set_xlabel('Time (min)')
+                else:
+                        ax.set_xticks([])
+                        ax.set_xlabel('')
+
+                # set y_ticks, labels and lims
+                ax.set_yticks(y_ticks[stim_idx])
+
+                if 100*y_ticks[stim_idx][1] > 1.0:
+                        ax.set_yticklabels([0, int(100*y_ticks[stim_idx][1])])
+                else:
+                        ax.set_yticklabels([0, 100*y_ticks[stim_idx][1]])
+                
+                ax.set_ylim(ylim[stim_idx])
+                # if (ax.get_ylim()[1]*0.75) < y_ticks[stim_idx][1]:
+                #         ax.set_ylim([0.0, y_ticks[stim_idx][1]*1.1])
+                # else:
+                #         ax.set_ylim([0.0, ax.get_ylim()[1]])
+
+                # plot the data on top, downsample by 10 for visibility
+                ax.errorbar(times[::10]/data_time_to_mins, data[stim_idx,::10], yerr=data_std[stim_idx,::10], color='black', linestyle='--', label='data')
+
+                # set y label to nothing
+                ax.set_ylabel('')
+
+                # save the figure
+                fig.savefig(savedir+model_name+'_post_pred_'+str(np.round(EGF_levels[stim_idx], 3))+'.pdf', bbox_inches='tight', transparent=True)
