@@ -284,26 +284,6 @@ def ERK_stim_response(params, model_dfrx_ode, max_time, y0_EGF_inputs,
     else:
         return erk_acts/normalization_func(params, y0_EGF_inputs[0]), erk_acts
 
-def ERK_stim_response_scan(params, model_dfrx_ode, max_time, y0_EGF_inputs, output_states):
-    """ function to compute the ERK response to EGF stimulation
-        Args:
-            difrx_model (diffrax.Model): diffrax model object
-            EGF_inputs (np.ndarray): array of EGF inputs to simulate
-            output_states (list): list of output states to sum over
-            maxtime (int): max time to simulate the model
-        Returns:
-            normalized_ERK_response (np.ndarray): array of ERK responses to each EGF input
-    """
-    # vmap solve over all initial conditions
-    solve = lambda carry, y0: (carry, solve_ss(model_dfrx_ode, y0, params, max_time))
-    _, ss = jax.lax.scan(solve, None, y0_EGF_inputs)
-    ss = jnp.squeeze(ss)
-
-    # sum over the output states
-    erk_acts = jnp.sum(ss[:, output_states], axis=1)
-    # return erk_acts/jnp.max(erk_acts), erk_acts
-    return erk_acts/jnp.max(erk_acts), erk_acts
-
 def ERK_stim_trajectory_set(params, model_dfrx_ode, max_time, y0_EGF_inputs, output_states, times, max_input_index=-1):
     """ function to compute the ERK response to EGF stimulation
         Args:
@@ -322,22 +302,8 @@ def ERK_stim_trajectory_set(params, model_dfrx_ode, max_time, y0_EGF_inputs, out
     # return traj/jnp.max(jnp.max(traj)), traj
 
     # normalize to highest value of the biggest stimulus
+    # TODO: why?
     return traj/traj[max_input_index,-1], traj
-
-def ERK_stim_trajectory(params, model_dfrx_ode, y0_EGF_input, output_states, times):
-    """ function to compute the ERK response to EGF stimulation
-        Args:
-            difrx_model (diffrax.Model): diffrax model object
-            EGF_inputs (np.ndarray): array of EGF inputs to simulate
-            output_states (list): list of output states to sum over
-            maxtime (int): max time to simulate the model
-        Returns:
-            normalized_ERK_response (np.ndarray): array of ERK trajectories to each EGF input
-    """
-    traj = jnp.squeeze(solve_traj(model_dfrx_ode, y0_EGF_input, params, times[-1], output_states, times))
-
-    return (traj - traj.min())/(traj.max() - traj.min()), traj
-
 
 def predict_dose_response(model, posterior_idata, inputs, input_state, 
                           ERK_states, max_time, EGF_conversion_factor=1, nsamples=None):
