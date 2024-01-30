@@ -338,67 +338,6 @@ def ERK_stim_trajectory(params, model_dfrx_ode, y0_EGF_input, output_states, tim
 
     return (traj - traj.min())/(traj.max() - traj.min()), traj
 
-def get_trajectories(model_name, idata, ntraj, max_time, 
-                            time_conversion, ntimes, EGF_state_name, 
-                            EGF_conversion_factor, ERK_state_names, inputs, data_savedir,stim_type='False', additional_naming=''):
-    # TODO: add doc string
-
-    # get the trajectories
-    trajs = {}
-    global_max = 0.0
-    param_samples = None
-    for input in inputs:
-        trajs[input], converted_times, param_samples = generate_trajectories(model_name, idata, ntraj, max_time,
-                            time_conversion, ntimes, input, EGF_conversion_factor,
-                            EGF_state_name, ERK_state_names, param_samples, stim_type=stim_type)
-        # save raw traj
-        np.save(os.path.join(data_savedir, model_name, additional_naming+'EGF_{}.npy'.format(input)), trajs[input])
-        global_max = np.max([global_max, np.max(trajs[input])])
-
-    np.save(os.path.join(data_savedir, model_name, additional_naming+'PARAMS.npy'), param_samples)
-    
-    # # normalize & save normalized trajs
-    # trajs_norm = {}
-    # for input in inputs:
-    #     trajs_norm[input] = np.apply_along_axis(normalize_traj, 1, trajs[input], global_max)
-    #     np.save(os.path.join(data_savedir, model_name, 'EGF_normalized_{}.npy'.format(input)), trajs[input])
-
-    return trajs, converted_times, param_samples
-
-def generate_trajectories(model_name, idata, n_traj, max_time, time_conversion_to_min, n_timpoints, EGF, EGF_conversion_factor, EGF_state_name, ERK_state_names, param_samples=None, stim_type='False'):
-    """ Plot trajectories for a given model """
-
-    model = eval(model_name + '(transient={})'.format(stim_type))
- 
-    # get parameter names and initial conditions
-    p_dict, _ = model.get_nominal_params()
-    y0_dict, _ = model.get_initial_conditions()
-
-    # convert EGF to required units
-    EGF = EGF * EGF_conversion_factor
-
-    # set EGF in the IC
-    y0_dict[EGF_state_name] = EGF
-    y0 = list(y0_dict.values())
-
-    # set up time points
-    times = np.linspace(0, max_time, n_timpoints)
-
-     # get parameter samples
-    if param_samples is None:
-        parameter_samples = get_param_subsample(idata, n_traj, p_dict)
-    else:
-        parameter_samples = param_samples
-
-    # get idxs of ERK states
-    ERK_idxs = []
-    for ERK_state in ERK_state_names:
-        ERK_idxs.append(list(y0_dict.keys()).index(ERK_state))
-    trajectories = np.array(vsolve_params_traj(diffrax.ODETerm(model), y0, parameter_samples, max_time, ERK_idxs, times))
-
-    converted_times = times*time_conversion_to_min
-
-    return trajectories, converted_times, parameter_samples
 
 def predict_dose_response(model, posterior_idata, inputs, input_state, 
                           ERK_states, max_time, EGF_conversion_factor=1, nsamples=None):
