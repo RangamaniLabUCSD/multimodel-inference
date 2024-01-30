@@ -18,6 +18,7 @@ from pytensor.link.jax.dispatch import jax_funcify
 import arviz as az
 import preliz as pz
 import diffrax
+from tqdm import tqdm
 
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -169,8 +170,7 @@ def load_data_json(data_file, data_std=False, time=False):
     else:
         return inputs, data
 
-
-def get_param_subsample(idata, n_traj, p_dict):
+def get_param_subsample(idata, n_traj, p_dict,rng=np.random.default_rng(seed=1234)):
     dat = idata.posterior.to_dict() # convert to dictionary
     free_params = list(dat['data_vars'].keys()) # figure out which params are free
     # get total number of MCMC samples
@@ -400,6 +400,45 @@ def generate_trajectories(model_name, idata, n_traj, max_time, time_conversion_t
 
     return trajectories, converted_times, parameter_samples
 
+def predict_dose_response(model, posterior_idata, inputs, input_state, 
+                          ERK_states, max_time, EGF_conversion_factor=1, nsamples=None):
+    """ function to predict dose response curves for a given model and many posterior samples"""
+    # try calling the model
+    try:
+        model = eval(model + '(transient=False)')
+    except:
+        print('Warning Model {} not found. Skipping this.'.format(model))
+
+    # get parameter names and initial conditions
+    p_dict, _ = model.get_nominal_params()
+    y0_dict, y0 = model.get_initial_conditions()
+
+    # convert EGF to required units
+    inputs_native_units = inputs * EGF_conversion_factor
+
+    # get the EGF index and ERK indices
+    state_names = list(y0_dict.keys())
+    EGF_idx = state_names.index(input_state)
+    ERK_indices = [state_names.index(s) for s in ERK_states.split(',')]
+
+    # make initial conditions that reflect the inputs
+    y0_EGF_ins = construct_y0_EGF_inputs(inputs_native_units, np.array([y0]), EGF_idx)
+
+    # solve the model nsamples times
+    if nsamples is None:
+        nsamples = posterior_idata.posterior.dims['draw']*posterior_idata.posterior.dims['chain']
+    elif nsamples > posterior_idata.posterior.dims['draw']*posterior_idata.posterior.dims['chain']:
+        print('Warning: nsamples > posterior samples. Using all posterior samples.')
+        nsamples = posterior_idata.posterior.dims['draw']*posterior_idata.posterior.dims['chain']
+
+    param_samples = get_param_subsample(posterior_idata, nsamples, p_dict)
+
+    dose_response = []
+    for param in tqdm(param_samples):
+        # print(param)
+        dose_response.append(ERK_stim_response(param, diffrax.ODETerm(model), max_time, y0_EGF_ins, ERK_indices)[0])
+
+    return np.array(dose_response)
 ###############################################################################
 #### PyMC Inference Utils ####
 ###############################################################################
@@ -948,6 +987,7 @@ def pretty_plot_posterior_trajectories(post_preds, data, data_std, times, color,
                                        EGF_levels, savedir, model_name, data_time_to_mins=60, 
                                        y_ticks=[[0.0, 5e-3], [0.0, 0.5], [0.0, 1.0]],
                                        ylim=[[0.0, 5.5e-3], [0.0, 0.7], [0.0, 1.2]],
+                                       xticklabels=None, data_downsample=5,
                                        width=1.1, height=0.5):
         # get dims
         n_traj, n_stim, n_times = post_preds.shape
@@ -986,7 +1026,10 @@ def pretty_plot_posterior_trajectories(post_preds, data, data_std, times, color,
                 # set x_ticks and labels only on bottom row
                 if stim_idx+1 == n_stim:
                         ax.set_xticks([0.0, 0.5*max(times)/data_time_to_mins, max(times)/data_time_to_mins])
-                        ax.set_xticklabels([0.0, 0.5*max(times)/data_time_to_mins, max(times)/data_time_to_mins])
+                        if xticklabels is None:
+                            ax.set_xticklabels([0, np.ceil(0.5*max(times)/data_time_to_mins), np.ceil(max(times)/data_time_to_mins)])
+                        else:
+                            ax.set_xticklabels(xticklabels)
                         ax.set_xlabel('Time (min)')
                 else:
                         ax.set_xticks([])
@@ -1007,7 +1050,12 @@ def pretty_plot_posterior_trajectories(post_preds, data, data_std, times, color,
                 #         ax.set_ylim([0.0, ax.get_ylim()[1]])
 
                 # plot the data on top, downsample by 10 for visibility
-                ax.errorbar(times[::10]/data_time_to_mins, data[stim_idx,::10], yerr=data_std[stim_idx,::10], color='black', linestyle='--', label='data')
+                ax.errorbar(np.hstack((times[::data_downsample],times[-1]))/data_time_to_mins, 
+                            np.hstack((data[stim_idx,::data_downsample], data[stim_idx,-1])), 
+                            yerr=np.hstack((data_std[stim_idx,::data_downsample], data_std[stim_idx,-1])), 
+                            color='black', linestyle='', label='data')
+                ax.plot(times/data_time_to_mins, data[stim_idx,:], color='black', 
+                        linestyle=':', label='data')
 
                 # set y label to nothing
                 ax.set_ylabel('')
