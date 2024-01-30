@@ -344,6 +344,10 @@ def predict_dose_response(model, posterior_idata, inputs, input_state,
         dose_response.append(ERK_stim_response(param, diffrax.ODETerm(model), max_time, y0_EGF_ins, ERK_indices)[0])
 
     return np.array(dose_response)
+
+def predict_traj_response(None):
+    # TODO: implement this
+    pass
 ###############################################################################
 #### PyMC Inference Utils ####
 ###############################################################################
@@ -413,46 +417,6 @@ def set_prior_params(model_name, param_names, nominal_params, free_param_idxs, p
                     tmp += (fixed_param + ', ')
             prior_param_dict[param] = tmp + ')'
             print(prior_param_dict[param])
-        else:
-            # set the prior parameters to the nominal value
-            prior_param_dict[param] = 'pm.ConstantData("' + param + '", ' + str(nominal_params[i]) + ')'
-
-    return prior_param_dict
-
-def set_priors(model_name, param_names, nominal_params, free_param_idxs, prior_family=[['Gamma()',['alpha', 'beta']]], upper_mult=1.9, lower_mult=0.1, prob_mass_bounds=0.95,          
-    saveplot=True, savedir=None):
-    """ Sets the prior parameters for the MAPK models.
-        Inputs:
-            - param_names (list): list of parameter names
-            - nominal_params (np.ndarray): array of nominal parameter values
-            - free_param_idxs (list): list of indices of the free parameters
-            - prior_family (str): prior family to use for the parameters. If a string will use that family for all free parameters, otherwise should be a list of strings of the same length as free_param_idxs. Each string should correspond to a pm.Distribution and pz.Distribution object, e.g., Gamma which is the default familly.
-            - upper_mult (float): multiplier for the upper bound of the prior
-            - lower_mult (float): multiplier for the lower bound of the prior
-        Returns:
-            - prior_param_dict (dict): dictionary of prior parameters for the model in syntax to use exec to set them in a pymc model object
-    """
-
-    if savedir is None:
-        savedir = os.getcwd() + '/'
-
-    # determine if a string or list of strings was passed for the prior family
-    prior_family = eval(prior_family)
-    if len(prior_family) == 1:
-        prior_family_list = prior_family*len(free_param_idxs)
-    else:
-        prior_family_list = prior_family
-    
-    # set the prior parameters
-    prior_param_dict = {}
-    for i, param in enumerate(param_names):
-        if i in free_param_idxs: # check if we are dealing with a free parameter
-            
-            prior = prior_family_list[free_param_idxs.index(i)]
-            
-            family, params = prior[0].split('(')
-            tmp = 'pm.' + family + "('" + param + "', " + params
-            prior_param_dict[param] = tmp
         else:
             # set the prior parameters to the nominal value
             prior_param_dict[param] = 'pm.ConstantData("' + param + '", ' + str(nominal_params[i]) + ')'
@@ -550,11 +514,6 @@ def plot_sampling_trace_diagnoses(posterior_idata, savedir, mapk_model_name, sam
     with open(savedir + mapk_model_name + '_' + sampling_type + '_diagnoses.json', 'w') as f:
         json.dump(diagnoses, f)
 
-def plot_sampling_trace(posterior_idata, savedir, mapk_model_name, sampling_type='MCMC_NUTS'):
-    # plot the traces with arviz
-    az.plot_trace(posterior_idata, compact=False)
-    plt.savefig(savedir + mapk_model_name + '_'+ sampling_type + '_traceplot.pdf',)
-
 ###############################################################################
 #### Dose Response Plotting ####
 # ###############################################################################
@@ -606,6 +565,132 @@ def plot_stimulus_response_curve(samples, data, inputs, box_color='k', data_colo
         ax.set_title(title)
 
     return fig, ax
+
+def plot_trajectory_responses_oneAxis(samples, data, inputs, times, legend_filename, input_name='EGF', 
+    output_name='% maximal ERK activity', data_std=0.1, data_downsample=3, colors=['c', 'g', 'b'], width=3.0, height=3.0):
+
+    fig, ax = get_sized_fig_ax(width, height)
+
+    nsamples, ninputs,_ = samples.shape
+
+    for idx in range(ninputs):
+            sample = samples[:,idx,:]
+            tr_dict =  {'run':{}, 'timepoint':{}, 'ERK_act':{}}
+            names = ['run'+str(i) for i in range(nsamples)]
+            idxs = np.linspace(0, (nsamples*times.shape[0]-1), nsamples*times.shape[0])
+            cnt = 0
+            for i in range(nsamples):
+                    for j in range(times.shape[0]):
+                            tr_dict['run'][int(idxs[cnt])] = names[i]
+                            tr_dict['timepoint'][int(idxs[cnt])] = times[j]
+                            tr_dict['ERK_act'][int(idxs[cnt])] = sample[i,j]
+                            cnt += 1
+            tr_df = pd.DataFrame.from_dict(tr_dict)
+
+            sns.lineplot(data=tr_df,
+                    x='timepoint',
+                    y='ERK_act',
+                    color=colors[idx],
+                    legend=True,
+                    label='[' + input_name + '] = {:.3f} (nM)'.format(inputs[idx]),
+                    errorbar=('pi', 95), # percentile interval form 2.5th to 97.5th
+                    ax=ax)
+
+    # ax.set_ylim([0.0, 1.0])
+    ax.set_xlim([0.0, max(times)])
+
+    # plot data
+    for idx,dat in enumerate(data):
+            ax.errorbar(times[::data_downsample], np.squeeze(dat)[::data_downsample], yerr=data_std[idx][::data_downsample], fmt='o', linewidth=1.0, markersize=0.1, color='k')
+
+    ax.set_xlabel('time (min)')
+    ax.set_ylabel(output_name)
+
+    leg = ax.legend(loc='right', bbox_to_anchor=(2.5,0.5))
+    export_legend(leg, filename=legend_filename)
+    leg.remove()
+
+    return fig, ax
+
+def pretty_plot_posterior_trajectories(post_preds, data, data_std, times, color, 
+                                       EGF_levels, savedir, model_name, data_time_to_mins=60, 
+                                       y_ticks=[[0.0, 1.0], [0.0, 1.0], [0.0, 1.0]],
+                                       ylim=[[0.0, 1.2], [0.0, 1.2], [0.0, 1.2]],
+                                       xticklabels=None, data_downsample=5,
+                                       width=1.1, height=0.5):
+        # get dims
+        n_traj, n_stim, n_times = post_preds.shape
+
+        # loop over the stimuli and make a plot for each
+        for stim_idx in range(n_stim):
+                # mean + 95% credible plot
+                tr_dict =  {'run':{}, 'timepoint':{}, 'ERK_act':{}}
+                names = ['run'+str(i) for i in range(n_traj)]
+                idxs = np.linspace(0, (n_traj*times.shape[0]-1), n_traj*times.shape[0])
+                cnt = 0
+                # TODO: add option for spaghetti plot
+                for i in range(n_traj):
+                        for j in range(times.shape[0]):
+                                tr_dict['run'][int(idxs[cnt])] = names[i]
+                                tr_dict['timepoint'][int(idxs[cnt])] = times[j]/data_time_to_mins
+                                tr_dict['ERK_act'][int(idxs[cnt])] = post_preds[i,stim_idx,j]
+                                cnt += 1
+                tr_df = pd.DataFrame.from_dict(tr_dict)
+
+                # make new axes and plot
+                fig, ax = get_sized_fig_ax(width, height)
+                sns.lineplot(data=tr_df,
+                        x='timepoint',
+                        y='ERK_act',
+                        color=color,
+                        legend=False,
+                        alpha=1.0,
+                        errorbar=('pi', 95), # percentile interval form 2.5th to 97.5th
+                        ax=ax,
+                        err_kws={'alpha':0.75,'edgecolor':'k','linewidth':0.5})
+                
+                # set xlims
+                ax.set_xlim([0.0, max(times)/data_time_to_mins])
+
+                # set x_ticks and labels only on bottom row
+                if stim_idx+1 == n_stim:
+                        ax.set_xticks([0.0, 0.5*max(times)/data_time_to_mins, max(times)/data_time_to_mins])
+                        if xticklabels is None:
+                            ax.set_xticklabels([0, np.ceil(0.5*max(times)/data_time_to_mins), np.ceil(max(times)/data_time_to_mins)])
+                        else:
+                            ax.set_xticklabels(xticklabels)
+                        ax.set_xlabel('Time (min)')
+                else:
+                        ax.set_xticks([])
+                        ax.set_xlabel('')
+
+                # set y_ticks, labels and lims
+                ax.set_yticks(y_ticks[stim_idx])
+
+                if 100*y_ticks[stim_idx][1] > 1.0:
+                        ax.set_yticklabels([0, int(100*y_ticks[stim_idx][1])])
+                else:
+                        ax.set_yticklabels([0, 100*y_ticks[stim_idx][1]])
+                
+                ax.set_ylim(ylim[stim_idx])
+                # if (ax.get_ylim()[1]*0.75) < y_ticks[stim_idx][1]:
+                #         ax.set_ylim([0.0, y_ticks[stim_idx][1]*1.1])
+                # else:
+                #         ax.set_ylim([0.0, ax.get_ylim()[1]])
+
+                # plot the data on top, downsample by 10 for visibility
+                ax.errorbar(np.hstack((times[::data_downsample],times[-1]))/data_time_to_mins, 
+                            np.hstack((data[stim_idx,::data_downsample], data[stim_idx,-1])), 
+                            yerr=np.hstack((data_std[stim_idx,::data_downsample], data_std[stim_idx,-1])), 
+                            color='black', linestyle='', label='data')
+                ax.plot(times/data_time_to_mins, data[stim_idx,:], color='black', 
+                        linestyle=':', label='data')
+
+                # set y label to nothing
+                ax.set_ylabel('')
+
+                # save the figure
+                fig.savefig(savedir+model_name+'_post_pred_'+str(np.round(EGF_levels[stim_idx], 3))+'.pdf', bbox_inches='tight', transparent=True)
 
 def create_prior_predictive(model, mapk_model_name, data, inputs, savedir, 
             seed=np.random.default_rng(seed=123), trajectory=False, times=None, data_std=None, nsamples=100):
@@ -673,26 +758,8 @@ def create_posterior_predictive(model, posterior_idata, mapk_model_name, data, i
     return fig, ax
 
 ###############################################################################
-#### Trajectory Plotting and analysis ####
+#### Trajectory analysis + QoI funcs ####
 ###############################################################################
-def plot_trajectories(trajectories, times, n_traj, display_name, color='k', width=6.0, height=3.0,
-                        fig=None, ax=None):
-    # plot this
-    if fig is None or ax is None:
-        fig, ax = get_sized_fig_ax(width, height)
-
-    for i in range(n_traj):
-        ax.plot(times, trajectories[i,:], color=color, linewidth=0.5, alpha=0.5)
-
-    ax.set_xlabel('Time (min)', fontsize=10.0)
-    ax.set_ylabel('ERK activity', fontsize=10.0)
-    ax.set_title(display_name, fontsize=10.0)
-    ticks = np.linspace(0, times[-1], 5)
-    ax.set_xticks(ticks)
-    ax.set_xticklabels(ticks, fontsize=8)
-
-    return fig, ax
-
 def time_to_max(trajectory, times):
     """ Get the time to max ERK activity and idx of max"""
     max_idx = np.argmax(trajectory)
@@ -733,237 +800,3 @@ def sustained_activity_metric(trajectory, index_of_interest, max_val=None):
         max_val = trajectory[max_idx]
 
     return (trajectory[index_of_interest] - trajectory[0])/(max_val - trajectory[0])
-
-def normalize_trajs(trajectory_dict, conv_factor, model_name, data_savedir, additional_naming=''):
-    traj_norm = {}
-    for key in trajectory_dict.keys():
-        if conv_factor.shape == ():
-            traj_norm[key] = trajectory_dict[key]/conv_factor
-            print(1)
-        else:
-            traj_norm[key] = np.divide(trajectory_dict[key], conv_factor)
-
-        np.save(os.path.join(data_savedir, model_name, additional_naming+'EGF_normalized_{}.npy'.format(key)), traj_norm[key])
-    return traj_norm
-
-def plot_trajectory_metric_hist(trajectory, metric_func, metric_name, width=1.0, height=1.0, color='k', fig=None, ax=None):
-    """ Plot histogram of a given metric for a given trajectory """
-    # apply metric function to each trajectory
-    metrics = np.apply_along_axis(metric_func, 1, trajectory)
-
-    if fig is None and ax is None:
-        fig, ax = get_sized_fig_ax(width, height)
-
-    sns.histplot(metrics, kde=True, ax=ax, color=color, stat='density')
-    ax.set_ylabel('density', fontsize=10.0)
-    ax.set_xlabel(metric_name, fontsize=10.0)
-    return fig, ax
-
-def make_traj_plots(model_name, display_name, inputs, n_traj, trajs, times,  
-    figure_savedir, HF_trajs, HF_times, show_ylabels=True, show_xlabels=True,
-    show_EGF_title=True, show_title=True, maxT = 120.0, additional_naming='', traj_plot_width = 1.75, traj_plot_height = 0.75):
-
-    cb = sns.color_palette("crest", n_colors=len(inputs))
-
-    # spaghetti plots
-    plot_objs = {}
-    for idx, input in enumerate(inputs):
-        traj = trajs[input]
-        s_fig, s_ax = plot_trajectories(traj, times, n_traj, display_name, color=cb[idx], width=traj_plot_width, height=traj_plot_height,)
-        s_ax.set_ylim([0.0, 1.0])
-        s_ax.set_xlim([0.0, maxT])
-
-        # format processing
-        if show_EGF_title & show_title:
-            s_ax.set_title(display_name + '\n EGF=' + str(np.round(input, decimals=3)),
-                fontsize=10.0)
-        elif show_title:
-            s_ax.set_title(display_name, fontsize=10.0)
-
-        if not show_xlabels:
-            s_ax.set_xticklabels('')
-            s_ax.set_xlabel('')
-
-        if not show_ylabels:
-            s_ax.set_yticklabels('')
-            s_ax.set_ylabel('')
-        else:
-            s_ax.set_yticklabels([0.0, 0.5, 1.0], fontsize=8.0)
-        
-        s_fig.savefig(os.path.join(figure_savedir, additional_naming+model_name+'_spaghetti_EGF_{}.pdf'.format(input)), transparent=True)
-
-        # mean + 95% credible plot
-        tr_dict =  {'run':{}, 'timepoint':{}, 'ERK_act':{}}
-        names = ['run'+str(i) for i in range(n_traj)]
-        idxs = np.linspace(0, (n_traj*times.shape[0]-1), n_traj*times.shape[0])
-        cnt = 0
-        for i in range(n_traj):
-            for j in range(times.shape[0]):
-                tr_dict['run'][int(idxs[cnt])] = names[i]
-                tr_dict['timepoint'][int(idxs[cnt])] = times[j]
-                tr_dict['ERK_act'][int(idxs[cnt])] = traj[i,j]
-                cnt += 1
-        tr_df = pd.DataFrame.from_dict(tr_dict)
-
-        fig, ax = get_sized_fig_ax(traj_plot_width, traj_plot_height)
-        sns.lineplot(data=tr_df,
-                x='timepoint',
-                y='ERK_act',
-                color=cb[idx],
-                legend=False,
-                errorbar=('pi', 95), # percentile interval form 2.5th to 97.5th
-                ax=ax)
-        ax.set_ylim([0.0, 1.0])
-        ax.set_xlim([0.0, maxT])
-
-        ax.plot(HF_times, np.squeeze(HF_trajs[idx]), 'k--', linewidth=2.0)
-
-        # format processing
-        if show_xlabels:
-            ax.set_xlabel('Time (min)', fontsize=10.0)
-            ticks = np.linspace(0, times[-1], 5)
-            ax.set_xticks(ticks)
-            ax.set_xticklabels(ticks, fontsize=8)
-        else:
-            ax.set_xticklabels('')
-            ax.set_xlabel('')
-
-        if show_ylabels:
-            ax.set_ylabel('ERK activity', fontsize=10.0)
-            ax.set_yticklabels([0.0, 0.5, 1.0], fontsize=8.0)
-        else:
-            ax.set_yticklabels('')
-
-        if show_EGF_title & show_title:
-            s_ax.set_title(display_name + '\n EGF=' + str(np.round(input, decimals=3)),
-                fontsize=10.0)
-        elif show_title:
-            s_ax.set_title(display_name, fontsize=10.0)
-        
-        fig.savefig(os.path.join(figure_savedir, additional_naming+model_name+'_credible_EGF_{}.pdf'.format(input)), transparent=True)
-
-def plot_trajectory_responses(samples, data, inputs, times, legend_filename, input_name='EGF', 
-    output_name='% maximal ERK activity', data_std=0.1, data_downsample=3, colors=['c', 'g', 'b'], width=3.0, height=3.0):
-
-    fig, ax = get_sized_fig_ax(width, height)
-
-    nsamples, ninputs,_ = samples.shape
-
-    for idx in range(ninputs):
-            sample = samples[:,idx,:]
-            tr_dict =  {'run':{}, 'timepoint':{}, 'ERK_act':{}}
-            names = ['run'+str(i) for i in range(nsamples)]
-            idxs = np.linspace(0, (nsamples*times.shape[0]-1), nsamples*times.shape[0])
-            cnt = 0
-            for i in range(nsamples):
-                    for j in range(times.shape[0]):
-                            tr_dict['run'][int(idxs[cnt])] = names[i]
-                            tr_dict['timepoint'][int(idxs[cnt])] = times[j]
-                            tr_dict['ERK_act'][int(idxs[cnt])] = sample[i,j]
-                            cnt += 1
-            tr_df = pd.DataFrame.from_dict(tr_dict)
-
-            sns.lineplot(data=tr_df,
-                    x='timepoint',
-                    y='ERK_act',
-                    color=colors[idx],
-                    legend=True,
-                    label='[' + input_name + '] = {:.3f} (nM)'.format(inputs[idx]),
-                    errorbar=('pi', 95), # percentile interval form 2.5th to 97.5th
-                    ax=ax)
-
-    # ax.set_ylim([0.0, 1.0])
-    ax.set_xlim([0.0, max(times)])
-
-    # plot data
-    for idx,dat in enumerate(data):
-            ax.errorbar(times[::data_downsample], np.squeeze(dat)[::data_downsample], yerr=data_std[idx][::data_downsample], fmt='o', linewidth=1.0, markersize=0.1, color='k')
-
-    ax.set_xlabel('time (min)')
-    ax.set_ylabel(output_name)
-
-    leg = ax.legend(loc='right', bbox_to_anchor=(2.5,0.5))
-    export_legend(leg, filename=legend_filename)
-    leg.remove()
-
-    return fig, ax
-
-def pretty_plot_posterior_trajectories(post_preds, data, data_std, times, color, 
-                                       EGF_levels, savedir, model_name, data_time_to_mins=60, 
-                                       y_ticks=[[0.0, 5e-3], [0.0, 0.5], [0.0, 1.0]],
-                                       ylim=[[0.0, 5.5e-3], [0.0, 0.7], [0.0, 1.2]],
-                                       xticklabels=None, data_downsample=5,
-                                       width=1.1, height=0.5):
-        # get dims
-        n_traj, n_stim, n_times = post_preds.shape
-
-        # loop over the stimuli and make a plot for each
-        for stim_idx in range(n_stim):
-                # mean + 95% credible plot
-                tr_dict =  {'run':{}, 'timepoint':{}, 'ERK_act':{}}
-                names = ['run'+str(i) for i in range(n_traj)]
-                idxs = np.linspace(0, (n_traj*times.shape[0]-1), n_traj*times.shape[0])
-                cnt = 0
-
-                for i in range(n_traj):
-                        for j in range(times.shape[0]):
-                                tr_dict['run'][int(idxs[cnt])] = names[i]
-                                tr_dict['timepoint'][int(idxs[cnt])] = times[j]/data_time_to_mins
-                                tr_dict['ERK_act'][int(idxs[cnt])] = post_preds[i,stim_idx,j]
-                                cnt += 1
-                tr_df = pd.DataFrame.from_dict(tr_dict)
-
-                # make new axes and plot
-                fig, ax = get_sized_fig_ax(width, height)
-                sns.lineplot(data=tr_df,
-                        x='timepoint',
-                        y='ERK_act',
-                        color=color,
-                        legend=False,
-                        alpha=1.0,
-                        errorbar=('pi', 95), # percentile interval form 2.5th to 97.5th
-                        ax=ax,
-                        err_kws={'alpha':0.75,'edgecolor':'k','linewidth':0.5})
-                
-                # set xlims
-                ax.set_xlim([0.0, max(times)/data_time_to_mins])
-
-                # set x_ticks and labels only on bottom row
-                if stim_idx+1 == n_stim:
-                        ax.set_xticks([0.0, 0.5*max(times)/data_time_to_mins, max(times)/data_time_to_mins])
-                        if xticklabels is None:
-                            ax.set_xticklabels([0, np.ceil(0.5*max(times)/data_time_to_mins), np.ceil(max(times)/data_time_to_mins)])
-                        else:
-                            ax.set_xticklabels(xticklabels)
-                        ax.set_xlabel('Time (min)')
-                else:
-                        ax.set_xticks([])
-                        ax.set_xlabel('')
-
-                # set y_ticks, labels and lims
-                ax.set_yticks(y_ticks[stim_idx])
-
-                if 100*y_ticks[stim_idx][1] > 1.0:
-                        ax.set_yticklabels([0, int(100*y_ticks[stim_idx][1])])
-                else:
-                        ax.set_yticklabels([0, 100*y_ticks[stim_idx][1]])
-                
-                ax.set_ylim(ylim[stim_idx])
-                # if (ax.get_ylim()[1]*0.75) < y_ticks[stim_idx][1]:
-                #         ax.set_ylim([0.0, y_ticks[stim_idx][1]*1.1])
-                # else:
-                #         ax.set_ylim([0.0, ax.get_ylim()[1]])
-
-                # plot the data on top, downsample by 10 for visibility
-                ax.errorbar(np.hstack((times[::data_downsample],times[-1]))/data_time_to_mins, 
-                            np.hstack((data[stim_idx,::data_downsample], data[stim_idx,-1])), 
-                            yerr=np.hstack((data_std[stim_idx,::data_downsample], data_std[stim_idx,-1])), 
-                            color='black', linestyle='', label='data')
-                ax.plot(times/data_time_to_mins, data[stim_idx,:], color='black', 
-                        linestyle=':', label='data')
-
-                # set y label to nothing
-                ax.set_ylabel('')
-
-                # save the figure
-                fig.savefig(savedir+model_name+'_post_pred_'+str(np.round(EGF_levels[stim_idx], 3))+'.pdf', bbox_inches='tight', transparent=True)
