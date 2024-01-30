@@ -345,9 +345,48 @@ def predict_dose_response(model, posterior_idata, inputs, input_state,
 
     return np.array(dose_response)
 
-def predict_traj_response(None):
-    # TODO: implement this
-    pass
+def predict_traj_response(model, posterior_idata, inputs, times, input_state, 
+                          ERK_states, time_conversion_factor=1, 
+                          EGF_conversion_factor=1, nsamples=None,
+                          max_input_index=-1):
+    """ function to predict trajectories for a given model and many posterior samples"""
+    # load model
+    try:
+        model = eval(model + '(transient=False)')
+    except:
+        print('Warning Model {} not found. Skipping this.'.format(model))
+
+
+    # get parameter names and initial conditions
+    p_dict, _ = model.get_nominal_params()
+    y0_dict, y0 = model.get_initial_conditions()
+
+    # convert EGF to required units
+    inputs_native_units = inputs * EGF_conversion_factor
+
+    # get the EGF index and ERK indices
+    state_names = list(y0_dict.keys())
+    EGF_idx = state_names.index(input_state)
+    ERK_indices = [state_names.index(s) for s in ERK_states.split(',')]
+
+    # make initial conditions that reflect the inputs
+    y0_EGF_ins = construct_y0_EGF_inputs(inputs_native_units, np.array([y0]), EGF_idx)
+
+    # solve the model nsamples times
+    if nsamples is None:
+        nsamples = posterior_idata.posterior.dims['draw']*posterior_idata.posterior.dims['chain']
+    elif nsamples > posterior_idata.posterior.dims['draw']*posterior_idata.posterior.dims['chain']:
+        print('Warning: nsamples > posterior samples. Using all posterior samples.')
+        nsamples = posterior_idata.posterior.dims['draw']*posterior_idata.posterior.dims['chain']
+
+    param_samples = get_param_subsample(posterior_idata, nsamples, p_dict)
+    trajectories = []
+    for param in tqdm(param_samples):
+        trajectories.append(ERK_stim_trajectory_set(param, diffrax.ODETerm(model), 
+                                                    max(times/time_conversion_factor), 
+                                                    y0_EGF_ins, ERK_indices, times/time_conversion_factor, max_input_index)[0])
+
+    return np.array(trajectories)
 ###############################################################################
 #### PyMC Inference Utils ####
 ###############################################################################
@@ -612,12 +651,12 @@ def plot_trajectory_responses_oneAxis(samples, data, inputs, times, legend_filen
 
     return fig, ax
 
-def pretty_plot_posterior_trajectories(post_preds, data, data_std, times, color, 
+def plot_posterior_trajectories(post_preds, data, data_std, times, color, 
                                        EGF_levels, savedir, model_name, data_time_to_mins=60, 
                                        y_ticks=[[0.0, 1.0], [0.0, 1.0], [0.0, 1.0]],
                                        ylim=[[0.0, 1.2], [0.0, 1.2], [0.0, 1.2]],
                                        xticklabels=None, data_downsample=5,
-                                       width=1.1, height=0.5):
+                                       width=1.1, height=0.5,fname='_post_pred_'):
         # get dims
         n_traj, n_stim, n_times = post_preds.shape
 
@@ -690,7 +729,7 @@ def pretty_plot_posterior_trajectories(post_preds, data, data_std, times, color,
                 ax.set_ylabel('')
 
                 # save the figure
-                fig.savefig(savedir+model_name+'_post_pred_'+str(np.round(EGF_levels[stim_idx], 3))+'.pdf', bbox_inches='tight', transparent=True)
+                fig.savefig(savedir+model_name+fname+str(np.round(EGF_levels[stim_idx], 3))+'.pdf', bbox_inches='tight', transparent=True)
 
 def create_prior_predictive(model, mapk_model_name, data, inputs, savedir, 
             seed=np.random.default_rng(seed=123), trajectory=False, times=None, data_std=None, nsamples=100):
@@ -708,7 +747,7 @@ def create_prior_predictive(model, mapk_model_name, data, inputs, savedir,
     if not trajectory:
         fig, ax = plot_stimulus_response_curve(prior_llike, data, inputs)
     else:
-        fig, ax = plot_trajectory_responses(prior_llike, data, inputs, times,
+        fig, ax = plot_trajectory_responses_oneAxis(prior_llike, data, inputs, times,
                                             savedir+mapk_model_name+'_legend_prior_predictive.pdf', data_std=data_std)
 
     # save the figure
@@ -745,7 +784,7 @@ def create_posterior_predictive(model, posterior_idata, mapk_model_name, data, i
         nchains,nsamples,ninputs,ntime=posterior_llike.shape
         posterior_llike = np.reshape(posterior_llike, (nchains*nsamples, ninputs, ntime))
         print(posterior_llike.shape)
-        fig, ax = plot_trajectory_responses(posterior_llike, data, inputs, times,
+        fig, ax = plot_trajectory_responses_oneAxis(posterior_llike, data, inputs, times,
                                             savedir+mapk_model_name+'_legend_posterior_predictive.pdf', data_std=data_std)
 
     # save the figure
