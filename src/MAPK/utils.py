@@ -19,6 +19,7 @@ import arviz as az
 import preliz as pz
 import diffrax
 from tqdm import tqdm
+from func_timeout import func_timeout, FunctionTimedOut
 
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -306,7 +307,7 @@ def ERK_stim_trajectory_set(params, model_dfrx_ode, max_time, y0_EGF_inputs, out
     return traj/traj[max_input_index,-1], traj
 
 def predict_dose_response(model, posterior_idata, inputs, input_state, 
-                          ERK_states, max_time, EGF_conversion_factor=1, nsamples=None):
+                          ERK_states, max_time, EGF_conversion_factor=1, nsamples=None, timeout=10):
     """ function to predict dose response curves for a given model and many posterior samples"""
     # try calling the model
     try:
@@ -338,10 +339,29 @@ def predict_dose_response(model, posterior_idata, inputs, input_state,
 
     param_samples = get_param_subsample(posterior_idata, nsamples, p_dict)
 
+    def dr_func(param):
+        return ERK_stim_response(param, diffrax.ODETerm(model), max_time, y0_EGF_ins, ERK_indices)[0]
+
     dose_response = []
+    skipped = False
     for param in tqdm(param_samples):
         # print(param)
-        dose_response.append(ERK_stim_response(param, diffrax.ODETerm(model), max_time, y0_EGF_ins, ERK_indices)[0])
+        try: # try to run the function
+            dr = func_timeout(timeout, dr_func, args=(param,))
+            dose_response.append(dr)
+            skipped = False
+        except FunctionTimedOut: # the function timed out
+            print('Function timed out. Skipping this sample. The params are {}'.format(param))
+            dr = np.nan*np.ones((len(inputs)))
+            dose_response.append(dr)
+                                      
+            if skipped: # if we skipped the last sample, increase the timeout time
+                timeout = timeout*1.5
+                print('Warning: two samples in a row have timed out. Increasing timeout time by 50 percent. Max waitime per iteration is now {} seconds.'.format(timeout))
+            else: # if we did not skip the last sample, try again with the same timeout time
+                skipped = True
+        else:
+            continue
 
     return np.array(dose_response)
 
