@@ -79,7 +79,7 @@ plotting_params = {
 }
 
 ################ Make pretty posterior predictive dose-response curves ################
-skip_idxs = [0,1,2,3,4,5,6,8,9]
+skip_idxs = []
 for idx,model in enumerate(model_names):
     if idx in skip_idxs:
         print('skipping', model)
@@ -101,7 +101,7 @@ plt.close('all')
 ## We also need to plot and analyze dose-responses that are not posterior predictive, 
 #           but simply use posterior samples to compute them
 
-skip_idxs = [0,1,2,3,4,5,6,8,9]
+skip_idxs = []
 for idx,model in enumerate(model_info.keys()):
     if idx in skip_idxs:
         print('skipping', model)
@@ -130,7 +130,7 @@ for idx,model in enumerate(model_info.keys()):
 ## Now we want to use posterior draws to simulate trajectory predictions
 n_traj = 400
 
-skip_idxs = [0,1,2,3,4,5,6,8,9]
+skip_idxs = []
 for idx,model in enumerate(model_names):
     if idx in skip_idxs:
         print('skipping', model)

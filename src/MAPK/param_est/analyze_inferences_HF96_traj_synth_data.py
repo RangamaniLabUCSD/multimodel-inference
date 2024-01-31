@@ -104,7 +104,7 @@ plotting_params = {
 
 n_traj = 400
 
-skip_idxs = [0,1,2,3,4,5,6,8,9]
+skip_idxs = []
 for idx,model in enumerate(model_names):
     if idx in skip_idxs:
         print('skipping', model)
@@ -139,7 +139,7 @@ plt.close('all')
 ################ Make posterior dose-response curves ################
 ## Now we want to use posterior draws to simulate dose-response curve predictions
 
-skip_idxs = [0,1,2,3,4,5,6,8,9]
+skip_idxs = []
 for idx,model in enumerate(model_names):
     if idx in skip_idxs:
         print('skipping', model)
