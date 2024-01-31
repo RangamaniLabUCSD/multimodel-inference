@@ -12,7 +12,6 @@ import sys
 from scipy.stats import mode
 from tqdm import tqdm
 
-from timeout import timeout
 
 sys.path.append("../models/")
 from huang_ferrell_1996 import *
