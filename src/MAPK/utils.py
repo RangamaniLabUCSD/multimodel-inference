@@ -574,7 +574,7 @@ def plot_sampling_trace_diagnoses(posterior_idata, savedir, mapk_model_name, sam
         json.dump(diagnoses, f)
 
 ###############################################################################
-#### Dose Response Plotting ####
+#### Plotting ####
 # ###############################################################################
 def plot_stimulus_response_curve(samples, data, inputs, box_color='k', data_color='r', input_name='EGF stimulus', 
                                  output_name='% maximal ERK activity',data_std=0.1,
@@ -676,7 +676,8 @@ def plot_posterior_trajectories(post_preds, data, data_std, times, color,
                                        y_ticks=[[0.0, 1.0], [0.0, 1.0], [0.0, 1.0]],
                                        ylim=[[0.0, 1.2], [0.0, 1.2], [0.0, 1.2]],
                                        xticklabels=None, data_downsample=5,
-                                       width=1.1, height=0.5,fname='_post_pred_'):
+                                       width=1.1, height=0.5,fname='_post_pred_',
+                                       labels=True):
         # get dims
         n_traj, n_stim, n_times = post_preds.shape
 
@@ -747,6 +748,13 @@ def plot_posterior_trajectories(post_preds, data, data_std, times, color,
 
                 # set y label to nothing
                 ax.set_ylabel('')
+
+                # turn off labels if specified
+                if not labels:
+                        ax.set_title('')
+                        ax.set_xlabel('')
+                        ax.set_yticklabels([])
+                        ax.set_xticklabels([])
 
                 # save the figure
                 fig.savefig(savedir+model_name+fname+str(np.round(EGF_levels[stim_idx], 3))+'.pdf', bbox_inches='tight', transparent=True)

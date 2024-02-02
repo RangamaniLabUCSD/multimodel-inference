@@ -91,7 +91,8 @@ for idx, model in enumerate(model_names):
                                         inputs, savedir+model+'/', model, data_time_to_mins=60,
                                         width=1.1, height=0.5, data_downsample=10,
                                         ylim=[[0.0, 1.2], [0.0, 1.2], [0.0, 1.2]],
-                                        y_ticks=[[0.0, 1.0], [0.0, 1.0], [0.0, 1.0]])
+                                        y_ticks=[[0.0, 1.0], [0.0, 1.0], [0.0, 1.0]],
+                                        labels=False)
         
 ################ Make pretty posterior trajectories ################
 ## We also need to plot and analyze trajectories that are not posterior predictive, 
@@ -99,7 +100,7 @@ for idx, model in enumerate(model_names):
 
 # parameters for plotting that control the x and y labels
 plotting_params = {
-    'kholodenko_2000':[False,False,True,True],'levchenko_2000':[False,False,False,False],'hatakeyama_2003':[False,False,False,False],'hornberg_2005':[False,False,False,False],'birtwistle_2007':[False,False,False,False],'orton_2009':[True,True,True,True],'vonKriegsheim_2009':[True,True,False,False],'shin_2014':[True,True,False,False],'ryu_2015':[True,True,False,False],'kochanczyk_2017':[True,True,False,False]
+    'kholodenko_2000':[False,False,False,False],'levchenko_2000':[False,False,False,False],'hatakeyama_2003':[False,False,False,False],'hornberg_2005':[False,False,False,False],'birtwistle_2007':[False,False,False,False],'orton_2009':[False,False,False,False],'vonKriegsheim_2009':[False,False,False,False],'shin_2014':[False,False,False,False],'ryu_2015':[False,False,False,False],'kochanczyk_2017':[False,False,False,False]
 }
 
 n_traj = 400
@@ -116,14 +117,15 @@ for idx,model in enumerate(model_names):
         plot_p = plotting_params[model]
 
      
-        # predict trajectories
-        traj = predict_traj_response(model, idata[model], inputs, times, 
-                                              this_model_info['input_state'], this_model_info['ERK_states'],
-                                              float(this_model_info['time_conversion']),
-                                              EGF_conversion_factor=float(this_model_info['EGF_conversion_factor']),
-                                              nsamples=400)
+        # # predict trajectories
+        # traj = predict_traj_response(model, idata[model], inputs, times, 
+        #                                       this_model_info['input_state'], this_model_info['ERK_states'],
+        #                                       float(this_model_info['time_conversion']),
+        #                                       EGF_conversion_factor=float(this_model_info['EGF_conversion_factor']),
+        #                                       nsamples=400)
         # save
-        np.save(savedir+model+'/traj_predict.npy', traj)
+        # np.save(savedir+model+'/traj_predict.npy', traj)
+        traj = np.load(savedir+model+'/traj_predict.npy')
 
         # plot
         plot_posterior_trajectories(traj, data, data_std, times, colors[idx], 
@@ -133,36 +135,36 @@ for idx,model in enumerate(model_names):
                                         data_downsample=10,
                                         ylim=[[0.0, 1.2], [0.0, 1.2], [0.0, 1.2]],
                                         y_ticks=[[0.0, 1.0], [0.0, 1.0], [0.0, 1.0]],
-                                        fname='_pred_traj_')
+                                        fname='_pred_traj_', labels=False)
 plt.close('all')
 
 ################ Make posterior dose-response curves ################
 ## Now we want to use posterior draws to simulate dose-response curve predictions
 
-skip_idxs = []
-for idx,model in enumerate(model_names):
-    if idx in skip_idxs:
-        print('skipping', model)
-        continue
-    else:
-        print('plotting', model)
-        this_model_info = model_info[model]
+# skip_idxs = []
+# for idx,model in enumerate(model_names):
+#     if idx in skip_idxs:
+#         print('skipping', model)
+#         continue
+#     else:
+#         print('plotting', model)
+#         this_model_info = model_info[model]
 
-        plot_p = plotting_params[model]
+#         plot_p = plotting_params[model]
 
-        # create dose-response curve prediction
-        dose_response = predict_dose_response(model, idata[model], inputs_dose_response,   
-                                this_model_info['input_state'], this_model_info['ERK_states'], 
-                                float(this_model_info['max_time']), EGF_conversion_factor=float(this_model_info['EGF_conversion_factor']), 
-                                nsamples=400, timeout=30)
-        print(dose_response.shape)
-        # save
-        np.save(savedir+model+'/dose_response_predict.npy', dose_response)
+#         # create dose-response curve prediction
+#         dose_response = predict_dose_response(model, idata[model], inputs_dose_response,   
+#                                 this_model_info['input_state'], this_model_info['ERK_states'], 
+#                                 float(this_model_info['max_time']), EGF_conversion_factor=float(this_model_info['EGF_conversion_factor']), 
+#                                 nsamples=400, timeout=30)
+#         print(dose_response.shape)
+#         # save
+#         np.save(savedir+model+'/dose_response_predict.npy', dose_response)
 
-        fig, ax = plot_stimulus_response_curve(dose_response, data_dose_response, inputs_dose_response, input_name='EGF stimulus (nM)', output_name='% maximal ERK \n activity', box_color='w', data_color='r',
-                                        data_std=0.1, width=1.1, height=1.1, data_marker_size=5.0, scatter_marker_size=0,
-                                        title=this_model_info['display_name'], xlabel=plot_p[0],xticklabels=plot_p[1],ylabel=plot_p[2], yticklabels=plot_p[3])
-        ax.set_title(ax.get_title(), fontsize=12.0)
-        fig.savefig(savedir+model+'/dose_response_predict.pdf', transparent=True)
+#         fig, ax = plot_stimulus_response_curve(dose_response, data_dose_response, inputs_dose_response, input_name='EGF stimulus (nM)', output_name='% maximal ERK \n activity', box_color='w', data_color='r',
+#                                         data_std=0.1, width=1.1, height=1.1, data_marker_size=5.0, scatter_marker_size=0,
+#                                         title=None, xlabel=plot_p[0],xticklabels=plot_p[1],ylabel=plot_p[2], yticklabels=plot_p[3])
+#         ax.set_title(ax.get_title(), fontsize=12.0)
+#         fig.savefig(savedir+model+'/'+model+'_dose_response_predict.pdf', transparent=True)
 
-plt.close('all')
+# plt.close('all')
