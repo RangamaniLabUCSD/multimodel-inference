@@ -809,9 +809,15 @@ def create_posterior_predictive(model, posterior_idata, mapk_model_name, data, i
         fig, ax = plot_stimulus_response_curve(posterior_llike, data, inputs)
     else:
         # reshape accordingly
-        nchains,nsamples,ninputs,ntime=posterior_llike.shape
-        posterior_llike = np.reshape(posterior_llike, (nchains*nsamples, ninputs, ntime))
-        print(posterior_llike.shape)
+        if len(posterior_llike.shape) > 3:
+            nchains,nsamples,ninputs,ntime=posterior_llike.shape
+            posterior_llike = np.reshape(posterior_llike, (nchains*nsamples, ninputs, ntime))
+            print(posterior_llike.shape)
+        else:
+            nchains,nsamples,ntime=posterior_llike.shape
+            posterior_llike = np.reshape(posterior_llike, (nchains*nsamples, ntime))
+            print(posterior_llike.shape)
+        
         fig, ax = plot_trajectory_responses_oneAxis(posterior_llike, data, inputs, times,
                                             savedir+mapk_model_name+'_legend_posterior_predictive.pdf', data_std=data_std)
 
