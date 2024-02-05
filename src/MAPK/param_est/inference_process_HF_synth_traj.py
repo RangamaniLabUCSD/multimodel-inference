@@ -107,22 +107,32 @@ def main():
     prior_param_dict = set_prior_params(args.model, list(p_dict.keys()), plist, free_param_idxs, upper_mult=100, lower_mult=0.01, prior_family=args.prior_family, savedir=args.savedir)
     
     # make simulator lambda function that solves at correct times with the time conversion factor taken into account
-    ERK_stim_traj = lambda p,model, max_time, y0, output_states: ERK_stim_trajectory_set(p, model, max_time, y0, output_states, times/args.time_conversion_factor, max_input_idx)
+    if len(inputs) > 1:
+        ERK_stim_traj = lambda p,model, max_time, y0, output_states: ERK_stim_trajectory_set(p, model, max_time, y0, output_states, times/args.time_conversion_factor, max_input_idx)
+    else:
+        print('Using single input traj func.')
+        def ERK_stim_traj(p, model, max_time, y0, output_states):
+            traj = solve_traj(model, y0, p, max_time, output_states, times/args.time_conversion_factor)
+            # return normalized trajectory
+            return [(traj - np.min(traj)) / (np.max(traj) - np.min(traj))], traj
 
+    
     # make initial conditions that reflect the inputs
     y0_EGF_ins = construct_y0_EGF_inputs(inputs_native_units, np.array([y0]), EGF_idx)
     max_input_idx = np.argmax(inputs_native_units) # get index of max input
 
+    print(len(times))
+
     # construct the pymc model
     # Note: We do not use the build_pymc_model function, because we need to 
     #   build a model that runs the simulator three times for each input level
-    pymc_model = build_pymc_model(prior_param_dict, data, y0_EGF_ins, 
+    pymc_model = build_pymc_model(prior_param_dict, [data], y0_EGF_ins[0], 
                     ERK_indices, np.max(times/args.time_conversion_factor), diffrax.ODETerm(model), 
-                    simulator=ERK_stim_traj, data_sigma=data_std)
+                    simulator=ERK_stim_traj, data_sigma=[data_std])
     
     if args.skip_prior_sample:
         create_prior_predictive(pymc_model, args.model, data, inputs, args.savedir, 
-            trajectory=True, times=times/data_time_to_mins, data_std=data_std, nsamples=200)
+            trajectory=True, times=times/data_time_to_mins, data_std=[data_std], nsamples=200)
 
     # SMC sampling
     if args.skip_sample:

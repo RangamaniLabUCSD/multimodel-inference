@@ -58,6 +58,7 @@ def parse_args():
     parser.add_argument("-prior_family", type=str, default="[['Gamma()',['alpha', 'beta']]]", help="Prior family to use. Defaults to uniform.")
     parser.add_argument("-ncores", type=int, default=1, help="Number of cores to use for multiprocessing. Defaults to None which will use all available cores.")
     parser.add_argument("--skip_prior_sample", action='store_false',default=True) 
+    parser.add_argument("--skip_sample", action='store_false',default=True)
 
     
     args=parser.parse_args()
@@ -113,14 +114,22 @@ def main():
                                 nsamples=500)
     
     # SMC sampling
-    # pdb.set_trace()
-    posterior_idata = smc_pymc(pymc_model, args.model, args.savedir, 
-                nsamples=args.nsamples, ncores=args.ncores, threshold=0.85, chains=4,)
+    if args.skip_sample:
+        posterior_idata = smc_pymc(pymc_model, args.model, args.savedir, 
+                    nsamples=args.nsamples, ncores=args.ncores, threshold=0.85, chains=4,)
     # posterior_idata = mcmc_numpyro_nuts(pymc_model, args.model, args.savedir, nsamples=10000, 
     #                   seed=np.random.default_rng(seed=123), nchains=4, chain_method='vectorized')
     
-    # trace plots and diagnostics
-    plot_sampling_trace_diagnoses(posterior_idata, args.savedir, args.model)
+        # trace plots and diagnostics
+        plot_sampling_trace_diagnoses(posterior_idata, args.savedir, args.model)
+    
+    # load posterior idata if it is not here from sampling
+    if 'posterior_idata' not in locals():
+        try:
+            posterior_idata, _ = load_smc_samples_to_idata(args.savedir + args.model + '_smc_samples.json', sample_time=False)
+        except:
+            print('Warning: posterior idata not found. Skipping this.')
+            return
     
     # posterior predictive sampling
     create_posterior_predictive(pymc_model, posterior_idata, args.model, data, 
