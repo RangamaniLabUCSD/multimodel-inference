@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Kholodenko 2000
-CUDA_VISIBLE_DEVICES= python inference_process_HF_synth_traj.py -model kholodenko_2000 -free_params K8,v10,v9,KI,MAPK_total,K10  -data_file ../../../results/MAPK/Keyes_et_al_2020-fig1-data1-v2-CYTO.json -nsamples 500 -ncores 4 -savedir ../../../results/MAPK/param_est/keyes_data-CYTO/kholodenko_2000/ -input_state Input -ERK_states MAPK_PP -prior_family "[['LogNormal(mu=2.70805020110221)',['sigma']],['LogNormal(mu=-0.6931471805599453)',['sigma']], ['LogNormal(mu=-0.6931471805599453)',['sigma']], ['LogNormal(mu=2.1972245773362196)',['sigma']], ['LogNormal(mu=5.703782474656201)',['sigma']], ['LogNormal(mu=2.70805020110221)',['sigma']]]" --skip_prior_sample
+#CUDA_VISIBLE_DEVICES= python inference_process_HF_synth_traj.py -model kholodenko_2000 -free_params K8,v10,v9,KI,MAPK_total,K10  -data_file ../../../results/MAPK/Keyes_et_al_2020-fig1-data1-v2-CYTO.json -nsamples 500 -ncores 4 -savedir ../../../results/MAPK/param_est/keyes_data-CYTO/kholodenko_2000/ -input_state Input -ERK_states MAPK_PP -prior_family "[['LogNormal(mu=2.70805020110221)',['sigma']],['LogNormal(mu=-0.6931471805599453)',['sigma']], ['LogNormal(mu=-0.6931471805599453)',['sigma']], ['LogNormal(mu=2.1972245773362196)',['sigma']], ['LogNormal(mu=5.703782474656201)',['sigma']], ['LogNormal(mu=2.70805020110221)',['sigma']]]" --skip_prior_sample
 
 # LEVCHENKO 2000
 # complete
