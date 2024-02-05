@@ -630,23 +630,31 @@ def plot_trajectory_responses_oneAxis(samples, data, inputs, times, legend_filen
 
     fig, ax = get_sized_fig_ax(width, height)
 
-    nsamples, ninputs,_ = samples.shape
+    if len(samples.shape) > 2:
+        nsamples, ninputs,_ = samples.shape
+    else:
+        nsamples, _ = samples.shape
+        ninputs = 1
 
     for idx in range(ninputs):
+        if ninputs > 1:
             sample = samples[:,idx,:]
-            tr_dict =  {'run':{}, 'timepoint':{}, 'ERK_act':{}}
-            names = ['run'+str(i) for i in range(nsamples)]
-            idxs = np.linspace(0, (nsamples*times.shape[0]-1), nsamples*times.shape[0])
-            cnt = 0
-            for i in range(nsamples):
-                    for j in range(times.shape[0]):
-                            tr_dict['run'][int(idxs[cnt])] = names[i]
-                            tr_dict['timepoint'][int(idxs[cnt])] = times[j]
-                            tr_dict['ERK_act'][int(idxs[cnt])] = sample[i,j]
-                            cnt += 1
-            tr_df = pd.DataFrame.from_dict(tr_dict)
+        else:
+            sample = samples
 
-            sns.lineplot(data=tr_df,
+        tr_dict =  {'run':{}, 'timepoint':{}, 'ERK_act':{}}
+        names = ['run'+str(i) for i in range(nsamples)]
+        idxs = np.linspace(0, (nsamples*times.shape[0]-1), nsamples*times.shape[0])
+        cnt = 0
+        for i in range(nsamples):
+            for j in range(times.shape[0]):
+                    tr_dict['run'][int(idxs[cnt])] = names[i]
+                    tr_dict['timepoint'][int(idxs[cnt])] = times[j]
+                    tr_dict['ERK_act'][int(idxs[cnt])] = sample[i,j]
+                    cnt += 1
+        tr_df = pd.DataFrame.from_dict(tr_dict)
+
+        sns.lineplot(data=tr_df,
                     x='timepoint',
                     y='ERK_act',
                     color=colors[idx],
@@ -659,8 +667,11 @@ def plot_trajectory_responses_oneAxis(samples, data, inputs, times, legend_filen
     ax.set_xlim([0.0, max(times)])
 
     # plot data
-    for idx,dat in enumerate(data):
+    if ninputs > 1:
+        for idx,dat in enumerate(data):
             ax.errorbar(times[::data_downsample], np.squeeze(dat)[::data_downsample], yerr=data_std[idx][::data_downsample], fmt='o', linewidth=1.0, markersize=0.1, color='k')
+    else:
+        ax.errorbar(times[::data_downsample], np.squeeze(data)[::data_downsample], yerr=data_std[::data_downsample], fmt='o', linewidth=1.0, markersize=0.1, color='k')
 
     ax.set_xlabel('time (min)')
     ax.set_ylabel(output_name)
