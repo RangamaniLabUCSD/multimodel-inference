@@ -12,7 +12,6 @@ import sys
 from scipy.stats import mode
 from tqdm import tqdm
 
-from timeout import timeout
 
 sys.path.append("../models/")
 from huang_ferrell_1996 import *
@@ -167,4 +166,4 @@ plt.close('all')
 #         ax.set_title(ax.get_title(), fontsize=12.0)
 #         fig.savefig(savedir+model+'/'+model+'_dose_response_predict.pdf', transparent=True)
 
-# plt.close('all')
+plt.close('all')
