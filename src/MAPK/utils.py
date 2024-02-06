@@ -688,7 +688,11 @@ def plot_posterior_trajectories(post_preds, data, data_std, times, color,
                                        width=1.1, height=0.5,fname='_post_pred_',
                                        labels=True):
         # get dims
-        n_traj, n_stim, n_times = post_preds.shape
+        if len(post_preds.shape) > 2:
+            n_traj, n_stim, n_times = post_preds.shape
+        else:
+            n_traj, n_times = post_preds.shape
+            n_stim = 1
 
         # loop over the stimuli and make a plot for each
         for stim_idx in range(n_stim):
@@ -702,7 +706,10 @@ def plot_posterior_trajectories(post_preds, data, data_std, times, color,
                         for j in range(times.shape[0]):
                                 tr_dict['run'][int(idxs[cnt])] = names[i]
                                 tr_dict['timepoint'][int(idxs[cnt])] = times[j]/data_time_to_mins
-                                tr_dict['ERK_act'][int(idxs[cnt])] = post_preds[i,stim_idx,j]
+                                if n_stim > 1:
+                                    tr_dict['ERK_act'][int(idxs[cnt])] = post_preds[i,stim_idx,j]
+                                else:
+                                    tr_dict['ERK_act'][int(idxs[cnt])] = post_preds[i,j]
                                 cnt += 1
                 tr_df = pd.DataFrame.from_dict(tr_dict)
 
@@ -748,12 +755,20 @@ def plot_posterior_trajectories(post_preds, data, data_std, times, color,
                 #         ax.set_ylim([0.0, ax.get_ylim()[1]])
 
                 # plot the data on top, downsample by 10 for visibility
-                ax.errorbar(np.hstack((times[::data_downsample],times[-1]))/data_time_to_mins, 
-                            np.hstack((data[stim_idx,::data_downsample], data[stim_idx,-1])), 
-                            yerr=np.hstack((data_std[stim_idx,::data_downsample], data_std[stim_idx,-1])), 
-                            color='black', linestyle='', label='data')
-                ax.plot(times/data_time_to_mins, data[stim_idx,:], color='black', 
-                        linestyle=':', label='data')
+                if n_stim > 1:
+                    ax.errorbar(np.hstack((times[::data_downsample],times[-1]))/data_time_to_mins, 
+                                np.hstack((data[stim_idx,::data_downsample], data[stim_idx,-1])), 
+                                yerr=np.hstack((data_std[stim_idx,::data_downsample], data_std[stim_idx,-1])), 
+                                color='black', linestyle='', label='data')
+                    ax.plot(times/data_time_to_mins, data[stim_idx,:], color='black', 
+                            linestyle=':', label='data')
+                else:
+                    ax.errorbar(np.hstack((times[::data_downsample],times[-1]))/data_time_to_mins, 
+                                np.hstack((data[::data_downsample], data[-1])), 
+                                yerr=np.hstack((data_std[::data_downsample], data_std[-1])), 
+                                color='black', linestyle='', label='data')
+                    ax.plot(times/data_time_to_mins, data[:], color='black', 
+                            linestyle=':', label='data')
 
                 # set y label to nothing
                 ax.set_ylabel('')
