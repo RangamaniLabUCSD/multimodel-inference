@@ -577,7 +577,7 @@ def plot_sampling_trace_diagnoses(posterior_idata, savedir, mapk_model_name, sam
 def plot_stimulus_response_curve(samples, data, inputs, box_color='k', data_color='r', input_name='EGF stimulus', 
                                  output_name='% maximal ERK activity',data_std=0.1,
                                  yticklabels=True,xticklabels=True,ylabel=True, xlabel=True, title=None,
-                                 width=6.0, height=3.0, scatter_marker_size=50, data_marker_size=7):
+                                 width=6.0, height=3.0, scatter_marker_size=50, data_marker_size=7,xticks=[1e-3, 1e-2, 1e-1]):
     dat = {}
     for i,input in enumerate(inputs):
         dat[input] = samples[:,i]
@@ -602,7 +602,7 @@ def plot_stimulus_response_curve(samples, data, inputs, box_color='k', data_colo
     else:
         ax.set_yticklabels(['', '', ''])
 
-    ax.set_xticks([1e-3, 1e-2, 1e-1])
+    ax.set_xticks(xticks)
     if xticklabels:
         ax.set_xticklabels([1e-3, 1e-2, 1e-1])
     else:
