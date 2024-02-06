@@ -59,8 +59,8 @@ def parse_args():
     parser.add_argument("-ncores", type=int, default=1, help="Number of cores to use for multiprocessing. Defaults to None which will use all available cores.")
     parser.add_argument("--skip_prior_sample", action='store_false',default=True) 
     parser.add_argument("--skip_sample", action='store_false',default=True)
-    parser.add_argument("-event_rtol", type=float,default=1e-10)
-    parser.add_argument("-event_atol", type=float,default=1e-10)
+    parser.add_argument("-event_rtol", type=float,default=1e-6)
+    parser.add_argument("-event_atol", type=float,default=1e-5)
 
     
     args=parser.parse_args()
@@ -106,6 +106,11 @@ def main():
     # make initial conditions that reflect the inputs
     y0_EGF_ins = construct_y0_EGF_inputs(inputs_native_units, np.array([y0]), EGF_idx)
 
+    # simulator function
+    simulator = lambda params, model_dfrx_ode, max_time, y0_EGF_inputs, \
+        output_states: ERK_stim_response(params, model_dfrx_ode, max_time, y0_EGF_inputs, 
+                      output_states, event_rtol=args.event_rtol, event_atol=args.event_atol)
+
     # construct the pymc model
     pymc_model = build_pymc_model(prior_param_dict, data, y0_EGF_ins, 
                     ERK_indices, args.t1, diffrax.ODETerm(model))
@@ -119,8 +124,6 @@ def main():
     if args.skip_sample:
         posterior_idata = smc_pymc(pymc_model, args.model, args.savedir, 
                     nsamples=args.nsamples, ncores=args.ncores, threshold=0.85, chains=4,)
-    # posterior_idata = mcmc_numpyro_nuts(pymc_model, args.model, args.savedir, nsamples=10000, 
-    #                   seed=np.random.default_rng(seed=123), nchains=4, chain_method='vectorized')
     
         # trace plots and diagnostics
         plot_sampling_trace_diagnoses(posterior_idata, args.savedir, args.model)
