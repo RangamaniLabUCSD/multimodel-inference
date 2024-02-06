@@ -1,0 +1,10 @@
+/.DS_Store
+results/
+figures/
+/synthetic_data_MMI.indd
+/synthetic_data_MMI 2.indd
+/src/MAPK/gsa/old_results/
+**/__pycache__
+**/.ipynb_checkpoints
+/src/MAPK/paper_data/
+**/.npy

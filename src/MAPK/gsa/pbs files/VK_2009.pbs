@@ -11,5 +11,5 @@
 #PBS -A rangamani-hopper-gpu
 module load cuda/11.2.0
 cd /home/nlinden/multimodel-inference/src/MAPK/gsa
-/home/nlinden/y/envs/pymc/bin/python gsa_sample.py vonKriegsheim_2009 --analyze_params k42,k37,k4,k27,k45,k69,k30,k43,k48,k5,k14,k28,k39,k46,k63,k68,k55,k29,k41,k25,k7,,k13,k2,k40,k6,k18,k56,k32,k38,k10,k34 --n_samples 256 --savedir /oasis/tscc/scratch/nlinden/MAPK_models/ --max_time 3600
+/home/nlinden/y/envs/pymc/bin/python gsa_sample.py vonKriegsheim_2009 -analyze_params k42,k37,k4,k27,k45,k30,k43,k48,k5,k14,k28,k39,k46,k63,k68,k55,k29,k41,k25,k7,k13,k2,k40,k6,k18,k56,k32,k38,k10,k34 -n_samples 256 -savedir /oasis/tscc/scratch/nlinden/MAPK_models/ -max_time 3600 -input_state EGF -input 0.06048
 exit 0

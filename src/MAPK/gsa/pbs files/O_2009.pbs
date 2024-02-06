@@ -11,5 +11,5 @@
 #PBS -A rangamani-hopper-gpu
 module load cuda/11.2.0
 cd /home/nlinden/multimodel-inference/src/MAPK/gsa
-/home/nlinden/y/envs/pymc/bin/python gsa_sample.py orton_2009 --analyze_params km_Erk_Activation,k1_C3G_Deactivation,km_Erk_Deactivation,k1_Akt_Deactivation,k1_P90Rsk_Deactivation,k1_PI3K_Deactivation,k1_Sos_Deactivation --n_samples 256 --savedir /oasis/tscc/scratch/nlinden/MAPK_models/ --max_time 720
+/home/nlinden/y/envs/pymc/bin/python gsa_sample.py orton_2009 -analyze_params km_Erk_Activation,k1_C3G_Deactivation,km_Erk_Deactivation,k1_Akt_Deactivation,k1_P90Rsk_Deactivation,k1_PI3K_Deactivation,k1_Sos_Deactivation -n_samples 256 -savedir /oasis/tscc/scratch/nlinden/MAPK_models/ -max_time 720 -input_state EGF -input 6022
 exit 0

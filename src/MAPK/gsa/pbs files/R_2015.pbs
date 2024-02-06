@@ -11,5 +11,5 @@
 #PBS -A rangamani-hopper-gpu
 module load cuda/11.2.0
 cd /home/nlinden/multimodel-inference/src/MAPK/gsa
-/home/nlinden/y/envs/pymc/bin/python gsa_sample.py ryu_2015 --analyze_params D2,T_dusp,K_dusp,K2,dusp_ind --n_samples 256 --savedir /oasis/tscc/scratch/nlinden/MAPK_models/ --max_time 540
+/home/nlinden/y/envs/pymc/bin/python gsa_sample.py ryu_2015 -analyze_params D2,T_dusp,K_dusp,K2,dusp_ind -n_samples 256 -savedir /oasis/tscc/scratch/nlinden/MAPK_models/ -max_time 540 -input_state EGF -input 0.06048
 exit 0

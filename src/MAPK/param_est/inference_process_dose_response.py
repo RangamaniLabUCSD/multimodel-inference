@@ -59,6 +59,8 @@ def parse_args():
     parser.add_argument("-ncores", type=int, default=1, help="Number of cores to use for multiprocessing. Defaults to None which will use all available cores.")
     parser.add_argument("--skip_prior_sample", action='store_false',default=True) 
     parser.add_argument("--skip_sample", action='store_false',default=True)
+    parser.add_argument("-event_rtol", type=float,default=1e-10)
+    parser.add_argument("-event_atol", type=float,default=1e-10)
 
     
     args=parser.parse_args()
