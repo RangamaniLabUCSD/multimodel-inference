@@ -200,13 +200,11 @@ def get_param_subsample(idata, n_traj, p_dict,rng=np.random.default_rng(seed=123
 #### Solving ODEs ####
 ###############################################################################
 @jax.jit
-def solve_ss(model_dfrx_ode, y0, params, t1):
+def solve_ss(model_dfrx_ode, y0, params, t1,event_rtol,event_atol):
     """ simulates a model over the specified time interval and returns the 
     calculated steady-state values.
     Returns an array of shape (n_species, 1) """
     dt0=1e-3
-    event_rtol=1e-6
-    event_atol=1e-5
     solver = diffrax.Kvaerno5()
     event=diffrax.SteadyStateEvent(event_rtol, event_atol)
     stepsize_controller=diffrax.PIDController(rtol=1e-6, atol=1e-6)
@@ -227,7 +225,7 @@ def solve_ss(model_dfrx_ode, y0, params, t1):
 
 # vmap steady state solving over different initial conds
 #   this means vmapping over the y0 and assuming everything else is fixed
-vsolve_ss = jax.vmap(solve_ss, in_axes=(None, 0, None, None))
+vsolve_ss = jax.vmap(solve_ss, in_axes=(None, 0, None, None, None, None))
 
 @jax.jit
 def solve_traj(model_dfrx_ode, y0, params, t1, ERK_indices, times):
@@ -263,7 +261,7 @@ vsolve_traj = jax.vmap(solve_traj, in_axes=(None, 0, None, None, None, None))
 vsolve_params_traj = jax.vmap(solve_traj, in_axes=(None, None, 0, None, None, None))
     
 def ERK_stim_response(params, model_dfrx_ode, max_time, y0_EGF_inputs, 
-                      output_states, normalization_func=None):
+                      output_states, normalization_func=None, event_rtol=1e-6, event_atol=1e-5):
     """ function to compute the ERK response to EGF stimulation
         Args:
             difrx_model (diffrax.Model): diffrax model object
@@ -274,7 +272,7 @@ def ERK_stim_response(params, model_dfrx_ode, max_time, y0_EGF_inputs,
             normalized_ERK_response (np.ndarray): array of ERK responses to each EGF input
     """
     # vmap solve over all initial conditions
-    ss = vsolve_ss(model_dfrx_ode, y0_EGF_inputs, params, max_time)
+    ss = vsolve_ss(model_dfrx_ode, y0_EGF_inputs, params, max_time, event_rtol, event_atol)
     ss = jnp.squeeze(ss)
 
     # sum over the output states
@@ -307,7 +305,7 @@ def ERK_stim_trajectory_set(params, model_dfrx_ode, max_time, y0_EGF_inputs, out
     return traj/traj[max_input_index,-1], traj
 
 def predict_dose_response(model, posterior_idata, inputs, input_state, 
-                          ERK_states, max_time, EGF_conversion_factor=1, nsamples=None, timeout=10):
+                          ERK_states, max_time, EGF_conversion_factor=1, nsamples=None, timeout=10., event_rtol=1e-6, event_atol=1e-5):
     """ function to predict dose response curves for a given model and many posterior samples"""
     # try calling the model
     try:
@@ -340,7 +338,7 @@ def predict_dose_response(model, posterior_idata, inputs, input_state,
     param_samples = get_param_subsample(posterior_idata, nsamples, p_dict)
 
     def dr_func(param):
-        return ERK_stim_response(param, diffrax.ODETerm(model), max_time, y0_EGF_ins, ERK_indices)[0]
+        return ERK_stim_response(param, diffrax.ODETerm(model), max_time, y0_EGF_ins, ERK_indices, event_rtol=event_rtol,event_atol=event_atol )[0]
 
     dose_response = []
     skipped = False
