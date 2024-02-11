@@ -104,7 +104,7 @@ def main():
     ERK_indices = [state_names.index(s) for s in args.ERK_states.split(',')]
 
     # construct the strings to make priors and constants
-    prior_param_dict = set_prior_params(args.model, list(p_dict.keys()), plist, free_param_idxs, upper_mult=100, lower_mult=0.01, prior_family=args.prior_family, savedir=args.savedir)
+    prior_param_dict = set_prior_params(args.model, list(p_dict.keys()), plist, free_param_idxs, upper_mult=100, lower_mult=0.01, prior_family=args.prior_family, savedir=args.savedir, saveplot=False)
     
     # make simulator lambda function that solves at correct times with the time conversion factor taken into account
     if len(inputs) > 1:
