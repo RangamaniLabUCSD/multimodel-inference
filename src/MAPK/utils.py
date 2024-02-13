@@ -399,10 +399,18 @@ def predict_traj_response(model, posterior_idata, inputs, times, input_state,
 
     param_samples = get_param_subsample(posterior_idata, nsamples, p_dict)
     trajectories = []
-    for param in tqdm(param_samples):
-        trajectories.append(ERK_stim_trajectory_set(param, diffrax.ODETerm(model), 
-                                                    max(times/time_conversion_factor), 
-                                                    y0_EGF_ins, ERK_indices, times/time_conversion_factor, max_input_index)[0])
+    if len(inputs) > 1:
+        for param in tqdm(param_samples):
+            trajectories.append(ERK_stim_trajectory_set(param, diffrax.ODETerm(model), 
+                                                        max(times/time_conversion_factor), 
+                                                        y0_EGF_ins, ERK_indices, times/time_conversion_factor, max_input_index)[0])
+    else:
+        def ERK_stim_traj(p, model, times, y0, output_states, time_conversion_factor=1):
+            traj = solve_traj(model, y0, p, jnp.max(times)/time_conversion_factor, output_states, times/time_conversion_factor)
+            # return normalized trajectory
+            return [(traj - np.min(traj)) / (np.max(traj) - np.min(traj))], traj
+        for param in tqdm(param_samples):
+            trajectories.append(ERK_stim_traj(param, diffrax.ODETerm(model), times, y0_EGF_ins[0], ERK_indices, time_conversion_factor)[0])
 
     return np.array(trajectories)
 ###############################################################################
@@ -686,7 +694,7 @@ def plot_posterior_trajectories(post_preds, data, data_std, times, color,
                                        ylim=[[0.0, 1.2], [0.0, 1.2], [0.0, 1.2]],
                                        xticklabels=None, data_downsample=5,
                                        width=1.1, height=0.5,fname='_post_pred_',
-                                       labels=True):
+                                       labels=True, xlim=None, train_times=None):
         # get dims
         if len(post_preds.shape) > 2:
             n_traj, n_stim, n_times = post_preds.shape
@@ -715,6 +723,7 @@ def plot_posterior_trajectories(post_preds, data, data_std, times, color,
 
                 # make new axes and plot
                 fig, ax = get_sized_fig_ax(width, height)
+
                 sns.lineplot(data=tr_df,
                         x='timepoint',
                         y='ERK_act',
@@ -726,7 +735,10 @@ def plot_posterior_trajectories(post_preds, data, data_std, times, color,
                         err_kws={'alpha':0.75,'edgecolor':'k','linewidth':0.5})
                 
                 # set xlims
-                ax.set_xlim([0.0, max(times)/data_time_to_mins])
+                if xlim is None:
+                    ax.set_xlim([0.0, max(times)/data_time_to_mins])
+                else:
+                    ax.set_xlim(xlim)
 
                 # set x_ticks and labels only on bottom row
                 if stim_idx+1 == n_stim:
@@ -779,6 +791,12 @@ def plot_posterior_trajectories(post_preds, data, data_std, times, color,
                         ax.set_xlabel('')
                         ax.set_yticklabels([])
                         ax.set_xticklabels([])
+
+                # plot a shaded region for the training area
+                ylm = ax.get_ylim()
+                if train_times is not None:
+                    fill = ax.fill_betweenx(ylm, train_times[0], np.max(train_times), color='gray', alpha=0.2)
+                    fill.set_zorder(0) # make sure that it is behind everything else
 
                 # save the figure
                 fig.savefig(savedir+model_name+fname+str(np.round(EGF_levels[stim_idx], 3))+'.pdf', bbox_inches='tight', transparent=True)
