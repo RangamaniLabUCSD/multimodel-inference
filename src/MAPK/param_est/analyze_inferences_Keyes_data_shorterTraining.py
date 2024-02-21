@@ -103,6 +103,8 @@ for train_len in [10, 20, 30]:
         'std_final_10_min':{}
     }}
 
+    SAM40_pred = {'CYTO':{},'PM':{}}
+
     for model in model_names:
         for compartment in ['CYTO','PM']:
             idata[compartment][model], _, sample_times[compartment][model] = load_smc_samples_to_idata(savedir+compartment+'/' + model + '/' + model +'_smc_samples.json', sample_time=True)
@@ -123,6 +125,8 @@ for train_len in [10, 20, 30]:
     # this one gets to 10 colors by removing the darkest green
     colors = ['#40004b','#762a83','#9970ab','#c2a5cf','#e7d4e8','#f7f7f7','#d9f0d3','#a6dba0','#5aae61','#1b7837','#363737','#929591','#d8dcd6']
     orange = '#de8f05'
+
+    colors = ['#762a83','#9970ab','#c2a5cf','#e7d4e8','#d9f0d3','#a6dba0','#5aae61','#1b7837','#363737','#929591','#d8dcd6']
 
     ################ Write sampling times to a file ################
     with open(savedir + 'SMC_runtimes.txt', 'w') as f:
@@ -169,22 +173,22 @@ for train_len in [10, 20, 30]:
 
                 plot_p = plotting_params
 
-                # predict trajectories
-                traj = predict_traj_response(model, idata[compartment][model], dat_full[compartment]['inputs'],
-                                            dat_full[compartment]['times'], this_model_info['input_state'], this_model_info['ERK_states'],
-                                            float(this_model_info['time_conversion']),
-                                                    EGF_conversion_factor=float(this_model_info['EGF_conversion_factor']),
-                                                    nsamples=n_traj)
-                traj = np.squeeze(traj)
-                # save
-                np.save(savedir+compartment+'/' + model + '/traj_predict.npy', traj)
-                # traj = np.load(savedir+compartment+'/' + model + '/traj_predict.npy')
+                # # predict trajectories
+                # traj = predict_traj_response(model, idata[compartment][model], dat_full[compartment]['inputs'],
+                #                             dat_full[compartment]['times'], this_model_info['input_state'], this_model_info['ERK_states'],
+                #                             float(this_model_info['time_conversion']),
+                #                                     EGF_conversion_factor=float(this_model_info['EGF_conversion_factor']),
+                #                                     nsamples=n_traj)
+                # traj = np.squeeze(traj)
+                # # save
+                # np.save(savedir+compartment+'/' + model + '/traj_predict.npy', traj)
+                traj = np.load(savedir+compartment+'/' + model + '/traj_predict.npy')
                
                 # plot
                 plot_posterior_trajectories(traj, dat_full[compartment]['data'], dat_full[compartment]['data_std'], 
                                             dat_full[compartment]['times'], colors[idx], 
                                             dat_full[compartment]['inputs'], savedir+compartment+'/' + model + '/', model, data_time_to_mins=60,
-                                            width=1.1, height=0.5, 
+                                            width=1.0, height=0.5, 
                                             data_downsample=10,
                                             ylim=[[0.0, 1.2], [0.0, 1.2], [0.0, 1.2]],
                                             y_ticks=[[0.0, 1.0], [0.0, 1.0], [0.0, 1.0]],
@@ -196,7 +200,7 @@ for train_len in [10, 20, 30]:
                 train_end_idx = np.where(dat_full[compartment]['times'] == dat[compartment]['times'][-1])[0][0]
                 dat[compartment]['times']
 
-                 # training error
+                # training error
                 train_preds = traj[:,:train_end_idx+1]
                 train_data = dat[compartment]['data']
                 RMSE_train = np.sqrt(np.nanmean((np.nanmean(train_preds,axis=0) - train_data)**2))
@@ -245,6 +249,12 @@ for train_len in [10, 20, 30]:
                 uncertainty[compartment]['cred95_final_10_min'][model] = cred95_final_10_min
                 uncertainty[compartment]['std_final_10_min'][model] = std_final_10_min
 
+                # compute SAM40 predictions
+                idx_40_min = -1
+                SAM40_preds = np.apply_along_axis(sustained_activity_metric, 1, traj, idx_40_min)
+                SAM40_pred[compartment][model] = list(SAM40_preds)
+
+
     # save errors
     with open(savedir + 'train_test_errors.json', 'w') as f:
         json.dump(errors, f)
@@ -252,3 +262,7 @@ for train_len in [10, 20, 30]:
     # save uncertainty
     with open(savedir + 'train_test_uncertainty.json', 'w') as f:
         json.dump(uncertainty, f)
+
+    # save SAM40 predictions
+    with open(savedir + 'SAM40_predictions.json', 'w') as f:
+        json.dump(SAM40_pred, f)

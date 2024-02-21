@@ -78,6 +78,8 @@ colors = ['#40004b','#762a83','#9970ab','#c2a5cf','#e7d4e8','#f7f7f7','#d9f0d3',
 colors = ['#40004b','#762a83','#9970ab','#c2a5cf','#e7d4e8','#f7f7f7','#d9f0d3','#a6dba0','#5aae61','#1b7837','#363737','#929591','#d8dcd6']
 orange = '#de8f05'
 
+colors = ['#762a83','#9970ab','#c2a5cf','#e7d4e8','#d9f0d3','#a6dba0','#5aae61','#1b7837','#363737','#929591','#d8dcd6']
+
 ################ Write sampling times to a file ################
 with open(savedir + 'SMC_runtimes.txt', 'w') as f:
     for model in model_names:
@@ -85,22 +87,22 @@ with open(savedir + 'SMC_runtimes.txt', 'w') as f:
             f.write(f'{model},{compartment}: {sample_times[compartment][model]/3600} hr\n')
 
 ################ Make pretty posterior predictive trajectories ################
-# skip_idxs = []
-# for idx, model in enumerate(model_names):
-#     if idx in skip_idxs:
-#         print('skipping', model)
-#         continue
-#     else:
-#         for compartment in ['CYTO','PM']:
-#             print('plotting', model, 'in compartment', compartment)
-#             plot_posterior_trajectories(posterior_samples[compartment][model], 
-#                                         dat[compartment]['data'], dat[compartment]['data_std'], 
-#                                         dat[compartment]['times'], colors[idx], 
-#                                             dat[compartment]['inputs'], savedir+compartment+'/' + model + '/', model, data_time_to_mins=60,
-#                                             width=1.1, height=0.5, data_downsample=10,
-#                                             ylim=[[0.0, 1.5]],
-#                                             y_ticks=[[0.0, 1.0]],
-#                                             labels=False)
+skip_idxs = []
+for idx, model in enumerate(model_names):
+    if idx in skip_idxs:
+        print('skipping', model)
+        continue
+    else:
+        for compartment in ['CYTO','PM']:
+            print('plotting', model, 'in compartment', compartment)
+            plot_posterior_trajectories(posterior_samples[compartment][model], 
+                                        dat[compartment]['data'], dat[compartment]['data_std'], 
+                                        dat[compartment]['times'], colors[idx], 
+                                            dat[compartment]['inputs'], savedir+compartment+'/' + model + '/', model, data_time_to_mins=60,
+                                            width=1.1, height=0.5, data_downsample=10,
+                                            ylim=[[0.0, 1.5]],
+                                            y_ticks=[[0.0, 1.0]],
+                                            labels=False)
 
 # ################ Make posterior dose-response curves ################
 # # Now we want to use posterior draws to simulate dose-response curve predictions
@@ -159,6 +161,8 @@ uncertainty = {'CYTO':{'cred95':{}, 'std':{}, 'cred95_postpred':{},
                 'PM':{ 'cred95':{}, 'std':{}, 'cred95_postpred':{}, 'std_postpred':{},
             'cred95_final_10_min':{}, 'std_final_10_min':{}}}
 
+SAM40_pred = {'CYTO':{},'PM':{}}
+
 skip_idxs = []
 for idx,model in enumerate(model_names):
     if idx in skip_idxs:
@@ -171,16 +175,16 @@ for idx,model in enumerate(model_names):
 
             plot_p = plotting_params
 
-            # predict trajectories
-            traj = predict_traj_response(model, idata[compartment][model], dat[compartment]['inputs'],
-                                        dat[compartment]['times'], this_model_info['input_state'], this_model_info['ERK_states'],
-                                        float(this_model_info['time_conversion']),
-                                                EGF_conversion_factor=float(this_model_info['EGF_conversion_factor']),
-                                                nsamples=n_traj)
-            traj = np.squeeze(traj)
-            # save
-            np.save(savedir+compartment+'/' + model + '/traj_predict.npy', traj)
-            # traj = np.load(savedir+compartment+'/' + model + '/traj_predict.npy')
+            # # predict trajectories
+            # traj = predict_traj_response(model, idata[compartment][model], dat[compartment]['inputs'],
+            #                             dat[compartment]['times'], this_model_info['input_state'], this_model_info['ERK_states'],
+            #                             float(this_model_info['time_conversion']),
+            #                                     EGF_conversion_factor=float(this_model_info['EGF_conversion_factor']),
+            #                                     nsamples=n_traj)
+            # traj = np.squeeze(traj)
+            # # save
+            # np.save(savedir+compartment+'/' + model + '/traj_predict.npy', traj)
+            traj = np.load(savedir+compartment+'/' + model + '/traj_predict.npy')
             
             # plot
             plot_posterior_trajectories(traj, dat[compartment]['data'], dat[compartment]['data_std'], 
@@ -240,6 +244,11 @@ for idx,model in enumerate(model_names):
             uncertainty[compartment]['cred95_final_10_min'][model] = cred95_final_10_min
             uncertainty[compartment]['std_final_10_min'][model] = std_final_10_min
 
+            # compute SAM40 predictions
+            idx_40_min = -1
+            SAM40_preds = np.apply_along_axis(sustained_activity_metric, 1, traj, idx_40_min)
+            SAM40_pred[compartment][model] = list(SAM40_preds)
+
 # save errors
 with open(savedir + 'train_test_errors.json', 'w') as f:
     json.dump(errors, f)
@@ -248,3 +257,6 @@ with open(savedir + 'train_test_errors.json', 'w') as f:
 with open(savedir + 'train_test_uncertainty.json', 'w') as f:
     json.dump(uncertainty, f)
 
+ # save SAM40 predictions
+with open(savedir + 'SAM40_predictions.json', 'w') as f:
+    json.dump(SAM40_pred, f)
