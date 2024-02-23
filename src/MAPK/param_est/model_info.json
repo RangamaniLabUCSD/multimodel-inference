@@ -79,7 +79,7 @@
         "EGF_conversion_factor":602214,
         "prior_family":"[['LogNormal(mu=13.822823751258499)',['sigma']],['LogNormal(mu=0.9162907318741551)',['sigma']],['LogNormal(mu=15.067270166119108)',['sigma']],['LogNormal(mu=-5.298317366548036)',['sigma']],['LogNormal(mu=0.9162907318741551)',['sigma']]]",
         "max_time":1440,
-        "time_conversion":1.0,
+        "time_conversion":60.0,
         "event_rtol":"1e-6",
         "event_atol":"1e-5"
     },
