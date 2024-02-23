@@ -190,7 +190,7 @@ for idx,model in enumerate(model_names):
             plot_posterior_trajectories(traj, dat[compartment]['data'], dat[compartment]['data_std'], 
                                         dat[compartment]['times'], colors[idx], 
                                         dat[compartment]['inputs'], savedir+compartment+'/' + model + '/', model, data_time_to_mins=60,
-                                        width=1.1, height=0.5, 
+                                        width=1., height=0.5, 
                                         data_downsample=10,
                                         ylim=[[0.0, 1.2], [0.0, 1.2], [0.0, 1.2]],
                                         y_ticks=[[0.0, 1.0], [0.0, 1.0], [0.0, 1.0]],
