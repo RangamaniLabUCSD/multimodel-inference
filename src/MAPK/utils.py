@@ -911,7 +911,6 @@ def full_half_max_width(trajectory, times):
 def sustained_activity_metric(trajectory, index_of_interest, max_val=None):
     # get max idx and max
     if max_val is None:
-        max_idx = np.argmax(trajectory)
-        max_val = trajectory[max_idx]
+        max_val = np.nanmax(trajectory)
 
     return (trajectory[index_of_interest] - trajectory[0])/(max_val - trajectory[0])
