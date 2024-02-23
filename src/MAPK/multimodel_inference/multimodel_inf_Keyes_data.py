@@ -37,11 +37,24 @@ data['PM']['inputs'], data['PM']['data'], data['PM']['data_std'], \
     data['PM']['times'] = load_data_json('../../../results/MAPK/Keyes_et_al_2020-fig1-data1-v2-PM.json', data_std=True, time=True)
 data_time_to_mins = 60
 
+# set up a color palette
+# this is the ColorBrewer purple-green with 11 colors + three greys https://colorbrewer2.org/#type=diverging&scheme=PRGn&n=11
+colors = ['#40004b','#762a83','#9970ab','#c2a5cf','#e7d4e8','#f7f7f7','#d9f0d3','#a6dba0','#5aae61','#1b7837','#00441b','#363737','#929591','#d8dcd6']
+# this one gets to 10 colors by removing the darkest purple
+colors = ['#40004b','#762a83','#9970ab','#c2a5cf','#e7d4e8','#f7f7f7','#d9f0d3','#a6dba0','#5aae61','#1b7837','#363737','#929591','#d8dcd6']
+
+# create dictionary to store MMI weights
+mmi_weights = {
+    '40min':{'CYTO':{},'PM':{}},
+    '30min':{'CYTO':{},'PM':{}},
+    '20min':{'CYTO':{},'PM':{}},
+    '10min':{'CYTO':{},'PM':{}}
+}
+
 ##############################################
 ##### Compute standard MMI + make plots ######
 ##############################################
 for time_len in ['', '_30min', '_20min', '_10min']:
-
     datadir = '../../../results/MAPK/param_est/Keyes_2020_data'+time_len+'/'
     savedir = '../../../results/MAPK/mmi/Keyes_2020_data'+time_len+'/'
 
@@ -90,13 +103,6 @@ for time_len in ['', '_30min', '_20min', '_10min']:
         idxs = rng.choice(np.arange(4000), size=2000, replace=False)
         posterior_samples['CYTO']['shin_2014'] = posterior_samples['CYTO']['shin_2014'][idxs]
         posterior_samples['PM']['shin_2014'] = posterior_samples['PM']['shin_2014'][idxs]
-
-    # set up a color palette
-    # this is the ColorBrewer purple-green with 11 colors + three greys https://colorbrewer2.org/#type=diverging&scheme=PRGn&n=11
-    colors = ['#40004b','#762a83','#9970ab','#c2a5cf','#e7d4e8','#f7f7f7','#d9f0d3','#a6dba0','#5aae61','#1b7837','#00441b','#363737','#929591','#d8dcd6']
-    # this one gets to 10 colors by removing the darkest purple
-    colors = ['#40004b','#762a83','#9970ab','#c2a5cf','#e7d4e8','#f7f7f7','#d9f0d3','#a6dba0','#5aae61','#1b7837','#363737','#929591','#d8dcd6']
-    orange = '#de8f05'
 
     ##### Run arviz model comparison ######
     compare_data_waic_pbma = {}
@@ -211,7 +217,7 @@ for time_len in ['', '_30min', '_20min', '_10min']:
         fig.savefig(savedir + compartment + '_traj_model_weights.pdf', transparent=True)
 
     ##### plot posterior predictive MMI traces ######
-    # first wiith posterior predictive samples
+    # first with posterior predictive samples
     loo_bma_combined = {}
     loo_stack_combined = {}
     loo_pbma_combined = {}
@@ -243,3 +249,57 @@ for time_len in ['', '_30min', '_20min', '_10min']:
                                                     y_ticks=[[0.0, 1.0]],
                                                     fname='_mmi_traj_', 
                                                     labels=False, xlim=[0,40])
+    
+    ##### Bar plots with errors and uncertainties ######
+    #TODO: add me
+    
+    ##### Store MMI weights ######
+    if time_len == '':
+        for compartment in ['CYTO','PM']:
+            mmi_weights['40min'][compartment] = {'m_probs':m_probs[compartment],
+                                                    'loo_pbma_combined':loo_pbma_combined[compartment],
+                                                    'loo_stack_combined':loo_stack_combined[compartment],
+                                                    'loo_bma_combined':loo_bma_combined[compartment]}
+
+##############################################
+######## Analyze train/test settings #########
+##############################################
+for time_len in ['', '_30min', '_20min', '_10min']:
+    datadir = '../../../results/MAPK/param_est/Keyes_2020_data'+time_len+'/'
+    savedir = '../../../results/MAPK/mmi/Keyes_2020_data'+time_len+'/'
+
+    # load in the training data
+    if time_len == '':
+        data_train = data
+    else:
+        data_train = {'CYTO':{'inputs':None, 'data':None,'data_std':None, 'times':None},
+            'PM':{'inputs':None, 'data':None,'data_std':None, 'times':None}}
+        for compartment in ['CYTO','PM']:
+            data_train[compartment]['inputs'], data_train[compartment]['data'], data_train[compartment]['data_std'], \
+                data_train[compartment]['times'] = load_data_json('../../../results/MAPK/Keyes_et_al_2020-fig1-data1-v2-'+compartment+'-'+time_len.strip('_')+'.json', data_std=True, time=True)
+        
+        data_time_to_mins = 60
+
+    idata = {'CYTO':{},'PM':{}}
+    posterior_samples = {'CYTO':{},'PM':{}}
+    sample_times = {'CYTO':{},'PM':{}}
+    ss = {'CYTO':{},'PM':{}}
+    log_marginal_likes = {'CYTO':[],'PM':[]}
+
+    for model in model_names:
+        for compartment in ['CYTO','PM']:
+            idata[compartment][model], ss[compartment][model], sample_times[compartment][model] = load_smc_samples_to_idata(datadir+compartment+'/' + model + '/' + model +'_smc_samples.json', sample_time=True)
+            posterior_samples[compartment][model] = np.load(datadir+compartment+'/' + model + '/' + model +'_posterior_predictive_samples.npy')
+            
+            if model == 'hornberg_2005':
+                # Hornberg 2005 only has 800 posterior predictive samples, so we duplicate and randomly permute them to get 2000
+                H_2005_posts = [posterior_samples[compartment]['hornberg_2005'] for _ in range(3)]
+                H_2005_post = np.vstack(H_2005_posts)
+                posterior_samples[compartment]['hornberg_2005'] = H_2005_post[rng.permutation(np.arange(2000))]
+
+            # now log marginal likelihoods
+            _log_marg_like = ss[compartment][model]['log_marginal_likelihood']
+            if len(_log_marg_like) == 1:
+                log_marginal_likes[compartment].append(np.mean([chain[-1] for chain in _log_marg_like[0]]))
+            else:
+                log_marginal_likes[compartment].append(np.mean([chain[-1] for chain in _log_marg_like]))
