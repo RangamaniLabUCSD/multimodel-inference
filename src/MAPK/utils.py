@@ -818,7 +818,7 @@ def create_prior_predictive(model, mapk_model_name, data, inputs, savedir,
         fig, ax = plot_stimulus_response_curve(prior_llike, data, inputs)
     else:
         fig, ax = plot_trajectory_responses_oneAxis(prior_llike, data, inputs, times,
-                                            savedir+mapk_model_name+'_legend_prior_predictive.pdf', data_std=data_std)
+                                            savedir+mapk_model_name+'_legend_prior_predictive.pdf', data_std=np.squeeze(data_std))
 
     # save the figure
     fig.savefig(savedir + mapk_model_name + '_prior_predictive.pdf', 
