@@ -154,7 +154,7 @@ class birtwistle_2007(eqx.Module):
         J101 = ((2.0 * kon78 * E44P * T) - (koff78 * E44T))
         
         # variable EGF rate
-        trans_fun = lambda J32: -J32
+        trans_fun = lambda J32: jnp.squeeze(-J32)
         sus_fun = lambda J32: 0.0
         d_E = cond(self.transient, trans_fun, sus_fun, J32)
         # if self.transient:

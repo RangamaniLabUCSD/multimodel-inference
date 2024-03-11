@@ -56,7 +56,7 @@ class ryu_2015(eqx.Module):
         v11 = DUSP*(jnp.log10(2)/T_dusp)
 
         # ODE rhs
-        trans_fun = lambda k1, R, EGF: -k1*R*EGF
+        trans_fun = lambda k1, R, EGF: jnp.squeeze(-k1*R*EGF)
         sus_fun = lambda k1, R, EGF: 0.0
         d_EGF = cond(self.transient, trans_fun, sus_fun, k1, R, EGF)
         # if self.transient:

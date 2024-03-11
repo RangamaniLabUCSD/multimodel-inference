@@ -1,5 +1,6 @@
 import equinox as eqx
 from jax.lax import cond
+import jax.numpy as jnp
 
 class huang_ferrell_1996(eqx.Module):
 
@@ -55,7 +56,7 @@ class huang_ferrell_1996(eqx.Module):
         J30 = d10*MAPK_PP_MAPKPase
 
         # ODE rhs
-        trans_fun = lambda J1, J2, J4: J2 + J4 - J1
+        trans_fun = lambda J1, J2, J4: jnp.squeeze(J2 + J4 - J1)
         sus_fun = lambda J1, J2, J4: 0.0
         d_E1 = cond(self.transient, trans_fun, sus_fun, J1, J2, J4)
 

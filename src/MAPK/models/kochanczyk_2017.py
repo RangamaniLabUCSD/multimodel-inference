@@ -98,7 +98,7 @@ class kochanczyk_2017(eqx.Module):
     
 
         # ODE rhs
-        trans_fun = lambda v1: -v1
+        trans_fun = lambda v1: jnp.squeeze(-v1)
         sus_fun = lambda v1: 0.0
         d_EGF = cond(self.transient, trans_fun, sus_fun, v1)
         # if self.transient:

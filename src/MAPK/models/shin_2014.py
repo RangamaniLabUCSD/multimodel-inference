@@ -28,7 +28,7 @@ class shin_2014(eqx.Module):
 
         # ode
         # EGF
-        trans_fun = lambda ka38, EGF, EGFR: -ka38*EGF*EGFR
+        trans_fun = lambda ka38, EGF, EGFR: jnp.squeeze(-ka38*EGF*EGFR)
         sus_fun = lambda ka38, EGF, EGFR: 0.0
         d_EGF_dt = cond(self.transient, trans_fun, sus_fun, ka38, EGF, EGFR)
         # if self.transient == True:
@@ -48,6 +48,7 @@ class shin_2014(eqx.Module):
         # pp_ERK
         d_pp_ERK_dt = kc46*pp_MEK*ERK - kc47*pp_ERK
 
+        # return jnp.array((d_EGF_dt, d_RE_dt, d_GS_dt, d_Ras_GTP_dt, d_act_Raf_dt, d_pp_MEK_dt, d_pp_ERK_dt))
         return (d_EGF_dt, d_RE_dt, d_GS_dt, d_Ras_GTP_dt, d_act_Raf_dt, d_pp_MEK_dt, d_pp_ERK_dt)
 
     

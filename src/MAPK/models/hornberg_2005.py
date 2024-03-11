@@ -29,7 +29,7 @@ class hornberg_2005(eqx.Module):
 
         v1 = constants[0]*c1*c2-constants[1]*c3
         # variable EGF rate
-        trans_fun = lambda v1: -v1
+        trans_fun = lambda v1: jnp.squeeze(-v1)
         sus_fun = lambda v1: 0.0
         dy_dt_0 = cond(self.transient, trans_fun, sus_fun, v1)
         # if self.transient:
@@ -288,22 +288,22 @@ class hornberg_2005(eqx.Module):
         dy_dt_86 = v62+v132+v133+v134+v135+v136+v137+v138+v139+v140+v141+v142
         
         return (dy_dt_0, dy_dt_1, dy_dt_2, dy_dt_3, dy_dt_4, dy_dt_5, dy_dt_6,
-                dy_dt_7, dy_dt_8, dy_dt_9, dy_dt_10, dy_dt_11, dy_dt_12,
-                dy_dt_13, dy_dt_14, dy_dt_15, dy_dt_16, dy_dt_17, dy_dt_18,
-                dy_dt_19, dy_dt_20, dy_dt_21, dy_dt_22, dy_dt_23, dy_dt_24,
-                dy_dt_25, dy_dt_26, dy_dt_27, dy_dt_28, dy_dt_29, dy_dt_30,
-                dy_dt_31, dy_dt_32, dy_dt_33, dy_dt_34, dy_dt_35, dy_dt_36,
-                dy_dt_37, dy_dt_38, dy_dt_39, dy_dt_40, dy_dt_41, dy_dt_42,
-                dy_dt_43, dy_dt_44, dy_dt_45, dy_dt_46, dy_dt_47, dy_dt_48,
-                dy_dt_49, dy_dt_50, dy_dt_51, dy_dt_52, dy_dt_53, dy_dt_54,
-                dy_dt_55, dy_dt_56, dy_dt_57, dy_dt_58, dy_dt_59, dy_dt_60,
-                dy_dt_61, dy_dt_62, dy_dt_63, dy_dt_64, dy_dt_65, dy_dt_66,
-                dy_dt_67, dy_dt_68, dy_dt_69, dy_dt_70, dy_dt_71, dy_dt_72,
-                dy_dt_73, dy_dt_74, dy_dt_75, dy_dt_76, dy_dt_77, dy_dt_78,
-                dy_dt_79, dy_dt_80, dy_dt_81, dy_dt_82, dy_dt_83, dy_dt_84,
-                dy_dt_85, dy_dt_86, dy_dt_87, dy_dt_88, dy_dt_89, dy_dt_90,
-                dy_dt_91, dy_dt_92, dy_dt_93, dy_dt_94, dy_dt_95, dy_dt_96,
-                dy_dt_97, dy_dt_98, dy_dt_99, dy_dt_100, dy_dt_101, dy_dt_102,)
+                    dy_dt_7, dy_dt_8, dy_dt_9, dy_dt_10, dy_dt_11, dy_dt_12,
+                    dy_dt_13, dy_dt_14, dy_dt_15, dy_dt_16, dy_dt_17, dy_dt_18,
+                    dy_dt_19, dy_dt_20, dy_dt_21, dy_dt_22, dy_dt_23, dy_dt_24,
+                    dy_dt_25, dy_dt_26, dy_dt_27, dy_dt_28, dy_dt_29, dy_dt_30,
+                    dy_dt_31, dy_dt_32, dy_dt_33, dy_dt_34, dy_dt_35, dy_dt_36,
+                    dy_dt_37, dy_dt_38, dy_dt_39, dy_dt_40, dy_dt_41, dy_dt_42,
+                    dy_dt_43, dy_dt_44, dy_dt_45, dy_dt_46, dy_dt_47, dy_dt_48,
+                    dy_dt_49, dy_dt_50, dy_dt_51, dy_dt_52, dy_dt_53, dy_dt_54,
+                    dy_dt_55, dy_dt_56, dy_dt_57, dy_dt_58, dy_dt_59, dy_dt_60,
+                    dy_dt_61, dy_dt_62, dy_dt_63, dy_dt_64, dy_dt_65, dy_dt_66,
+                    dy_dt_67, dy_dt_68, dy_dt_69, dy_dt_70, dy_dt_71, dy_dt_72,
+                    dy_dt_73, dy_dt_74, dy_dt_75, dy_dt_76, dy_dt_77, dy_dt_78,
+                    dy_dt_79, dy_dt_80, dy_dt_81, dy_dt_82, dy_dt_83, dy_dt_84,
+                    dy_dt_85, dy_dt_86, dy_dt_87, dy_dt_88, dy_dt_89, dy_dt_90,
+                    dy_dt_91, dy_dt_92, dy_dt_93, dy_dt_94, dy_dt_95, dy_dt_96,
+                    dy_dt_97, dy_dt_98, dy_dt_99, dy_dt_100, dy_dt_101, dy_dt_102,)
 
     
     def get_initial_conditions(self):
