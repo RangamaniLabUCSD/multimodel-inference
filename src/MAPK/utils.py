@@ -18,7 +18,10 @@ from pytensor.link.jax.dispatch import jax_funcify
 import arviz as az
 import preliz as pz
 import diffrax
+from optimistix import root_find, Newton, two_norm
+import lineax as lx
 from tqdm import tqdm
+import time
 from func_timeout import func_timeout, FunctionTimedOut
 
 import matplotlib.pyplot as plt
@@ -228,6 +231,22 @@ def solve_ss(model_dfrx_ode, y0, params, t1,event_rtol,event_atol):
 vsolve_ss = jax.vmap(solve_ss, in_axes=(None, 0, None, None, None, None))
 
 @jax.jit
+def solve_ss_newton(model_dfrx_ode, y0, params, t1, newton_atol, newton_rtol):
+    # run the model to crude tol (rtol=1e-5, atol=1e-4), SS to get a good initial guess
+    ss_ic = solve_ss(model_dfrx_ode, y0, params, t1, 1e-5, 1e-5)
+
+    # solve the model to steady state using a newton solver
+    solver = Newton(atol=newton_atol, rtol=newton_rtol,linear_solver=lx.AutoLinearSolver(well_posed=False), norm=two_norm)
+    RHS = lambda y, p: model_dfrx_ode.vf(None, tuple(y), params)
+    ss = root_find(RHS, solver, ss_ic, max_steps=100, throw=False,
+                   options={'lower':jnp.zeros_like(ss_ic)})
+    
+    return ss.value
+
+# vmap steady state solving over different initial conds
+vsolve_ss_newton = jax.vmap(solve_ss_newton, in_axes=(None, 0, None, None, None, None))
+
+@jax.jit
 def solve_traj(model_dfrx_ode, y0, params, t1, ERK_indices, times):
     """ simulates a model over the specified time interval and returns the 
     calculated values.
@@ -261,7 +280,7 @@ vsolve_traj = jax.vmap(solve_traj, in_axes=(None, 0, None, None, None, None))
 vsolve_params_traj = jax.vmap(solve_traj, in_axes=(None, None, 0, None, None, None))
     
 def ERK_stim_response(params, model_dfrx_ode, max_time, y0_EGF_inputs, 
-                      output_states, normalization_func=None, event_rtol=1e-6, event_atol=1e-5):
+                      output_states, normalization_func=None, event_rtol=1e-6, event_atol=1e-5, ode_or_newton='ode'):
     """ function to compute the ERK response to EGF stimulation
         Args:
             difrx_model (diffrax.Model): diffrax model object
@@ -272,7 +291,10 @@ def ERK_stim_response(params, model_dfrx_ode, max_time, y0_EGF_inputs,
             normalized_ERK_response (np.ndarray): array of ERK responses to each EGF input
     """
     # vmap solve over all initial conditions
-    ss = vsolve_ss(model_dfrx_ode, y0_EGF_inputs, params, max_time, event_rtol, event_atol)
+    if ode_or_newton == 'ode':
+        ss = vsolve_ss(model_dfrx_ode, y0_EGF_inputs, params, max_time, event_rtol, event_atol)
+    elif ode_or_newton == 'newton':
+        ss = vsolve_ss_newton(model_dfrx_ode, y0_EGF_inputs, params, max_time, event_rtol, event_atol)
     ss = jnp.squeeze(ss)
 
     # sum over the output states
@@ -914,3 +936,66 @@ def sustained_activity_metric(trajectory, index_of_interest, max_val=None):
         max_val = np.nanmax(trajectory)
 
     return (trajectory[index_of_interest] - trajectory[0])/(max_val - trajectory[0])
+
+###############################################################################
+#### Model Analysis ####
+###############################################################################
+def prior_check_ss_func(model_name, model_dfrx_ode, pymc_model, nominal_params, 
+                        y0, t1, event_rtol, event_atol, newton_rtol, newton_atol, 
+                        free_param_idxs, savedir, print_results=True, save_results=True, 
+                        seed=np.random.default_rng(seed=123), nsamples=10):
+    
+    # draw samples from prior
+    prior_samples = np.array(pm.draw(pymc_model.free_RVs, draws=nsamples, random_seed=seed)).T
+
+    # loop over samples, evaluate ss func, time, and eval final RHS norm
+    results = {'ODE_times':[], 'Newton_times':[], 'ODE_norms':[], 'Newton_norms':[]}
+    
+    RHS = lambda y, p: model_dfrx_ode.vf(None, y, p)
+    for sample in prior_samples:
+        # construct full param_set
+        params = list(construct_full_param_list(sample,jnp.array(free_param_idxs),nominal_params))
+
+        # solve dose-response-curve both ways
+        t_start = time.time() # ODE
+        ss_ODE = solve_ss(model_dfrx_ode, y0, params, t1,event_rtol,event_atol)
+        t_end = time.time()
+        results['ODE_times'].append(t_end - t_start)
+
+        t_start = time.time() # Newton
+        ss_newtown = solve_ss_newton(model_dfrx_ode, y0, params, t1, newton_rtol, newton_atol)
+        t_end = time.time()
+        results['Newton_times'].append(t_end - t_start)
+
+        # get norm of time-derivative at the RHS
+        results['ODE_norms'].append(two_norm(RHS(tuple(ss_ODE), params)))
+        results['Newton_norms'].append(two_norm(RHS(tuple(ss_newtown), params)))
+
+    # compare times
+    if np.mean(results['Newton_times'])<=np.mean(results['ODE_times']):
+        smaller_time='Newton'
+    else:
+        smaller_time='ODE'
+
+    text_time = model_name + ': ODE: ' + str(np.mean(results['ODE_times'])) + '\n' + 'Newton: ' + str(np.mean(results['Newton_times'])) + '\n' + 'Smaller: ' + smaller_time
+
+    # compare avg norm time-derivative at the RHS
+    # compare times
+    if np.mean(results['Newton_norms'])<np.mean(results['ODE_norms']):
+        smaller_norm='Newton'
+    else:
+        smaller_norm='ODE'
+
+    # save results to file
+    text_norm = model_name + ': ODE: ' + str(np.mean(results['ODE_norms'])) + '\n' + 'Newton: ' + str(np.mean(results['Newton_norms'])) + '\n' + 'Smaller: ' + smaller_norm
+
+    if save_results:
+        with open(savedir + 'prior_predictive_sampling_times.txt', 'a') as f:
+            f.write(text_time)
+
+        with open(savedir + 'prior_predictive_sampling_norms.txt', 'a') as f:
+            f.write(text_time)
+
+    if print_results:
+        print('Time: ', text_time)
+        print('Norm RHS: ', text_norm)
