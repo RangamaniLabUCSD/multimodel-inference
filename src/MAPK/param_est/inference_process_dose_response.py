@@ -59,10 +59,17 @@ def parse_args():
     parser.add_argument("-ncores", type=int, default=1, help="Number of cores to use for multiprocessing. Defaults to None which will use all available cores.")
     parser.add_argument("--skip_prior_sample", action='store_false',default=True) 
     parser.add_argument("--skip_sample", action='store_false',default=True)
+    parser.add_argument("-rtol", type=float,default=1e-6)
+    parser.add_argument("-atol", type=float,default=1e-6)
+    parser.add_argument("-ss_method", type=str, default='ode')
     parser.add_argument("-event_rtol", type=float,default=1e-6)
     parser.add_argument("-event_atol", type=float,default=1e-5)
+    parser.add_argument("-newton_event_rtol", type=float,default=1e-5)
+    parser.add_argument("-newton_event_atol", type=float,default=1e-5)
+    parser.add_argument("-ss_check_sim_tmax", type=float,default=1e6)
+    parser.add_argument("-ss_check_sim_samples", type=int,default=10)
+    parser.add_argument("-ss_check_sim_yaxis_scale", type=str, default=None)
 
-    
     args=parser.parse_args()
     return args
 
@@ -100,20 +107,36 @@ def main():
 
     # construct the strings to make priors and constants
     prior_param_dict = set_prior_params(args.model, list(p_dict.keys()), plist, free_param_idxs,
-                                        upper_mult=100, lower_mult=0.01,prior_family=args.prior_family,
+                                        upper_mult=100, lower_mult=0.01,prior_family=args.prior_family, saveplot=False,
                                         savedir=args.savedir)
 
     # make initial conditions that reflect the inputs
     y0_EGF_ins = construct_y0_EGF_inputs(inputs_native_units, np.array([y0]), EGF_idx)
 
     # simulator function
+    if args.ss_method == 'ode':
+        event_rtol = args.event_rtol
+        event_atol = args.event_atol
+    elif args.ss_method == 'newton':
+        event_rtol = args.newton_event_rtol
+        event_atol = args.newton_event_atol
+    
+    print('Using {} for SS with tols atol={}, rtol={}.'.format(args.ss_method, event_atol, event_rtol))
     simulator = lambda params, model_dfrx_ode, max_time, y0_EGF_inputs, \
         output_states: ERK_stim_response(params, model_dfrx_ode, max_time, y0_EGF_inputs, 
-                      output_states, event_rtol=args.event_rtol, event_atol=args.event_atol)
-
+                      output_states, event_rtol=event_rtol, event_atol=event_atol,
+                      rtol=args.rtol, atol=args.atol, ode_or_newton=args.ss_method)
+    
     # construct the pymc model
     pymc_model = build_pymc_model(prior_param_dict, data, y0_EGF_ins, 
-                    ERK_indices, args.t1, diffrax.ODETerm(model))
+                    ERK_indices, args.t1, diffrax.ODETerm(model), simulator=simulator)
+
+    prior_check_ss_func(args.model, diffrax.ODETerm(model), pymc_model, jnp.array(plist), 
+                        y0_EGF_ins[4], args.t1, free_param_idxs, ERK_indices, args.savedir, 
+                        print_results=True, nsamples=args.ss_check_sim_samples, tmax=args.ss_check_sim_tmax,
+                        event_rtol=args.event_rtol, event_atol=args.event_atol,
+                        newton_rtol=args.newton_event_rtol, newton_atol=args.newton_event_atol,
+                        yaxis_scale=args.ss_check_sim_yaxis_scale, rtol=args.rtol, atol=args.atol)
     
     # # prior predictive sampling
     if args.skip_prior_sample:
