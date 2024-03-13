@@ -203,14 +203,14 @@ def get_param_subsample(idata, n_traj, p_dict,rng=np.random.default_rng(seed=123
 #### Solving ODEs ####
 ###############################################################################
 @jax.jit
-def solve_ss(model_dfrx_ode, y0, params, t1,event_rtol,event_atol):
+def solve_ss(model_dfrx_ode, y0, params, t1,event_rtol,event_atol,rtol, atol):
     """ simulates a model over the specified time interval and returns the 
     calculated steady-state values.
     Returns an array of shape (n_species, 1) """
     dt0=1e-3
     solver = diffrax.Kvaerno5()
     event=diffrax.SteadyStateEvent(event_rtol, event_atol)
-    stepsize_controller=diffrax.PIDController(rtol=1e-6, atol=1e-6)
+    stepsize_controller=diffrax.PIDController(rtol, atol)
     t0 = 0.0
 
     sol = diffrax.diffeqsolve(
@@ -221,22 +221,22 @@ def solve_ss(model_dfrx_ode, y0, params, t1,event_rtol,event_atol):
         stepsize_controller=stepsize_controller,
         discrete_terminating_event=event,
         args=params,
-        max_steps=600000,
+        max_steps=6000000,
         throw=False,)
     
     return jnp.array(sol.ys)
 
 # vmap steady state solving over different initial conds
 #   this means vmapping over the y0 and assuming everything else is fixed
-vsolve_ss = jax.vmap(solve_ss, in_axes=(None, 0, None, None, None, None))
+vsolve_ss = jax.vmap(solve_ss, in_axes=(None, 0, None, None, None, None, None, None))
 
 @jax.jit
-def solve_ss_newton(model_dfrx_ode, y0, params, t1, newton_atol, newton_rtol):
+def solve_ss_newton(model_dfrx_ode, y0, params, t1, event_rtol, event_atol, rtol, atol):
     # run the model to crude tol (rtol=1e-5, atol=1e-4), SS to get a good initial guess
-    ss_ic = solve_ss(model_dfrx_ode, y0, params, t1, 1e-5, 1e-5)
+    ss_ic = solve_ss(model_dfrx_ode, y0, params, t1, event_rtol=event_rtol, event_atol=event_atol, rtol=rtol, atol=atol)
 
     # solve the model to steady state using a newton solver
-    solver = Newton(atol=newton_atol, rtol=newton_rtol,linear_solver=lx.AutoLinearSolver(well_posed=False), norm=two_norm)
+    solver = Newton(atol=1e-10, rtol=1e-10,linear_solver=lx.AutoLinearSolver(well_posed=False), norm=two_norm)
     RHS = lambda y, p: model_dfrx_ode.vf(None, tuple(y), params)
     ss = root_find(RHS, solver, ss_ic, max_steps=100, throw=False,
                    options={'lower':jnp.zeros_like(ss_ic)})
@@ -244,16 +244,16 @@ def solve_ss_newton(model_dfrx_ode, y0, params, t1, newton_atol, newton_rtol):
     return ss.value
 
 # vmap steady state solving over different initial conds
-vsolve_ss_newton = jax.vmap(solve_ss_newton, in_axes=(None, 0, None, None, None, None))
+vsolve_ss_newton = jax.vmap(solve_ss_newton, in_axes=(None, 0, None, None, None, None, None, None))
 
 @jax.jit
-def solve_traj(model_dfrx_ode, y0, params, t1, ERK_indices, times):
+def solve_traj(model_dfrx_ode, y0, params, t1, ERK_indices, times, rtol, atol):
     """ simulates a model over the specified time interval and returns the 
     calculated values.
     Returns an array of shape (n_species, 1) """
     dt0=1e-3
     solver = diffrax.Kvaerno5()
-    stepsize_controller=diffrax.PIDController(rtol=1e-6, atol=1e-6)
+    stepsize_controller=diffrax.PIDController(rtol, atol)
     t0 = 0.0
     saveat=diffrax.SaveAt(ts=times)
 
@@ -274,13 +274,14 @@ def solve_traj(model_dfrx_ode, y0, params, t1, ERK_indices, times):
 
 # vmap traj solving over different initial conds
 #   this means vmapping over the y0 and assuming everything else is fixed
-vsolve_traj = jax.vmap(solve_traj, in_axes=(None, 0, None, None, None, None))
+vsolve_traj = jax.vmap(solve_traj, in_axes=(None, 0, None, None, None, None, None, None))
 
 # vmap traj solving over the parameters
-vsolve_params_traj = jax.vmap(solve_traj, in_axes=(None, None, 0, None, None, None))
+vsolve_params_traj = jax.vmap(solve_traj, in_axes=(None, None, 0, None, None, None, None, None))
     
 def ERK_stim_response(params, model_dfrx_ode, max_time, y0_EGF_inputs, 
-                      output_states, normalization_func=None, event_rtol=1e-6, event_atol=1e-5, ode_or_newton='ode'):
+                      output_states, normalization_func=None, event_rtol=1e-6, event_atol=1e-6, 
+                      rtol=1e-6, atol=1e-6, ode_or_newton='ode'):
     """ function to compute the ERK response to EGF stimulation
         Args:
             difrx_model (diffrax.Model): diffrax model object
@@ -292,9 +293,9 @@ def ERK_stim_response(params, model_dfrx_ode, max_time, y0_EGF_inputs,
     """
     # vmap solve over all initial conditions
     if ode_or_newton == 'ode':
-        ss = vsolve_ss(model_dfrx_ode, y0_EGF_inputs, params, max_time, event_rtol, event_atol)
+        ss = vsolve_ss(model_dfrx_ode, y0_EGF_inputs, params, max_time, event_rtol, event_atol, rtol, atol)
     elif ode_or_newton == 'newton':
-        ss = vsolve_ss_newton(model_dfrx_ode, y0_EGF_inputs, params, max_time, event_rtol, event_atol)
+        ss = vsolve_ss_newton(model_dfrx_ode, y0_EGF_inputs, params, max_time, event_rtol, event_atol, rtol, atol)
     ss = jnp.squeeze(ss)
 
     # sum over the output states
@@ -438,8 +439,7 @@ def predict_traj_response(model, posterior_idata, inputs, times, input_state,
 ###############################################################################
 #### PyMC Inference Utils ####
 ###############################################################################
-def set_prior_params(model_name, param_names, nominal_params, free_param_idxs, prior_family=[['Gamma()',['alpha', 'beta']]], upper_mult=1.9, lower_mult=0.1, prob_mass_bounds=0.95,          
-    saveplot=True, savedir=None):
+def set_prior_params(model_name, param_names, nominal_params, free_param_idxs, prior_family=[['Gamma()',['alpha', 'beta']]], upper_mult=1.9, lower_mult=0.1, prob_mass_bounds=0.95, saveplot=True, savedir=None):
     """ Sets the prior parameters for the MAPK models.
         Inputs:
             - param_names (list): list of parameter names
@@ -938,17 +938,61 @@ def sustained_activity_metric(trajectory, index_of_interest, max_val=None):
     return (trajectory[index_of_interest] - trajectory[0])/(max_val - trajectory[0])
 
 ###############################################################################
-#### Model Analysis ####
+#### Steady-state checking ####
 ###############################################################################
 def prior_check_ss_func(model_name, model_dfrx_ode, pymc_model, nominal_params, 
-                        y0, t1, event_rtol, event_atol, newton_rtol, newton_atol, 
-                        free_param_idxs, savedir, print_results=True, save_results=True, 
-                        seed=np.random.default_rng(seed=123), nsamples=10):
+                        y0, t1, free_param_idxs, ERK_indices, savedir, tmax=1e6,
+                        event_rtol=1e-6, event_atol=1e-6, 
+                        newton_rtol=1e-5, newton_atol=1e-5,
+                        atol=1e-6, rtol=1e-6,
+                        print_results=True, save_results=True, 
+                        seed=np.random.default_rng(seed=123), nsamples=10, yaxis_scale=None):
+    """ Function to check the steady-state solver for the prior predictive samples.
     
-    # draw samples from prior
+    Compares ODE method to Newton method for solving the steady-state with the specified tolerances.
+
+    Produces three plots:
+        1) Plot of single (fixed EGF/param) ERK traj with all computed steady-states for ODE
+        1) Plot of single (fixed EGF/param) ERK traj with all computed steady-states for Newtown
+        3) Plot of ERK traces to SS for all computed prior samples
+
+    Inputs:
+        model_name (str): name of the model
+        model_dfrx_ode (diffrax.ODETerm): diffrax ODETerm model object
+        pymc_model (pymc.Model): PyMC model object
+        nominal_params (np.ndarray): array of nominal parameter values
+        y0 (np.ndarray): array of initial conditions
+        t1 (float): max time to simulate the model
+        free_param_idxs (list): list of indices of the free parameters
+        ERK_indices (list): list of indices of the ERK states
+        savedir (str): directory to save the results
+        print_results (bool): whether to print the results
+        save_results (bool): whether to save the results    
+        tmax (float): max time to simulate the model
+            (default: 1e6)
+        event_rtol (float): relative tolerance for the event detection 
+            (default: 1e-6)
+        event_atol (float): absolute tolerance for the event detection
+            (default: 1e-5)
+        newton_rtol (float): relative tolerance for the ODE-solve to initialize Newton solver
+            (default: 1e-5)
+        newton_atol (float): absolute tolerance for the ODE-solve to initialize Newton solver
+            (default: 1e-5)
+        seed (int): random seed 
+            (default: np.random.default_rng(seed=123))
+        nsamples (int): number of samples to draw from the prior predictive
+            (default: 10)
+
+    Returns:
+        None
+    """
+    
+    # draw parameter samples from prior
+    #   need to be converted to numpy array and transposed to each row is a sample
     prior_samples = np.array(pm.draw(pymc_model.free_RVs, draws=nsamples, random_seed=seed)).T
 
     # loop over samples, evaluate ss func, time, and eval final RHS norm
+    sols = {'ss_ODE':[], 'ss_newton':[], 'traj_ODE':[]}
     results = {'ODE_times':[], 'Newton_times':[], 'ODE_norms':[], 'Newton_norms':[]}
     
     RHS = lambda y, p: model_dfrx_ode.vf(None, y, p)
@@ -958,19 +1002,30 @@ def prior_check_ss_func(model_name, model_dfrx_ode, pymc_model, nominal_params,
 
         # solve dose-response-curve both ways
         t_start = time.time() # ODE
-        ss_ODE = solve_ss(model_dfrx_ode, y0, params, t1,event_rtol,event_atol)
+        ss_ODE = solve_ss(model_dfrx_ode, y0, params, t1, event_rtol, event_atol, rtol, atol)
         t_end = time.time()
+        sols['ss_ODE'].append(ss_ODE)
         results['ODE_times'].append(t_end - t_start)
 
         t_start = time.time() # Newton
-        ss_newtown = solve_ss_newton(model_dfrx_ode, y0, params, t1, newton_rtol, newton_atol)
+        ss_newtown = solve_ss_newton(model_dfrx_ode, y0, params, t1, newton_rtol, newton_atol, rtol, atol)
         t_end = time.time()
+        sols['ss_newton'].append(ss_newtown)
         results['Newton_times'].append(t_end - t_start)
 
         # get norm of time-derivative at the RHS
         results['ODE_norms'].append(two_norm(RHS(tuple(ss_ODE), params)))
         results['Newton_norms'].append(two_norm(RHS(tuple(ss_newtown), params)))
 
+        # solve the trajectory until t1 or a long-time
+        if t1 != jnp.inf and t1 != np.inf:
+            tmax = t1
+    
+        traj_ODE = solve_traj(model_dfrx_ode, y0, params, tmax, ERK_indices, np.linspace(0, tmax, 600000), rtol, atol)
+        sols['traj_ODE'].append(traj_ODE)
+
+
+    # COMAPRISON of the two SS methods:
     # compare times
     if np.mean(results['Newton_times'])<=np.mean(results['ODE_times']):
         smaller_time='Newton'
@@ -985,17 +1040,66 @@ def prior_check_ss_func(model_name, model_dfrx_ode, pymc_model, nominal_params,
         smaller_norm='Newton'
     else:
         smaller_norm='ODE'
-
-    # save results to file
+        
     text_norm = model_name + ': ODE: ' + str(np.mean(results['ODE_norms'])) + '\n' + 'Newton: ' + str(np.mean(results['Newton_norms'])) + '\n' + 'Smaller: ' + smaller_norm
 
-    if save_results:
-        with open(savedir + 'prior_predictive_sampling_times.txt', 'a') as f:
-            f.write(text_time)
-
-        with open(savedir + 'prior_predictive_sampling_norms.txt', 'a') as f:
-            f.write(text_time)
-
     if print_results:
-        print('Time: ', text_time)
-        print('Norm RHS: ', text_norm)
+        print(text_time)
+        print(text_norm)
+
+    # MAKE PLOTS
+    # traces with ODE-SS
+    fig, ax = get_sized_fig_ax(1.75, 1.25)
+    for ss, traj in zip(sols['ss_ODE'], sols['traj_ODE']):
+        ss = np.sum(np.squeeze(ss)[np.array(ERK_indices)])
+        pl = ax.plot(np.linspace(0, tmax, 600000), traj, '-', alpha=0.5, label=None, linewidth=1.0)
+        ax.plot([0, tmax], [ss, ss], '--', color=pl[0].get_color(), alpha=0.9, linewidth=0.75, label=None)
+
+    ax.plot([np.nan, np.nan], [np.nan, np.nan], 'k-', alpha=0.5, label='ERK Trajectory')
+    ax.plot([np.nan, np.nan], [np.nan, np.nan], '--', color='k', alpha=0.9, linewidth=0.75, label='steady-state')
+    ax.ticklabel_format(useOffset=False, style='plain')
+
+    leg = ax.legend(loc='right', bbox_to_anchor=(4,0.5), fontsize=8.0, labelspacing=0.1)
+    export_legend(leg, filename=savedir + 'ss_ODE_traces_legend.pdf')
+    leg.remove()
+
+    ax.set_xlabel('time (sec)')
+    ax.set_ylabel('total active ERK')
+
+    if yaxis_scale is not None:
+        ax.set_yscale(yaxis_scale)
+
+    fig.savefig(savedir + model_name + '_ss_ODE_traces.pdf', bbox_inches='tight', transparent=True)
+
+    # traces with Newton-SS
+    fig, ax = get_sized_fig_ax(1.75, 1.25)
+    for ss, traj in zip(sols['ss_newton'], sols['traj_ODE']):
+        ss = np.sum(np.squeeze(ss)[np.array(ERK_indices)])
+        pl = ax.plot(np.linspace(0, tmax, 600000), traj, '-', alpha=0.5, label=None, linewidth=1.0)
+        ax.plot([0, tmax], [ss, ss], '--', color=pl[0].get_color(), alpha=0.9, linewidth=0.75, label=None)
+
+    ax.ticklabel_format(useOffset=False, style='plain')
+    ax.set_xlabel('time (sec)')
+    ax.set_ylabel('total active ERK')
+
+    if yaxis_scale is not None:
+        ax.set_yscale(yaxis_scale)
+
+    fig.savefig(savedir + model_name + '_ss_Newton_traces.pdf', bbox_inches='tight', transparent=True) 
+
+    # plot of hists of SS errors
+    # fig, ax = get_sized_fig_ax(1.75, 1.25)
+    # ax.scatter(results['ODE_norms'], results['Newton_norms'])
+    # # ax.hist(results['ODE_norms'], alpha=0.5, label='ODE', density=True)
+    # # ax.hist(results['Newton_norms'], alpha=0.5, label='Newton', density=True)
+
+    # # ax.set_xlabel('norm of RHS at SS')
+    # # ax.set_ylabel('density')
+
+    # # leg = ax.legend(loc='right', bbox_to_anchor=(4,0.5), fontsize=8.0, labelspacing=0.1)
+    # # export_legend(leg, filename=savedir + 'ss_norms_legend.pdf')
+    # # leg.remove()
+
+    # fig.savefig(savedir + model_name + '_ss_norms.pdf', bbox_inches='tight', transparent=True)
+
+
