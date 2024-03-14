@@ -43,7 +43,7 @@ jax.config.update("jax_enable_x64", True)
 ##############################
 # def arg parsers to take inputs from the command line
 ##############################
-def parse_args():
+def parse_args(raw_args=None):
     """ function to parse command line arguments
     """
     parser=argparse.ArgumentParser(description="Generate Morris samples for the specified model.")
@@ -55,21 +55,24 @@ def parse_args():
     parser.add_argument("-input_state", type=str, default='EGF', help="Name of EGF input in the state vector. Defaults to EGF.")
     parser.add_argument("-EGF_conversion_factor", type=float, default=1.0, help="Conversion factor to convert EGF from nM to other units. Defaults to 1.")
     parser.add_argument("-ERK_states", type=str, default=None, help="Names of ERK species to use for inference. Defaults to None.")
-    parser.add_argument("-time_conversion_factor", type=int, default=1, help="Conversion factor to convert from seconds by division. Default is 1. Mins would be 60")
+    parser.add_argument("-time_conversion_factor", type=float, default=1.0, help="Conversion factor to convert from seconds by division. Default is 1. Mins would be 60")
     parser.add_argument("-prior_family", type=str, default="[['Gamma()',['alpha', 'beta']]]", help="Prior family to use. Defaults to uniform.")
     parser.add_argument("-ncores", type=int, default=1, help="Number of cores to use for multiprocessing. Defaults to None which will use all available cores.")
     parser.add_argument("-nchains", type=int, default=4, help="Number of chains to run. Defaults to 4.")
     parser.add_argument("--skip_prior_sample", action='store_false',default=True) 
     parser.add_argument("--skip_sample", action='store_false',default=True)
+    parser.add_argument("-rtol", type=float,default=1e-6)
+    parser.add_argument("-atol", type=float,default=1e-6)
 
-    args=parser.parse_args()
+    args=parser.parse_args(raw_args)
     return args
 
 
-def main():
+def main(raw_args=None):
     """ main function to execute command line script functionality.
     """
-    args = parse_args()
+    args = parse_args(raw_args)
+
     print('Processing model {}.'.format(args.model))
     
     # try calling the model
@@ -108,7 +111,7 @@ def main():
     
     # make simulator lambda function that solves at correct times with the time conversion factor taken into account
     if len(inputs) > 1:
-        ERK_stim_traj = lambda p,model, max_time, y0, output_states: ERK_stim_trajectory_set(p, model, max_time, y0, output_states, times/args.time_conversion_factor, max_input_idx)
+        ERK_stim_traj = lambda p,model, max_time, y0, output_states: ERK_stim_trajectory_set(p, model, max_time, y0, output_states, times/args.time_conversion_factor, max_input_idx, rtol=args.rtol, atol=args.atol)
     else:
         print('Using single input traj func.')
         def ERK_stim_traj(p, model, max_time, y0, output_states):

@@ -306,7 +306,8 @@ def ERK_stim_response(params, model_dfrx_ode, max_time, y0_EGF_inputs,
     else:
         return erk_acts/normalization_func(params, y0_EGF_inputs[0]), erk_acts
 
-def ERK_stim_trajectory_set(params, model_dfrx_ode, max_time, y0_EGF_inputs, output_states, times, max_input_index=-1):
+def ERK_stim_trajectory_set(params, model_dfrx_ode, max_time, y0_EGF_inputs, 
+                            output_states, times, rtol=1e-6, atol=1e-6, max_input_index=-1):
     """ function to compute the ERK response to EGF stimulation
         Args:
             difrx_model (diffrax.Model): diffrax model object
@@ -317,7 +318,7 @@ def ERK_stim_trajectory_set(params, model_dfrx_ode, max_time, y0_EGF_inputs, out
             normalized_ERK_response (np.ndarray): array of ERK trajectories to each EGF input
     """
     # vmap solve over all initial conditions
-    traj = vsolve_traj(model_dfrx_ode, y0_EGF_inputs, params, max_time, output_states, times)
+    traj = vsolve_traj(model_dfrx_ode, y0_EGF_inputs, params, max_time, output_states, times, rtol, atol)
     traj = jnp.squeeze(traj)
 
     # normalize to the max val
