@@ -265,6 +265,8 @@ def run_analysis(model_name, qoi_lambda, params_to_analyze, loaddir, savedir, lo
 
 def main():
     """ main function to run analysis on all models.
+
+    Note: params to analyze are the structurally locally ID params for each model.
     """
     savedir = '../../../results/MAPK/gsa/figs/'
     loaddir = '../../../results/MAPK/gsa/'
