@@ -287,18 +287,6 @@ def main():
     params_to_analyze = ['kOff1','a2','kOn1','k10','RAFPase','k4','k6','kOff4','kOn2','total_scaffold','d7','d9','d3','a3','a10','kOff3','k8','k5','a9','a8','a5','d8','d5','a6','k7','d2','a7','d10','a1','a4','k9','d6','k2','d1','k3','MEKPase','kOff2','MAPKPase','d4','k1']
     run_analysis(model_name, qoi_lambda, params_to_analyze, loaddir, savedir, lower=1e-2, upper=1e2)
 
-    # # BRIGHTMAN FELL 2000
-    # model_name = 'brightman_fell_2000'
-    # qoi_lambda = lambda x: x[:,-1]
-    # params_to_analyze = ['kn14','K_24','kn16','V_26','kn1','k3','V_24','kn12','k15','k_13','kn7','kn11','K_25','k2_4','K_26','k17','K_23','DT']
-    # run_analysis(model_name, qoi_lambda, params_to_analyze, loaddir, savedir, lower=1e-2, upper=1e2)
-
-    # HATAKEYAMA 2003
-    model_name = 'hatakeyama_2003'
-    qoi_lambda = lambda x: x[:,-1]
-    params_to_analyze = ['k21','k20','kb29','kf9','kb24','kb3','kb23','kf25','kb1','kb2','kf24','kb7','kf8','k19','kf34','k22','kb5','kf6','kf3','kb6']
-    run_analysis(model_name, qoi_lambda, params_to_analyze, loaddir, savedir, lower=1e-2, upper=1e2)
-
     # HORNBERG 2005
     model_name = 'hornberg_2005'
     qoi_lambda = lambda x: x[:,-1]
