@@ -10,10 +10,16 @@ class vonKriegsheim_2009(eqx.Module):
 
     def __call__(self, t, y, args):
         # unpack state variables
-        NGF, EGF, NGFR, pNGFR, EGFR, pEGFR, pEGFRi, PIP3, Akt, pAkt, PhE, \
+        EGF, EGFR, pEGFR, pEGFRi, PIP3, Akt, pAkt, \
             PLCg, pPLCg, PKC, PKCa, RKIP, pRKIP, RasD, RasT, NF1, pNF1, Raf, \
             Rafa, MEK, ppMEK, ERK, ppERK, ERK_15, ppERK_15, ppERKn, PEA, \
-            p104PEA, p116PEA, EGFRi, NGFRi, RSK, pRSK = y
+            p104PEA, p116PEA, EGFRi, RSK, pRSK = y
+        
+        # commented on 3/19/24 to exclude NGF/NGFR from the model
+        # NGF, EGF, NGFR, pNGFR, EGFR, pEGFR, pEGFRi, PIP3, Akt, pAkt, PhE, \
+            # PLCg, pPLCg, PKC, PKCa, RKIP, pRKIP, RasD, RasT, NF1, pNF1, Raf, \
+            # Rafa, MEK, ppMEK, ERK, ppERK, ERK_15, ppERK_15, ppERKn, PEA, \
+            # p104PEA, p116PEA, EGFRi, NGFRi, RSK, pRSK = y
 
         # unpack parameters
         k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15, k16, \
@@ -23,6 +29,13 @@ class vonKriegsheim_2009(eqx.Module):
         k53, k54, k55, k56, k57, k58, k59, k60, k61, k62, k63, k64, k65, \
         k66, k67, k68,  k69,  k70,  k71,  k72,  k73, V_NUC, V_CYT, \
         NGFDeriv, EGFDeriv = args
+
+        # exclude NGF/NGFR from the model (added 3/19/24)
+        NGF = 0.0
+        NGFR = 0.0
+        pNGFR = 0.0
+        PhE = 0.0
+        NGFRi = 0.0
 
         # expressions
         ERKFeedtoSOS=(1+(pRSK)/k49)
@@ -167,7 +180,7 @@ class vonKriegsheim_2009(eqx.Module):
         d_PIP3 = v8+v9-v10
         d_Akt = v48-v47
         d_pAkt = -d_Akt
-        d_PhE = 0.0
+        # d_PhE = 0.0
         d_PLCg = v13-v12-v11
         d_pPLCg = -d_PLCg
         d_PKC = v16-v14-v15
@@ -191,17 +204,23 @@ class vonKriegsheim_2009(eqx.Module):
         d_p104PEA = v43-v45
         d_p116PEA = v44-v46
         d_EGFRi = -v52+v51-v6
-        d_NGFRi = 0.0
+        # d_NGFRi = 0.0
         d_RSK = v54-v53
         d_pRSK = -d_RSK
 
-
         # concatenate into tuple and return
-        return (d_NGF, d_EGF, d_NGFR, d_pNGFR, d_EGFR, d_pEGFR, d_pEGFRi, 
-        d_PIP3, d_Akt, d_pAkt, d_PhE, d_PLCg, d_pPLCg, d_PKC, d_PKCa, 
+        return (d_EGF, d_EGFR, d_pEGFR, d_pEGFRi, 
+        d_PIP3, d_Akt, d_pAkt, d_PLCg, d_pPLCg, d_PKC, d_PKCa, 
         d_RKIP, d_pRKIP, d_RasD, d_RasT, d_NF1, d_pNF1, d_Raf, d_Rafa, 
         d_MEK, d_ppMEK, d_ERK, d_ppERK, d_ERK_15, d_ppERK_15, d_ppERKn, 
-        d_PEA, d_p104PEA, d_p116PEA, d_EGFRi, d_NGFRi, d_RSK, d_pRSK)
+        d_PEA, d_p104PEA, d_p116PEA, d_EGFRi, d_RSK, d_pRSK)
+
+        # commented on 3/19/24 to exclude NGF/NGFR from the model
+        # return (d_NGF, d_EGF, d_NGFR, d_pNGFR, d_EGFR, d_pEGFR, d_pEGFRi, 
+        # d_PIP3, d_Akt, d_pAkt, d_PhE, d_PLCg, d_pPLCg, d_PKC, d_PKCa, 
+        # d_RKIP, d_pRKIP, d_RasD, d_RasT, d_NF1, d_pNF1, d_Raf, d_Rafa, 
+        # d_MEK, d_ppMEK, d_ERK, d_ppERK, d_ERK_15, d_ppERK_15, d_ppERKn, 
+        # d_PEA, d_p104PEA, d_p116PEA, d_EGFRi, d_NGFRi, d_RSK, d_pRSK)
 
 
     def get_nominal_params(self):
@@ -295,17 +314,19 @@ class vonKriegsheim_2009(eqx.Module):
     def get_initial_conditions(self):
 
         y0_dict = {
-            'NGF':0.0,
+            # commented on 3/19/24 to exclude NGF/NGFR from the model
+            # 'NGF':0.0,
             'EGF':0.0,
-            'NGFR':0.0, # set to 1.0 to recover results in the paper
-            'pNGFR':0.0,
+            # commented on 3/19/24 to exclude NGF/NGFR from the model
+            # 'NGFR':0.0, # set to 1.0 to recover results in the paper
+            # 'pNGFR':0.0,
             'EGFR':1.0,
             'pEGFR':0.0,
             'pEGFRi':0.0,
             'PIP3':0.0,
             'Akt':1.0,
             'pAkt':0.0,
-            'PhE':0.0,
+            # 'PhE':0.0, # commented on 3/19/24 to fix issues
             'PLCg':1.0,
             'pPLCg':0.0,
             'PKC':1.0,
@@ -329,7 +350,7 @@ class vonKriegsheim_2009(eqx.Module):
             'p104PEA':0.0,
             'p116PEA':0.0,
             'EGFRi':0.0,
-            'NGFRi':0.0,
+            # 'NGFRi':0.0, # commented on 3/19/24 to fix issues
             'RSK':1.0,
             'pRSK':0.0,
         }
