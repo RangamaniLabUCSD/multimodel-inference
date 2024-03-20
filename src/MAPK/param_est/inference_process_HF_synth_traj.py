@@ -115,7 +115,7 @@ def main(raw_args=None):
     else:
         print('Using single input traj func.')
         def ERK_stim_traj(p, model, max_time, y0, output_states):
-            traj = solve_traj(model, y0, p, max_time, output_states, times/args.time_conversion_factor)
+            traj = solve_traj(model, y0, p, max_time, output_states, times/args.time_conversion_factor, args.rtol, args.atol)
             # return normalized trajectory
             return [(traj - np.min(traj)) / (np.max(traj) - np.min(traj))], traj
 
@@ -123,8 +123,6 @@ def main(raw_args=None):
     # make initial conditions that reflect the inputs
     y0_EGF_ins = construct_y0_EGF_inputs(inputs_native_units, np.array([y0]), EGF_idx)
     max_input_idx = np.argmax(inputs_native_units) # get index of max input
-
-    print(len(times))
 
     # construct the pymc model
     # Note: We do not use the build_pymc_model function, because we need to 
