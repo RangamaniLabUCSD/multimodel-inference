@@ -27,6 +27,8 @@ from func_timeout import func_timeout, FunctionTimedOut
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+import modified_pymc_smc_sample as pm_smc
+
 jax.config.update("jax_enable_x64", True)
 rng = np.random.default_rng(seed=1234)
 
@@ -44,6 +46,7 @@ from diffrax_ODE_PyTensor import *
 # import models
 sys.path.insert(0, '../models/')
 from huang_ferrell_1996 import *
+from huang_ferrell_1996_EGF_param import *
 from bhalla_iyengar_1999 import *
 from kholodenko_2000 import *
 from levchenko_2000 import *
@@ -540,7 +543,15 @@ def build_pymc_model(prior_param_dict, data, y0_EGF_inputs,
             return Apply(self, inputs, outputs)
 
         def perform(self, node, inputs, outputs):
+            
             result = sol_op_jax_jitted(*inputs)
+            # added 3/25 to deal with NaNs
+            # Note this is a temporary/ad hoc fix where we penalize param combos that cause computational
+            # issues by setting their value to zero so they review a lower likelihood
+            if jnp.any(jnp.isnan(jnp.array(result))):
+                # print as a way to see if this is an issue
+                print('Warning: NaNs in the result. Setting to zeros.')
+                result = jnp.zeros_like(result)
             outputs[0][0] = np.asarray(result, dtype="float64")
         
         def grad(self, inputs, output_grads):
@@ -1104,3 +1115,12 @@ def prior_check_ss_func(model_name, model_dfrx_ode, pymc_model, nominal_params,
     # fig.savefig(savedir + model_name + '_ss_norms.pdf', bbox_inches='tight', transparent=True)
 
 
+###############################################################################
+#### MMI funcs ####
+###############################################################################
+def logsumexp(x):
+        c = np.max(x)
+        return c + np.log(np.sum(np.exp(x - c)))
+
+def weight_with_logsumexp(log_values):
+    return np.exp(log_values - logsumexp(log_values))
