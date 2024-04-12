@@ -16,7 +16,7 @@ class huang_ferrell_1996(eqx.Module):
         # unnpack parameters
         a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,d1,d2,d3,d4,d5,d6,d7,d8,d9,d10,k1,k2,k3,k4,k5,k6,k7,k8,k9,k10, MKKK_tot,MKK_tot,MAPK_tot,E2_tot,MKKPase_tot,MAPKPase_tot = args
 
-        MKKK = MKKK_tot - MKKK_P - MKKK_E1 - MKKK_P_E2
+        MKKK = MKKK_tot - MKKK_P - MKKK_E1 - MKKK_P_E2 - MKK_MKKK_P - MKK_P_MKKK_P
         MKK = MKK_tot - MKK_P - MKK_PP - MKK_MKKK_P - MKK_P_MKKK_P - MKK_P_MKKPase - MKK_PP_MKKPase - MAPK_MKK_PP - MAPK_P_MKK_PP
         MAPK = MAPK_tot - MAPK_P - MAPK_PP - MAPK_MKK_PP - MAPK_P_MKK_PP - MAPK_P_MAPKPase - MAPK_PP_MAPKPase
         MKKPase = MKKPase_tot - MKK_P_MKKPase - MKK_PP_MKKPase
@@ -94,26 +94,26 @@ class huang_ferrell_1996(eqx.Module):
         Km8 = 0.3 #nM
         Km9 = 0.3 #nM
         Km10 = 0.3 #nM
-        a1 = 1000.0 #1/s
-        a2 = 1000.0 #1/s
-        a3 = 1000.0 #1/s
-        a4 = 1000.0 #1/s
-        a5 = 1000.0 #1/s
-        a6 = 1000.0 #1/s
-        a7 = 1000.0 #1/s
-        a8 = 1000.0 #1/s
-        a9 = 1000.0 #1/s
-        a10 = 1000.0 #1/s
-        d1 = 10.0 #nM/s
-        d2 = 10.0 #nM/s
-        d3 = 10.0 #nM/s
-        d4 = 10.0 #nM/s
-        d5 = 10.0 #nM/s
-        d6 = 10.0 #nM/s
-        d7 = 10.0 #nM/s
-        d8 = 10.0 #nM/s
-        d9 = 10.0 #nM/s
-        d10 = 10.0 #nM/s
+        a1 = 75.0 #1/s
+        a2 = 75.0 #1/s
+        a3 = 75.0 #1/s
+        a4 = 75.0 #1/s
+        a5 = 75.0 #1/s
+        a6 = 75.0 #1/s
+        a7 = 75.0 #1/s
+        a8 = 75.0 #1/s
+        a9 = 75.0 #1/s
+        a10 = 75.0 #1/s
+        d1 = 0.75 #nM/s
+        d2 = 0.75 #nM/s
+        d3 = 0.75 #nM/s
+        d4 = 0.75 #nM/s
+        d5 = 0.75 #nM/s
+        d6 = 0.75 #nM/s
+        d7 = 0.75 #nM/s
+        d8 = 0.75 #nM/s
+        d9 = 0.75 #nM/s
+        d10 = 0.75 #nM/s
 
         p_dict = {
             # parameters
