@@ -551,6 +551,7 @@ def build_pymc_model(prior_param_dict, data, y0_EGF_inputs,
             if jnp.any(jnp.isnan(jnp.array(result))):
                 # print as a way to see if this is an issue
                 print('Warning: NaNs in the result. Setting to zeros.')
+                # print(inputs)
                 result = jnp.zeros_like(result)
             outputs[0][0] = np.asarray(result, dtype="float64")
         
