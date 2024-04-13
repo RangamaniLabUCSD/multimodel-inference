@@ -42,7 +42,7 @@ jax.config.update("jax_enable_x64", True)
 ##############################
 # def arg parsers to take inputs from the command line
 ##############################
-def parse_args():
+def parse_args(raw_args=None):
     """ function to parse command line arguments
     """
     parser=argparse.ArgumentParser(description="Generate Morris samples for the specified model.")
@@ -58,6 +58,7 @@ def parse_args():
     parser.add_argument("-prior_family", type=str, default="[['Gamma()',['alpha', 'beta']]]", help="Prior family to use. Defaults to uniform.")
     parser.add_argument("-ncores", type=int, default=1, help="Number of cores to use for multiprocessing. Defaults to None which will use all available cores.")
     parser.add_argument("--skip_prior_sample", action='store_false',default=True) 
+    parser.add_argument("--skip_ss_check_func", action='store_false',default=True) 
     parser.add_argument("--skip_sample", action='store_false',default=True)
     parser.add_argument("-rtol", type=float,default=1e-6)
     parser.add_argument("-atol", type=float,default=1e-6)
@@ -70,14 +71,14 @@ def parse_args():
     parser.add_argument("-ss_check_sim_samples", type=int,default=10)
     parser.add_argument("-ss_check_sim_yaxis_scale", type=str, default=None)
 
-    args=parser.parse_args()
+    args=parser.parse_args(raw_args)
     return args
 
 
-def main():
+def main(raw_args=None):
     """ main function to execute command line script functionality.
     """
-    args = parse_args()
+    args = parse_args(raw_args)
     print('Processing model {}.'.format(args.model))
     
     # try calling the model
@@ -130,13 +131,13 @@ def main():
     # construct the pymc model
     pymc_model = build_pymc_model(prior_param_dict, data, y0_EGF_ins, 
                     ERK_indices, args.t1, diffrax.ODETerm(model), simulator=simulator)
-
-    prior_check_ss_func(args.model, diffrax.ODETerm(model), pymc_model, jnp.array(plist), 
-                        y0_EGF_ins[4], args.t1, free_param_idxs, ERK_indices, args.savedir, 
-                        print_results=True, nsamples=args.ss_check_sim_samples, tmax=args.ss_check_sim_tmax,
-                        event_rtol=args.event_rtol, event_atol=args.event_atol,
-                        newton_rtol=args.newton_event_rtol, newton_atol=args.newton_event_atol,
-                        yaxis_scale=args.ss_check_sim_yaxis_scale, rtol=args.rtol, atol=args.atol)
+    if args.skip_ss_check_func:
+        prior_check_ss_func(args.model, diffrax.ODETerm(model), pymc_model, jnp.array(plist), 
+                            y0_EGF_ins[4], args.t1, free_param_idxs, ERK_indices, args.savedir, 
+                            print_results=True, nsamples=args.ss_check_sim_samples, tmax=args.ss_check_sim_tmax,
+                            event_rtol=args.event_rtol, event_atol=args.event_atol,
+                            newton_rtol=args.newton_event_rtol, newton_atol=args.newton_event_atol,
+                            yaxis_scale=args.ss_check_sim_yaxis_scale, rtol=args.rtol, atol=args.atol)
     
     # # prior predictive sampling
     if args.skip_prior_sample:
