@@ -45,7 +45,7 @@ savedir = '../../../results/MAPK/param_est/Keyes_2020_data/'
 # load in the model info 
 model_info = json.load(open('model_info.json', 'r'))
 model_names = list(model_info.keys())
-model_names.remove('hatakeyama_2003')
+
 model_names.remove('vonKriegsheim_2009')
 display_names = [model_info[model]['display_name'] for model in model_names]
 
@@ -87,6 +87,8 @@ with open(savedir + 'SMC_runtimes.txt', 'w') as f:
             f.write(f'{model},{compartment}: {sample_times[compartment][model]/3600} hr\n')
 
 ################ Make pretty posterior predictive trajectories ################
+SAM40_post_pred = {'CYTO':{},'PM':{}}            
+
 skip_idxs = []
 for idx, model in enumerate(model_names):
     if idx in skip_idxs:
@@ -99,10 +101,21 @@ for idx, model in enumerate(model_names):
                                         dat[compartment]['data'], dat[compartment]['data_std'], 
                                         dat[compartment]['times'], colors[idx], 
                                             dat[compartment]['inputs'], savedir+compartment+'/' + model + '/', model, data_time_to_mins=60,
-                                            width=1.1, height=0.5, data_downsample=10,
+                                            width=1., height=0.5, data_downsample=10,
                                             ylim=[[0.0, 1.5]],
                                             y_ticks=[[0.0, 1.0]],
                                             labels=False)
+            
+            # compute SAM40 post-pred predictions
+            idx_40_min = -1
+            SAM40_preds = np.apply_along_axis(sustained_activity_metric, 1, 
+                                              posterior_samples[compartment][model], 
+                                              idx_40_min)
+            SAM40_post_pred[compartment][model] = list(SAM40_preds)
+
+# save SAM40 predictions
+with open(savedir + 'SAM40_post_pred.json', 'w') as f:
+    json.dump(SAM40_post_pred, f)
 
 # ################ Make posterior dose-response curves ################
 # # Now we want to use posterior draws to simulate dose-response curve predictions
