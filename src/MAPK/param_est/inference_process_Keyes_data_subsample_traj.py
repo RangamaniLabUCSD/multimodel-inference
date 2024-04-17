@@ -55,8 +55,8 @@ def parse_args(raw_args=None):
     parser.add_argument("-n_sets", type=int, default=25, help="Number of sets to sample. Defaults to 25.")
     parser.add_argument("-subset_sizes", type=str, default="[10,20,40,60]", help="List of subset sizes to sample. Defaults to [10,20,40,60].")
     parser.add_argument("-model_names", type=str, default='kholodenko_2000,orton_2009,shin_2014,ryu_2015,kochanczyk_2017', help="List of model names to process. Defaults to  'kholodenko_2000,levchenko_2000,orton_2009,shin_2014,ryu_2015,kochanczyk_2017'.")
-    parser.add_argument("-new_run", type=bool, default=True, help="Flag to indicate if this is a new run. Defaults to True. IF it is a new run then past run info is moved to past_run subdirs and inference is run again. Any data in past_run subdirs is removed. If it is not a new run, then inference is not run again and the past run info is NOT moved to past_run directory.")
     parser.add_argument("-EGF_input", type=float, default=1.653e4, help="EGF input level. Defaults to 1.653e4 nM EGF.")
+    parser.add_argument("--reprocess_run", action='store_false',default=True, help="Flag to indicate if this is a new run. IF it is a new run then past run info is moved to past_run subdirs and inference is run again. Any data in past_run subdirs is removed. If it is not a new run, then inference is not run again and the past run info is NOT moved to past_run directory.")
     
     args=parser.parse_args(raw_args)
     return args
@@ -123,7 +123,30 @@ def main(raw_args=None):
     # load model info
     with open('./model_info.json') as file:
         model_info = json.load(file)
+    models = args.model_names.split(',')
     
+    keys = models + ['pseudoBMA', 'BMA', 'stacking']
+    # dictionaries to hold data
+    # relative error to mean of data with all cells
+    rel_error_full_dat = {size:{key:[] for key in keys} for size in subset_sizes}
+    print(rel_error_full_dat)
+    # relative error to mean of data with subset of cells
+    rel_error_sub_dat = {size:{key:[] for key in keys} for size in subset_sizes}
+    # RMSE
+    RMSE_full_dat = {size:{key:[] for key in keys} for size in subset_sizes} 
+    RMSE_sub_dat = {size:{key:[] for key in keys} for size in subset_sizes}
+    # 95% cred int width
+    uncert95 = {size:{key:[] for key in keys} for size in subset_sizes}
+    # std
+    std = {size:{key:[] for key in keys} for size in subset_sizes}
+
+    # summary stats about the data subsets
+    data_RMSE = {size:[] for size in subset_sizes}
+    data_rel_error = {size:[] for size in subset_sizes}
+    data_uncert95 = {size:[] for size in subset_sizes}
+    data_std = {size:[] for size in subset_sizes}
+
+
     # this is the main loop over the subset sizes
     for size in tqdm(subset_sizes):
         print('Processing subset size {}'.format(size))
@@ -131,7 +154,7 @@ def main(raw_args=None):
         # create a dir for all results are this subset size
         _savedir = savedir + 'subset_size_{}/'.format(size)
 
-        if args.new_run:
+        if args.reprocess_run:
             # add _savedir if it does not exist
             if not os.path.isdir(_savedir):
                 os.makedirs(_savedir)
@@ -145,7 +168,7 @@ def main(raw_args=None):
         
         # this is the inner loop over the number of sets st the given subset size
         for i in range(args.n_sets):
-            if args.new_run:
+            if args.reprocess_run:
                 # daw a random sample of cells
                 idxs = rng.choice(ncells, int(size), replace=False,)
                 dat = responses[:,idxs]
@@ -156,13 +179,24 @@ def main(raw_args=None):
                     json.dump(data, data_file)
 
                 np.save(_savedir + 'sample_{}.npy'.format(i), dat)
+            else:
+                # load the data
+                dat = np.load(_savedir + 'sample_{}.npy'.format(i))
+                print(dat.shape)
+
+            # compute the summary stats of the data subset
+            data_RMSE[size].append(np.sqrt(np.nanmean((np.nanmean(dat,axis=1) \
+                            - np.nanmean(responses,axis=1))**2)))
+            data_rel_error[size].append(np.linalg.norm(np.nanmean(dat,axis=1) \
+                            - np.nanmean(responses,axis=1))/np.linalg.norm(np.nanmean(responses,axis=1)))
+            data_uncert95[size].append(np.nanmean(np.abs(np.squeeze(np.diff(np.nanquantile(dat, [0.025, 0.975], axis=0),axis=1)))))
+            data_std[size].append(np.nanmean(np.nanstd(dat, axis=1)))
 
             # inference loop -- this is where we run inference on the data for each model
             #    we will call the inference_process_HF_synth_traj.py script
-            models = args.model_names.split(',')
             for model in models:
 
-                if args.new_run:
+                if args.reprocess_run:
                     # run inference
                     m_info = model_info[model]
 
@@ -183,40 +217,50 @@ def main(raw_args=None):
                     # run the inference
                     inference_process.main(arg_lst)
 
+                # load the posterior samples
+                # idata, _  = load_smc_samples_to_idata(_savedir + 'sample_{}_'.format(i) + model + '_smc_samples.json', sample_time=False)
+
                 # load posterior predictive samples
                 post_samples = np.load(_savedir + 'sample_{}_'.format(i) + model + '_posterior_predictive_samples.npy')
-                print(post_samples.shape)
 
+                # compute the relative error, RMSE and uncert95 of individual models
+                RMSE_full_dat[size][model].append(np.sqrt(np.nanmean((np.nanmean(post_samples,axis=0) \
+                                - np.nanmean(responses,axis=1))**2)))
+                RMSE_sub_dat[size][model].append(np.sqrt(np.nanmean((np.nanmean(post_samples,axis=0) \
+                                - np.nanmean(dat,axis=1))**2)))
+                rel_error_full_dat[size][model].append(np.linalg.norm(np.nanmean(post_samples,axis=0) \
+                                - np.nanmean(responses,axis=1))/np.linalg.norm(np.nanmean(responses,axis=1)))
+                rel_error_sub_dat[size][model].append(np.linalg.norm(np.nanmean(post_samples,axis=0) \
+                                - np.nanmean(dat,axis=1))/np.linalg.norm(np.nanmean(dat,axis=1)))
+                uncert95[size][model].append(np.nanmean(np.abs(np.squeeze(np.diff(np.nanquantile(post_samples, [0.025, 0.975], axis=0),axis=0)))))
+                std[size][model].append(np.nanmean(np.nanstd(post_samples, axis=0)))
             
-                 
-                
+    # save errors and uncertainties to file
+    # data summary stats
+    with open(savedir + 'data_RMSE.json', 'w') as f:
+        json.dump(data_RMSE, f)
+    with open(savedir + 'data_rel_error.json', 'w') as f:
+        json.dump(data_rel_error, f)
+    with open(savedir + 'data_uncert95.json', 'w') as f:
+        json.dump(data_uncert95, f)
+    with open(savedir + 'data_std.json', 'w') as f:
+        json.dump(data_std, f)
 
-
-        #     # compute the SAM for each sample
-        #     sample_SAMs = np.apply_along_axis(sustained_activity_metric, axis=0, arr=dat, index_of_interest=times_40_idx)
-        #     samples.append(np.array(sample_SAMs))
-
-        #     # make a plot
-        #     ax[0, idx].set_title('{} cells'.format(int(size)))
-        #     ax[0, idx].plot(times, np.nanmean(dat, axis=1), linewidth=2, alpha=0.5)
-
-        #     ax[1, idx].plot(times, np.nanstd(dat, axis=1), linewidth=2, alpha=0.5)
-        #     ax[1, idx].set_xlabel('Time (min)')
-
-        #     if idx == 0:
-        #         ax[0, idx].set_ylabel('Mean ERK act.')
-        #         ax[1, idx].set_ylabel('STD ERK act.')
-        
-        #     else:
-        #         ax[0, idx].set_yticklabels([])
-        #         ax[1, idx].set_yticklabels([])
-        #     ax[0, idx].set_yticks([0.0, 0.5, 1.0])
-        #     ax[1, idx].set_yticks([0.0, 0.25, 0.5])
-        #     ax[1, idx].set_ylim([0.0, 0.5])
-
-        # ax[0, idx].plot(times, cyto_mean,  color='k', linewidth=3)
-        # ax[1, idx].plot(times, cyto_std,  color='k', linewidth=3)
-        
+    # model predictions
+    with open(savedir + 'RMSE_full_dat.json', 'w') as f:
+        json.dump(RMSE_full_dat, f)
+    with open(savedir + 'RMSE_sub_dat.json', 'w') as f:
+        json.dump(RMSE_sub_dat, f)
+    with open(savedir + 'rel_error_full_dat.json', 'w') as f:
+        json.dump(rel_error_full_dat, f)
+    with open(savedir + 'rel_error_sub_dat.json', 'w') as f:
+        json.dump(rel_error_sub_dat, f)
+    with open(savedir + 'uncert95.json', 'w') as f:
+        json.dump(uncert95, f)
+    with open(savedir + 'std.json', 'w') as f:
+        json.dump(std, f)
+    
+    
     print('Completed {}'.format(args.compartment))
 
 if __name__ == '__main__':
