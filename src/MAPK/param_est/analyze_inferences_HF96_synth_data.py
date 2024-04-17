@@ -42,6 +42,7 @@ savedir = '../../../results/MAPK/param_est/HF96_synthetic_data/'
 model_info = json.load(open('model_info.json', 'r'))
 model_names = list(model_info.keys())
 display_names = [model_info[model]['display_name'] for model in model_names]
+print(model_names)
 
 idata = {}
 posterior_samples = {}
@@ -97,28 +98,52 @@ for idx,model in enumerate(model_names):
 
 plt.close('all')
 
+########################### Make plot of the data ##############################
+# use the pretty posterior predictive dose-response function
+fig, ax = plot_stimulus_response_curve(-100*np.ones_like(posterior_samples['shin_2014']), data, inputs, input_name='EGF stimulus (nM)', output_name='% maximal ERK \n activity', box_color='w', data_color='red',
+                                        data_std=0.1, width=1.1, height=1.1, data_marker_size=5.0, scatter_marker_size=0,
+                                        title=None, xlabel=False,xticklabels=False,ylabel=False, yticklabels=False)
+ax.set_title(ax.get_title(), fontsize=12.0)
+
+fig.savefig(savedir+'dose_response_training_data.pdf', transparent=True)
+
+# make a legend
+fig, ax = plt.subplots()
+ax.errorbar(-100, -100, yerr=0.1, color='red', fmt='x', markersize=5.0, label='training data')
+leg = ax.legend(bbox_to_anchor=(2.0, 1.0), numpoints=1, fontsize=8.0)
+export_legend(leg, savedir+'dose_response_training_data_leg.pdf')
+leg.remove()
+plt.close('fig')
+ 
+
 ################ Make pretty posterior dose-response curves ################
 ## We also need to plot and analyze dose-responses that are not posterior predictive, 
 #           but simply use posterior samples to compute them
 
-skip_idxs = []
+skip_idxs = [3,4,5]
 for idx,model in enumerate(model_info.keys()):
     if idx in skip_idxs:
         print('skipping', model)
         continue
     else:
-        print('plotting', model)
+#         print('plotting', model)
         this_model_info = model_info[model]
 
         plot_p = plotting_params[model]
 
-        # # create dose-response curve prediction
-        # dose_response = predict_dose_response(model, idata[model], inputs,   
-        #                         this_model_info['input_state'], this_model_info['ERK_states'], 
-        #                         float(this_model_info['max_time']), EGF_conversion_factor=float(this_model_info['EGF_conversion_factor']),nsamples=400, timeout=30)
-        # # save
-        # np.save(savedir+model+'/dose_response_predict.npy', dose_response)
-        dose_response = np.load(savedir+model+'/dose_response_predict.npy')
+        max_time = this_model_info['max_time']
+        if max_time == 'jnp.inf':
+            max_time = np.inf
+        else:
+            max_time = float(max_time)
+
+        # create dose-response curve prediction
+        dose_response = predict_dose_response(model, idata[model], inputs,   
+                                this_model_info['input_state'], this_model_info['ERK_states'], 
+                                max_time, EGF_conversion_factor=float(this_model_info['EGF_conversion_factor']),nsamples=400, timeout=30)
+        # save
+        np.save(savedir+model+'/dose_response_predict.npy', dose_response)
+        # dose_response = np.load(savedir+model+'/dose_response_predict.npy')
 
         fig, ax = plot_stimulus_response_curve(dose_response, data, inputs, input_name='EGF stimulus (nM)', output_name='% maximal ERK \n activity', box_color='w', data_color='red',
                                         data_std=0.1, width=1.1, height=1.1, data_marker_size=5.0, scatter_marker_size=0,
@@ -127,39 +152,39 @@ for idx,model in enumerate(model_info.keys()):
         fig.savefig(savedir+model+'/'+model+'_dose_response_predict.pdf', transparent=True)
 
 
-################ Make posterior trajectory ################
-## Now we want to use posterior draws to simulate trajectory predictions
-n_traj = 400
+# ################ Make posterior trajectory ################
+# ## Now we want to use posterior draws to simulate trajectory predictions
+# n_traj = 400
 
-skip_idxs = []
-for idx,model in enumerate(model_names):
-    if idx in skip_idxs:
-        print('skipping', model)
-        continue
-    else:
-        print('plotting', model)
-        this_model_info = model_info[model]
+# skip_idxs = []
+# for idx,model in enumerate(model_names):
+#     if idx in skip_idxs:
+#         print('skipping', model)
+#         continue
+#     else:
+#         print('plotting', model)
+#         this_model_info = model_info[model]
 
-        plot_p = plotting_params[model]
+#         plot_p = plotting_params[model]
 
      
-        # # predict trajectories
-        # traj = predict_traj_response(model, idata[model], inputs_traj, times_traj, 
-        #                                       this_model_info['input_state'], this_model_info['ERK_states'],
-        #                                       float(this_model_info['time_conversion']),
-        #                                       EGF_conversion_factor=float(this_model_info['EGF_conversion_factor']),
-        #                                       nsamples=400)
-        # # save
-        # np.save(savedir+model+'/traj_predict.npy', traj)
-        traj = np.load(savedir+model+'/traj_predict.npy')
+#         # # predict trajectories
+#         # traj = predict_traj_response(model, idata[model], inputs_traj, times_traj, 
+#         #                                       this_model_info['input_state'], this_model_info['ERK_states'],
+#         #                                       float(this_model_info['time_conversion']),
+#         #                                       EGF_conversion_factor=float(this_model_info['EGF_conversion_factor']),
+#         #                                       nsamples=400)
+#         # # save
+#         # np.save(savedir+model+'/traj_predict.npy', traj)
+#         traj = np.load(savedir+model+'/traj_predict.npy')
 
-        # plot
-        plot_posterior_trajectories(traj, data_traj, data_std_traj, times_traj, colors[idx], 
-                                        inputs_traj, savedir+model+'/',
-                                        model, data_time_to_mins=60,
-                                        width=1.1, height=0.5, 
-                                        data_downsample=10,
-                                        ylim=[[0.0, 1.2], [0.0, 1.2], [0.0, 1.2]],
-                                        y_ticks=[[0.0, 1.0], [0.0, 1.0], [0.0, 1.0]],
-                                        fname='_pred_traj_', labels=False)
-plt.close('all')
+#         # plot
+#         plot_posterior_trajectories(traj, data_traj, data_std_traj, times_traj, colors[idx], 
+#                                         inputs_traj, savedir+model+'/',
+#                                         model, data_time_to_mins=60,
+#                                         width=1.1, height=0.5, 
+#                                         data_downsample=10,
+#                                         ylim=[[0.0, 1.2], [0.0, 1.2], [0.0, 1.2]],
+#                                         y_ticks=[[0.0, 1.0], [0.0, 1.0], [0.0, 1.0]],
+#                                         fname='_pred_traj_', labels=False)
+# plt.close('all')
