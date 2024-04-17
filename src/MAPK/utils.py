@@ -515,12 +515,16 @@ def set_prior_params(model_name, param_names, nominal_params, free_param_idxs, p
     return prior_param_dict
 
 def build_pymc_model(prior_param_dict, data, y0_EGF_inputs, 
-                    output_states, max_time, model_dfrx_ode, model=None, 
+                    output_states, max_time, model_dfrx_ode, model_func=None, 
                     simulator=ERK_stim_response, data_sigma=0.1):
     """ Builds a pymc model object for the MAPK models.
 
     Constructs priors for the model, and uses the ERK_stim_response function to 
     generate the stimulus response function and likelihood.
+    
+    If model is None, the function will use the default model. If a model is s
+    pecified, it will use that model_func function to create a PyMC model.
+
     """
 
     
@@ -568,21 +572,24 @@ def build_pymc_model(prior_param_dict, data, y0_EGF_inputs,
     
     
     # Construct the PyMC model # 
-    model = pm.Model()
-    with model:
-        # loop over free params and construct the priors
-        priors = []
-        for key, value in prior_param_dict.items():
-            # create PyMC variables for each parameters in the model
-            prior = eval(value)
-            priors.append(prior)
+    if model_func is not None:
+        model = model_func(prior_param_dict, sol_op, data, data_sigma)
+    else:
+        model = pm.Model()
+        with model:
+            # loop over free params and construct the priors
+            priors = []
+            for key, value in prior_param_dict.items():
+                # create PyMC variables for each parameters in the model
+                prior = eval(value)
+                priors.append(prior)
 
-        # predict dose response
-        prediction = sol_op(*priors)
+            # predict dose response
+            prediction = sol_op(*priors)
 
-        # assume a normal model for the data
-        # sigma specified by the data_sigma param to this function
-        llike = pm.Normal("llike", mu=prediction, sigma=data_sigma, observed=data)
+            # assume a normal model for the data
+            # sigma specified by the data_sigma param to this function
+            llike = pm.Normal("llike", mu=prediction, sigma=data_sigma, observed=data)
 
     return model
 
