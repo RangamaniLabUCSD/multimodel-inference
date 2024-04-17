@@ -63,6 +63,8 @@ def parse_args(raw_args=None):
     parser.add_argument("--skip_sample", action='store_false',default=True)
     parser.add_argument("-rtol", type=float,default=1e-6)
     parser.add_argument("-atol", type=float,default=1e-6)
+    parser.add_argument("-upper_prior_mult", type=float,default=1e2)
+    parser.add_argument("-lower_prior_mult", type=float,default=1e-2)
 
     args=parser.parse_args(raw_args)
     return args
@@ -107,7 +109,7 @@ def main(raw_args=None):
     ERK_indices = [state_names.index(s) for s in args.ERK_states.split(',')]
 
     # construct the strings to make priors and constants
-    prior_param_dict = set_prior_params(args.model, list(p_dict.keys()), plist, free_param_idxs, upper_mult=100, lower_mult=0.01, prior_family=args.prior_family, savedir=args.savedir, saveplot=False)
+    prior_param_dict = set_prior_params(args.model, list(p_dict.keys()), plist, free_param_idxs, upper_mult=args.upper_prior_mult, lower_mult=args.lower_prior_mult, prior_family=args.prior_family, savedir=args.savedir, saveplot=False)
     
     # make simulator lambda function that solves at correct times with the time conversion factor taken into account
     if len(inputs) > 1:
