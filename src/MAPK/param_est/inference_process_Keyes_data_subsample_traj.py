@@ -36,7 +36,7 @@ import os
 import shutil
 import json
 
-import inference_process_HF_synth_traj as inference_process
+import inference_process_traj as inference_process
 
 # tell jax to use 64bit floats
 jax.config.update("jax_enable_x64", True)
