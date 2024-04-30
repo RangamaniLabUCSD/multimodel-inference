@@ -147,7 +147,7 @@ class ryu_2015_Rap1(eqx.Module):
             'D_Rap1Act':1.0,
             'VmaxRap1deact':0.5, # 1/min
             'D_Rap1deact':1.0,
-            'k_RafRap1':0.5, # 1/min
+            'k_RafRap1':5.0, # 1/min
             'D_RafRap1':1.0,
         }
 

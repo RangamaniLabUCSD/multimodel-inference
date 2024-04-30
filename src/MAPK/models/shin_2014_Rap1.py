@@ -103,7 +103,7 @@ class shin_2014_Rap1(eqx.Module):
             # new params
             'kRap1Act': 1.0, # 1/min
             'kRap1deAct': 1.0, # 1/min
-            'kRap1_RafAct': 1.0, # 1/min
+            'kRap1_RafAct': 10.0, # 1/min
         }
         param_list = [param_dict[key] for key in param_dict]
 
