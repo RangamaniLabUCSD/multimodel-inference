@@ -250,13 +250,13 @@ def solve_ss_newton(model_dfrx_ode, y0, params, t1, event_rtol, event_atol, rtol
 vsolve_ss_newton = jax.vmap(solve_ss_newton, in_axes=(None, 0, None, None, None, None, None, None))
 
 @jax.jit
-def solve_traj(model_dfrx_ode, y0, params, t1, ERK_indices, times, rtol, atol):
+def solve_traj(model_dfrx_ode, y0, params, t1, ERK_indices, times, rtol, atol, pcoeff=0,   icoeff=1, dcoeff=0):
     """ simulates a model over the specified time interval and returns the 
     calculated values.
     Returns an array of shape (n_species, 1) """
     dt0=1e-3
     solver = diffrax.Kvaerno5()
-    stepsize_controller=diffrax.PIDController(rtol, atol)
+    stepsize_controller=diffrax.PIDController(rtol, atol, pcoeff=pcoeff, icoeff=icoeff, dcoeff=dcoeff)
     t0 = 0.0
     saveat=diffrax.SaveAt(ts=times)
 
@@ -841,7 +841,11 @@ def plot_posterior_trajectories(post_preds, data, data_std, times, color,
                     fill.set_zorder(0) # make sure that it is behind everything else
 
                 # save the figure
-                fig.savefig(savedir+model_name+fname+str(np.round(EGF_levels[stim_idx], 3))+'.pdf', bbox_inches='tight', transparent=True)
+                if type(EGF_levels[stim_idx]) == str:
+                    egf_lvl_name = ''
+                else:
+                    egf_lvl_name = str(np.round(EGF_levels[stim_idx], 3))
+                fig.savefig(savedir+model_name+fname+egf_lvl_name+'.pdf', bbox_inches='tight', transparent=True)
 
 def create_prior_predictive(model, mapk_model_name, data, inputs, savedir, 
             seed=np.random.default_rng(seed=123), trajectory=False, times=None, data_std=None, nsamples=100):
