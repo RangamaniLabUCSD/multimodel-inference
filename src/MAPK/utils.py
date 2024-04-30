@@ -803,10 +803,6 @@ def plot_posterior_trajectories(post_preds, data, data_std, times, color,
                         ax.set_yticklabels([0, 100*y_ticks[stim_idx][1]])
                 
                 ax.set_ylim(ylim[stim_idx])
-                # if (ax.get_ylim()[1]*0.75) < y_ticks[stim_idx][1]:
-                #         ax.set_ylim([0.0, y_ticks[stim_idx][1]*1.1])
-                # else:
-                #         ax.set_ylim([0.0, ax.get_ylim()[1]])
 
                 # plot the data on top, downsample by 10 for visibility
                 if n_stim > 1:
