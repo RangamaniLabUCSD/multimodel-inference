@@ -65,6 +65,9 @@ def parse_args(raw_args=None):
     parser.add_argument("-atol", type=float,default=1e-6)
     parser.add_argument("-upper_prior_mult", type=float,default=1e2)
     parser.add_argument("-lower_prior_mult", type=float,default=1e-2)
+    parser.add_argument('-pcoeff', type=float, default=0, help='pcoeff for PID time stepper')
+    parser.add_argument('-dcoeff', type=float, default=0, help='dcoeff for PID time stepper')
+    parser.add_argument('-icoeff', type=float, default=1.0, help='icoeff for PID time stepper')
 
     args=parser.parse_args(raw_args)
     return args
@@ -117,7 +120,7 @@ def main(raw_args=None):
     else:
         print('Using single input traj func.')
         def ERK_stim_traj(p, model, max_time, y0, output_states):
-            traj = solve_traj(model, y0, p, max_time, output_states, times/args.time_conversion_factor, args.rtol, args.atol)
+            traj = solve_traj(model, y0, p, max_time, output_states, times/args.time_conversion_factor, args.rtol, args.atol, pcoeff=args.pcoeff, dcoeff=args.dcoeff, icoeff=args.icoeff)
             # return normalized trajectory
             return [(traj - np.min(traj)) / (np.max(traj) - np.min(traj))], traj
 
