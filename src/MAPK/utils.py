@@ -736,13 +736,17 @@ def plot_posterior_trajectories(post_preds, data, data_std, times, color,
                                        ylim=[[0.0, 1.2], [0.0, 1.2], [0.0, 1.2]],
                                        xticklabels=None, data_downsample=5,
                                        width=1.1, height=0.5,fname='_post_pred_',
-                                       labels=True, xlim=None, train_times=None):
+                                       labels=True, xlim=None, train_times=None,
+                                       one_axis=False):
         # get dims
         if len(post_preds.shape) > 2:
             n_traj, n_stim, n_times = post_preds.shape
         else:
             n_traj, n_times = post_preds.shape
             n_stim = 1
+
+        if one_axis:
+            fig, ax = get_sized_fig_ax(width, height)
 
         # loop over the stimuli and make a plot for each
         for stim_idx in range(n_stim):
@@ -751,7 +755,7 @@ def plot_posterior_trajectories(post_preds, data, data_std, times, color,
                 names = ['run'+str(i) for i in range(n_traj)]
                 idxs = np.linspace(0, (n_traj*times.shape[0]-1), n_traj*times.shape[0])
                 cnt = 0
-                # TODO: add option for spaghetti plot
+                
                 for i in range(n_traj):
                         for j in range(times.shape[0]):
                                 tr_dict['run'][int(idxs[cnt])] = names[i]
@@ -764,7 +768,8 @@ def plot_posterior_trajectories(post_preds, data, data_std, times, color,
                 tr_df = pd.DataFrame.from_dict(tr_dict)
 
                 # make new axes and plot
-                fig, ax = get_sized_fig_ax(width, height)
+                if not one_axis:
+                    fig, ax = get_sized_fig_ax(width, height)
 
                 sns.lineplot(data=tr_df,
                         x='timepoint',
@@ -837,8 +842,10 @@ def plot_posterior_trajectories(post_preds, data, data_std, times, color,
                     fill.set_zorder(0) # make sure that it is behind everything else
 
                 # save the figure
-                if type(EGF_levels[stim_idx]) == str:
+                if EGF_levels[stim_idx] == '':
                     egf_lvl_name = ''
+                elif type(EGF_levels[stim_idx]) == str:
+                    egf_lvl_name = EGF_levels[stim_idx]
                 else:
                     egf_lvl_name = str(np.round(EGF_levels[stim_idx], 3))
                 fig.savefig(savedir+model_name+fname+egf_lvl_name+'.pdf', bbox_inches='tight', transparent=True)
