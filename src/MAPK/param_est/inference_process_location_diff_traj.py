@@ -10,6 +10,7 @@ import diffrax
 import sys
 import argparse
 import pymc as pm
+from pytensor.tensor import max as pt_max
 
 sys.path.append("../models/")
 from orton_2009 import *
@@ -25,108 +26,78 @@ import os
 
 # tell jax to use 64bit floats
 jax.config.update("jax_enable_x64", True)
-# jax.config.update("jax_platform_name", "cpu")
+jax.config.update("jax_platform_name", "cpu")
 
-# # print out device count
-# n_devices = jax.local_device_count() 
-# print(jax.devices())
-# print('Using {} jax devices'.format(n_devices))
 
 # need a posterior predictive function that can deal with the fact that we now have multiple outputs in the llike function
-def create_posterior_predictive_local(model, posterior_idata, mapk_model_name, data_CYTO, data_PM, data_std_CYTO, data_std_PM, times, inputs, savedir, seed=np.random.default_rng(seed=123)):
+def plot_trajectories(mapk_model_name, times, inputs, savedir, type,
+    llike_CYTO, llike_PM, llike_CYTO_Rap1KD, llike_PM_Rap1KD, \
+    data_CYTO, data_PM, data_CYTO_RAP1i, data_PM_RAP1i,
+    data_std_CYTO, data_std_PM, data_std_CYTO_RAP1i, data_std_PM_RAP1i, 
+    seed=np.random.default_rng(seed=123)):
     """ Creates prior predictive samples plot of the stimulus response curve.
+
+    Type should be 'prior' or 'posterior'.
     """
 
-    # sample from the posterior predictive
-    with model:
-        posterior_predictive = pm.sample_posterior_predictive(posterior_idata, model=model, 
-                                                              random_seed=seed)
-
-    # extract llike values
-    posterior_llike_CYTO = np.squeeze(posterior_predictive.posterior_predictive['llike_CYTO'].values)
-    posterior_llike_PM = np.squeeze(posterior_predictive.posterior_predictive['llike_PM'].values)
+    data = {'CYTO':{'llike':llike_CYTO, 'data':data_CYTO, 'data_std':data_std_CYTO},
+            'PM':{'llike':llike_PM, 'data':data_PM, 'data_std':data_std_PM},
+            'CYTO_Rap1KD':{'llike':llike_CYTO_Rap1KD, 'data':data_CYTO_RAP1i, 'data_std':data_std_CYTO_RAP1i},
+            'PM_Rap1KD':{'llike':llike_PM_Rap1KD, 'data':data_PM_RAP1i, 'data_std':data_std_PM_RAP1i}}
 
     fig_ax = []
-    for post, name, data, data_std in zip([posterior_llike_CYTO, posterior_llike_PM], ['_CYTO', '_PM'], [data_CYTO, data_PM],      
-                          [data_std_CYTO, data_std_PM]):
-        # generate the plot
-        # reshape accordingly
-        nchains,nsamples,ntime=post.shape
-        posterior_llike = np.reshape(post, (nchains*nsamples, ntime))
+    for key in data.keys():
+        samples = data[key]['llike']
+
+        if samples.ndim == 3:
+            nchains,nsamples,ntime=samples.shape
+            samples = np.reshape(samples, (nchains*nsamples, ntime))
+        else:
+            nsamples,ntime=samples.shape
         
-        fig, ax = plot_trajectory_responses_oneAxis(posterior_llike, data, inputs, times,
-                                            savedir+mapk_model_name+name+'_legend_posterior_predictive.pdf', data_std=data_std)
+        fig, ax = get_sized_fig_ax(3.0, 1.5)
+
+        # plot the samples
+        tr_dict =  {'run':{}, 'timepoint':{}, 'ERK_act':{}}
+        names = ['run'+str(i) for i in range(nsamples)]
+        idxs = np.linspace(0, (nsamples*times.shape[0]-2), nsamples*times.shape[0]-1)
+        cnt = 0
+        for i in range(nsamples):
+            for j in range(times.shape[0]-1):
+                    tr_dict['run'][int(idxs[cnt])] = names[i]
+                    tr_dict['timepoint'][int(idxs[cnt])] = times[j+1]
+                    tr_dict['ERK_act'][int(idxs[cnt])] = samples[i,j]
+                    cnt += 1
+        tr_df = pd.DataFrame.from_dict(tr_dict)
+
+        sns.lineplot(data=tr_df,
+                    x='timepoint',
+                    y='ERK_act',
+                    color='c',
+                    legend=True,
+                    errorbar=('pi', 95), # percentile interval form 2.5th to 97.5th
+                    ax=ax)
+
+        # ax.set_ylim([0.0, 1.0])
+        ax.set_xlim([0.0, max(times)])
+
+        # plot data
+        data_downsample = 3
+        ax.errorbar(times[::data_downsample], np.squeeze(data[key]['data'])[::data_downsample], yerr=data[key]['data_std'][::data_downsample], fmt='o', linewidth=1.0, markersize=0.1, color='k')
+
+        ax.set_xlabel('time (min)')
+        ax.set_ylabel('ERK activity')
 
         # save the figure
-        fig.savefig(savedir + mapk_model_name + name + '_posterior_predictive.pdf', 
+        fig.savefig(savedir + mapk_model_name + '_' + key + '_' + type + '_predictive.pdf', 
                     bbox_inches='tight', transparent=True)
 
         # save the samples
-        np.save(savedir + mapk_model_name + name + '_posterior_predictive_samples.npy', posterior_llike)
+        np.save(savedir + mapk_model_name + '_' + key + '_' + type + '_predictive_samples.npy', samples)
 
         fig_ax.append((fig, ax))
     
     return fig_ax
-
-def create_prior_predictive_local(model, mapk_model_name, data_CYTO, data_PM, data_std_CYTO, data_std_PM, data_CYTO_Rap1KD, data_PM_Rap1KD, data_std_CYTO_Rap1KD, data_std_PM_Rap1KD, times, inputs, savedir, seed=np.random.default_rng(seed=123)):
-    """ Creates prior predictive samples plot of the stimulus response curve.
-    """
-
-    # sample from the posterior predictive
-    with model:
-        prior_predictive = pm.sample_prior_predictive(samples=500, random_seed=seed)
-
-    # extract llike values
-    prior_llike_CYTO = np.squeeze(prior_predictive.prior_predictive['llike_CYTO'].values)
-    prior_llike_PM = np.squeeze(prior_predictive.prior_predictive['llike_PM'].values)
-    prior_llike_CYTO_Rap1KD = np.squeeze(prior_predictive.prior_predictive['llike_CYTO_Rap1KD'].values)
-    prior_llike_PM_Rap1KD = np.squeeze(prior_predictive.prior_predictive['llike_PM_Rap1KD'].values)
-
-    fig_ax = []
-    for prior_llike, name, data, data_std in zip([prior_llike_CYTO, prior_llike_PM, prior_llike_CYTO_Rap1KD, prior_llike_PM_Rap1KD], ['_CYTO', '_PM', '_CYTO_Rap1KD', '_PM_Rap1KD'], [data_CYTO, data_PM, data_CYTO_Rap1KD, data_PM_Rap1KD],      
-                          [data_std_CYTO, data_std_PM, data_std_CYTO_Rap1KD, data_std_PM_Rap1KD]):
-        # generate the plot
-        # reshape accordingly
-        # nsamples,ntime=post.shape
-        # prior_llike = np.reshape(post, (nsamples, ntime))
-        
-        fig, ax = plot_trajectory_responses_oneAxis(prior_llike, data, inputs, times,
-                                            savedir+mapk_model_name+name+'_legend_prior_predictive.pdf', data_std=data_std)
-
-        # save the figure
-        fig.savefig(savedir + mapk_model_name + name + '_prior_predictive.pdf', 
-                    bbox_inches='tight', transparent=True)
-
-        fig_ax.append((fig, ax))
-    
-    return fig_ax
-
-@jax.jit
-def solve_traj_local(model_dfrx_ode, y0, params, t1, times, rtol, atol):
-    """ simulates a model over the specified time interval and returns the 
-    calculated values.
-    Returns an array of shape (n_species, 1) """
-    dt0=1e-3
-    solver = diffrax.Kvaerno5()
-    stepsize_controller=diffrax.PIDController(rtol, atol)
-    t0 = 0.0
-    saveat=diffrax.SaveAt(ts=times)
-
-    sol = diffrax.diffeqsolve(
-        model_dfrx_ode, 
-        solver, 
-        t0, 
-        t1, 
-        dt0, 
-        tuple(y0), 
-        stepsize_controller=stepsize_controller,
-        saveat=saveat,
-        args=params,
-        max_steps=600000,
-        throw=False,)
-    
-    return jnp.array(sol.ys)
-
 
 def build_pymc_model_local(prior_param_dict, data, y0, y0_Rap1KD,
                     output_states, max_time, model_dfrx_ode, model_func=None, 
@@ -139,6 +110,8 @@ def build_pymc_model_local(prior_param_dict, data, y0, y0_Rap1KD,
     If model is None, the function will use the default model. If a model is s
     pecified, it will use that model_func function to create a PyMC model.
 
+    This is different than the build_pymc_model function in that it creates PyTensor Ops for
+    the case with the Rap1 active and inactive which is defined by different initial conditions.
     """
 
     ####### SOL_OP for the model with Rap1 #######
@@ -216,6 +189,7 @@ def build_pymc_model_local(prior_param_dict, data, y0, y0_Rap1KD,
     model = model_func(prior_param_dict, sol_op, sol_op_Rap1KD, data, data_sigma)
 
     return model
+
 ################################################################################
 #### PyMC Model Functions ####
 ################################################################################
@@ -242,14 +216,23 @@ def all_diff(prior_param_dict, sol_op, sol_op_Rap1KD, data_CYTO, data_PM, data_s
             priors_CYTO.append(prior_CYTO)
             priors_PM.append(prior_PM)
 
-        # predict
-        prediction_CYTO = sol_op(*priors_CYTO)
-        prediction_PM = sol_op(*priors_PM)
-        prediction_CYTO_Rap1KD = sol_op_Rap1KD(*priors_CYTO)
-        prediction_PM_Rap1KD = sol_op_Rap1KD(*priors_PM)
+        # predict full Rap1
+        CYTO = pm.Deterministic("CYTO", sol_op(*priors_CYTO))
+        PM = pm.Deterministic("PM", sol_op(*priors_PM))
+        # Rap1 inhib
+        CYTO_Rap1KD = pm.Deterministic("CYTO_Rap1KD", sol_op_Rap1KD(*priors_CYTO))
+        PM_Rap1KD = pm.Deterministic("PM_Rap1KD", sol_op_Rap1KD(*priors_PM))
+        # normalization factors
+        CYTO_norm = pm.Deterministic("CYTO_norm", pt_max(CYTO))
+        PM_norm = pm.Deterministic("PM_norm", pt_max(PM))
+
+        # normalized predictions are the actual predictions divided by the max value
+        prediction_CYTO = pm.Deterministic("prediction_CYTO", CYTO/CYTO_norm)
+        prediction_PM = pm.Deterministic("prediction_PM", PM/PM_norm)
+        prediction_CYTO_Rap1KD = pm.Deterministic("prediction_CYTO_Rap1KD", CYTO_Rap1KD/CYTO_norm)
+        prediction_PM_Rap1KD = pm.Deterministic("prediction_PM_Rap1KD", PM_Rap1KD/PM_norm) 
 
         # assume a normal model for the data
-        # sigma specified by the data_sigma param to this function
         llike_CYTO = pm.Normal("llike_CYTO", mu=prediction_CYTO, sigma=data_std_CYTO, observed=data_CYTO)
         llike_PM = pm.Normal("llike_PM", mu=prediction_PM, sigma=data_std_PM, observed=data_PM)
         llike_CYTO_Rap1KD = pm.Normal("llike_CYTO_Rap1KD", mu=prediction_CYTO_Rap1KD, sigma=data_std_CYTO_Rap1KD, observed=data_CYTO_Rap1KD)
@@ -272,17 +255,26 @@ def Orton_2009_Rap1_diff(prior_param_dict, sol_op, sol_op_Rap1KD, data_CYTO, dat
                 priors.append(prior)
             else:
                 priors.append(None)
-                k1_C3G_Deactivation_CYTO = pm.LogNormal("k1_C3G_Deactivation_CYTO",sigma=0.7804389020524362, mu=0.9162907318741551)
-                k1_C3G_Deactivation_PM = pm.LogNormal("k1_C3G_Deactivation_PM",sigma=0.7804389020524362, mu=0.9162907318741551)
+                k1_C3G_Deactivation_CYTO = pm.LogNormal("k1_C3G_Deactivation_CYTO",sigma=3.5244297004803578, mu=0.9162907318741551)
+                k1_C3G_Deactivation_PM = pm.LogNormal("k1_C3G_Deactivation_PM",sigma=3.5244297004803578, mu=0.9162907318741551)
     
         # predict dose response
-        prediction_CYTO = sol_op(*priors[0:k1_C3G_Deact_idx], k1_C3G_Deactivation_CYTO, *priors[k1_C3G_Deact_idx+1:])
-        prediction_PM = sol_op(*priors[0:k1_C3G_Deact_idx], k1_C3G_Deactivation_PM, *priors[k1_C3G_Deact_idx+1:])
-        prediction_CYTO_Rap1KD = sol_op_Rap1KD(*priors[0:k1_C3G_Deact_idx], k1_C3G_Deactivation_CYTO, *priors[k1_C3G_Deact_idx+1:])
-        prediction_PM_Rap1KD = sol_op_Rap1KD(*priors[0:k1_C3G_Deact_idx], k1_C3G_Deactivation_PM, *priors[k1_C3G_Deact_idx+1:])
+        CYTO = sol_op(*priors[0:k1_C3G_Deact_idx], k1_C3G_Deactivation_CYTO, *priors[k1_C3G_Deact_idx+1:])
+        PM = sol_op(*priors[0:k1_C3G_Deact_idx], k1_C3G_Deactivation_PM, *priors[k1_C3G_Deact_idx+1:])
+        CYTO_Rap1KD = sol_op_Rap1KD(*priors[0:k1_C3G_Deact_idx], k1_C3G_Deactivation_CYTO, *priors[k1_C3G_Deact_idx+1:])
+        PM_Rap1KD = sol_op_Rap1KD(*priors[0:k1_C3G_Deact_idx], k1_C3G_Deactivation_PM, *priors[k1_C3G_Deact_idx+1:])
+
+         # normalization factors
+        CYTO_norm = pm.Deterministic("CYTO_norm", pt_max(CYTO))
+        PM_norm = pm.Deterministic("PM_norm", pt_max(PM))
+
+        # normalized predictions are the actual predictions divided by the max value
+        prediction_CYTO = pm.Deterministic("prediction_CYTO", CYTO/CYTO_norm)
+        prediction_PM = pm.Deterministic("prediction_PM", PM/PM_norm)
+        prediction_CYTO_Rap1KD = pm.Deterministic("prediction_CYTO_Rap1KD", CYTO_Rap1KD/CYTO_norm)
+        prediction_PM_Rap1KD = pm.Deterministic("prediction_PM_Rap1KD", PM_Rap1KD/PM_norm) 
 
         # assume a normal model for the data
-        # sigma specified by the data_sigma param to this function
         llike_CYTO = pm.Normal("llike_CYTO", mu=prediction_CYTO, sigma=data_std_CYTO, observed=data_CYTO)
         llike_PM = pm.Normal("llike_PM", mu=prediction_PM, sigma=data_std_PM, observed=data_PM)
         llike_CYTO_Rap1KD = pm.Normal("llike_CYTO_Rap1KD", mu=prediction_CYTO_Rap1KD, sigma=data_std_CYTO_Rap1KD, observed=data_CYTO_Rap1KD)
@@ -308,18 +300,27 @@ def Orton_2009_p90RsKSoS_diff(prior_param_dict, sol_op, sol_op_Rap1KD, data_CYTO
                 print(key)
                 priors.append(None)
             
-        k1_P90Rsk_Deactivation_CYTO = pm.LogNormal("k1_P90Rsk_Deactivation_CYTO",sigma=0.3902194510262181, mu=-5.298317366548036)
-        k1_P90Rsk_Deactivation_PM = pm.LogNormal("k1_P90Rsk_Deactivation_PM",sigma=0.3902194510262181, mu=-5.298317366548036)
-        k1_Sos_Deactivation_CYTO = pm.LogNormal("k1_Sos_Deactivation_CYTO",sigma=0.3902194510262181, mu=0.9162907318741551)
-        k1_Sos_Deactivation_PM = pm.LogNormal("k1_Sos_Deactivation_PM",sigma=0.3902194510262181, mu=0.9162907318741551)
+        k1_P90Rsk_Deactivation_CYTO = pm.LogNormal("k1_P90Rsk_Deactivation_CYTO",sigma=3.5244297004803578, mu=-5.298317366548036)
+        k1_P90Rsk_Deactivation_PM = pm.LogNormal("k1_P90Rsk_Deactivation_PM",sigma=3.5244297004803578, mu=-5.298317366548036)
+        k1_Sos_Deactivation_CYTO = pm.LogNormal("k1_Sos_Deactivation_CYTO",sigma=3.5244297004803578, mu=0.9162907318741551)
+        k1_Sos_Deactivation_PM = pm.LogNormal("k1_Sos_Deactivation_PM",sigma=3.5244297004803578, mu=0.9162907318741551)
     
         # predict dose response
-        prediction_CYTO = sol_op(k1_Sos_Deactivation_CYTO, *priors[k1_Sos_idx+1:k1_P90Rsk_idx], k1_P90Rsk_Deactivation_CYTO, *priors[k1_P90Rsk_idx+1:])
-        prediction_PM = sol_op(k1_Sos_Deactivation_PM, *priors[k1_Sos_idx+1:k1_P90Rsk_idx], k1_P90Rsk_Deactivation_PM, *priors[k1_P90Rsk_idx+1:])
-        prediction_CYTO_Rap1KD = sol_op_Rap1KD(k1_Sos_Deactivation_CYTO, *priors[k1_Sos_idx+1:k1_P90Rsk_idx], k1_P90Rsk_Deactivation_CYTO, *priors[k1_P90Rsk_idx+1:])
-        prediction_PM_Rap1KD = sol_op_Rap1KD(k1_Sos_Deactivation_PM, *priors[k1_Sos_idx+1:k1_P90Rsk_idx], k1_P90Rsk_Deactivation_PM, *priors[k1_P90Rsk_idx+1:])
+        CYTO = sol_op(k1_Sos_Deactivation_CYTO, *priors[k1_Sos_idx+1:k1_P90Rsk_idx], k1_P90Rsk_Deactivation_CYTO, *priors[k1_P90Rsk_idx+1:])
+        PM = sol_op(k1_Sos_Deactivation_PM, *priors[k1_Sos_idx+1:k1_P90Rsk_idx], k1_P90Rsk_Deactivation_PM, *priors[k1_P90Rsk_idx+1:])
+        CYTO_Rap1KD = sol_op_Rap1KD(k1_Sos_Deactivation_CYTO, *priors[k1_Sos_idx+1:k1_P90Rsk_idx], k1_P90Rsk_Deactivation_CYTO, *priors[k1_P90Rsk_idx+1:])
+        PM_Rap1KD = sol_op_Rap1KD(k1_Sos_Deactivation_PM, *priors[k1_Sos_idx+1:k1_P90Rsk_idx], k1_P90Rsk_Deactivation_PM, *priors[k1_P90Rsk_idx+1:])
 
-        
+        # normalization factors
+        CYTO_norm = pm.Deterministic("CYTO_norm", pt_max(CYTO))
+        PM_norm = pm.Deterministic("PM_norm", pt_max(PM))
+
+        # normalized predictions are the actual predictions divided by the max value
+        prediction_CYTO = pm.Deterministic("prediction_CYTO", CYTO/CYTO_norm)
+        prediction_PM = pm.Deterministic("prediction_PM", PM/PM_norm)
+        prediction_CYTO_Rap1KD = pm.Deterministic("prediction_CYTO_Rap1KD", CYTO_Rap1KD/CYTO_norm)
+        prediction_PM_Rap1KD = pm.Deterministic("prediction_PM_Rap1KD", PM_Rap1KD/PM_norm) 
+
         # assume a normal model for the data
         # sigma specified by the data_sigma param to this function
         llike_CYTO = pm.Normal("llike_CYTO", mu=prediction_CYTO, sigma=data_std_CYTO, observed=data_CYTO)
@@ -347,38 +348,48 @@ def Orton_2009_p90RsKSoS_Rap1_diff(prior_param_dict, sol_op, sol_op_Rap1KD, data
             else:
                 priors.append(None)
             
-        k1_C3G_Deactivation_CYTO = pm.LogNormal("k1_C3G_Deactivation_CYTO",sigma=0.7804389020524362, mu=0.9162907318741551)
-        k1_C3G_Deactivation_PM = pm.LogNormal("k1_C3G_Deactivation_PM",sigma=0.7804389020524362, mu=0.9162907318741551)
-        k1_P90Rsk_Deactivation_CYTO = pm.LogNormal("k1_P90Rsk_Deactivation_CYTO",sigma=0.3902194510262181, mu=-5.298317366548036)
-        k1_P90Rsk_Deactivation_PM = pm.LogNormal("k1_P90Rsk_Deactivation_PM",sigma=0.3902194510262181, mu=-5.298317366548036)
-        k1_Sos_Deactivation_CYTO = pm.LogNormal("k1_Sos_Deactivation_CYTO",sigma=0.3902194510262181, mu=0.9162907318741551)
-        k1_Sos_Deactivation_PM = pm.LogNormal("k1_Sos_Deactivation_PM",sigma=0.3902194510262181, mu=0.9162907318741551)
+        k1_C3G_Deactivation_CYTO = pm.LogNormal("k1_C3G_Deactivation_CYTO",sigma=3.5244297004803578, mu=0.9162907318741551)
+        k1_C3G_Deactivation_PM = pm.LogNormal("k1_C3G_Deactivation_PM",sigma=3.5244297004803578, mu=0.9162907318741551)
+        k1_P90Rsk_Deactivation_CYTO = pm.LogNormal("k1_P90Rsk_Deactivation_CYTO",sigma=3.5244297004803578, mu=-5.298317366548036)
+        k1_P90Rsk_Deactivation_PM = pm.LogNormal("k1_P90Rsk_Deactivation_PM",sigma=3.5244297004803578, mu=-5.298317366548036)
+        k1_Sos_Deactivation_CYTO = pm.LogNormal("k1_Sos_Deactivation_CYTO",sigma=3.5244297004803578, mu=0.9162907318741551)
+        k1_Sos_Deactivation_PM = pm.LogNormal("k1_Sos_Deactivation_PM",sigma=3.5244297004803578, mu=0.9162907318741551)
     
         # predict dose response
-        prediction_CYTO = sol_op(k1_Sos_Deactivation_CYTO, \
-                *priors[k1_Sos_idx+1:k1_C3G_Deact_idx], \
-                k1_C3G_Deactivation_CYTO, \
-                *priors[k1_C3G_Deact_idx+1:k1_P90Rsk_idx], \
-                k1_P90Rsk_Deactivation_CYTO, *priors[k1_P90Rsk_idx+1:])
+        CYTO = sol_op(k1_Sos_Deactivation_CYTO, \
+            *priors[k1_Sos_idx+1:k1_C3G_Deact_idx], \
+            k1_C3G_Deactivation_CYTO, \
+            *priors[k1_C3G_Deact_idx+1:k1_P90Rsk_idx], \
+            k1_P90Rsk_Deactivation_CYTO, *priors[k1_P90Rsk_idx+1:])
         
-        prediction_PM = sol_op(k1_Sos_Deactivation_PM, \
-                *priors[k1_Sos_idx+1:k1_C3G_Deact_idx], \
-                k1_C3G_Deactivation_PM, \
-                *priors[k1_C3G_Deact_idx+1:k1_P90Rsk_idx], \
-                k1_P90Rsk_Deactivation_PM, *priors[k1_P90Rsk_idx+1:])
+        PM = sol_op(k1_Sos_Deactivation_PM, \
+            *priors[k1_Sos_idx+1:k1_C3G_Deact_idx], \
+            k1_C3G_Deactivation_PM, \
+            *priors[k1_C3G_Deact_idx+1:k1_P90Rsk_idx], \
+            k1_P90Rsk_Deactivation_PM, *priors[k1_P90Rsk_idx+1:])
         
-        prediction_CYTO_Rap1KD = sol_op_Rap1KD(k1_Sos_Deactivation_CYTO, \
-                *priors[k1_Sos_idx+1:k1_C3G_Deact_idx], \
-                k1_C3G_Deactivation_CYTO, \
-                *priors[k1_C3G_Deact_idx+1:k1_P90Rsk_idx], \
-                k1_P90Rsk_Deactivation_CYTO, *priors[k1_P90Rsk_idx+1:])
+        CYTO_Rap1KD = sol_op_Rap1KD(k1_Sos_Deactivation_CYTO, \
+            *priors[k1_Sos_idx+1:k1_C3G_Deact_idx], \
+            k1_C3G_Deactivation_CYTO, \
+            *priors[k1_C3G_Deact_idx+1:k1_P90Rsk_idx], \
+            k1_P90Rsk_Deactivation_CYTO, *priors[k1_P90Rsk_idx+1:])
         
-        prediction_PM_Rap1KD = sol_op_Rap1KD(k1_Sos_Deactivation_PM, \
-                *priors[k1_Sos_idx+1:k1_C3G_Deact_idx], \
-                k1_C3G_Deactivation_PM, \
-                *priors[k1_C3G_Deact_idx+1:k1_P90Rsk_idx], \
-                k1_P90Rsk_Deactivation_PM, *priors[k1_P90Rsk_idx+1:])
+        PM_Rap1KD = sol_op_Rap1KD(k1_Sos_Deactivation_PM, \
+            *priors[k1_Sos_idx+1:k1_C3G_Deact_idx], \
+            k1_C3G_Deactivation_PM, \
+            *priors[k1_C3G_Deact_idx+1:k1_P90Rsk_idx], \
+            k1_P90Rsk_Deactivation_PM, *priors[k1_P90Rsk_idx+1:])
         
+        # normalization factors
+        CYTO_norm = pm.Deterministic("CYTO_norm", pt_max(CYTO))
+        PM_norm = pm.Deterministic("PM_norm", pt_max(PM))
+
+        # normalized predictions are the actual predictions divided by the max value
+        prediction_CYTO = pm.Deterministic("prediction_CYTO", CYTO/CYTO_norm)
+        prediction_PM = pm.Deterministic("prediction_PM", PM/PM_norm)
+        prediction_CYTO_Rap1KD = pm.Deterministic("prediction_CYTO_Rap1KD", CYTO_Rap1KD/CYTO_norm)
+        prediction_PM_Rap1KD = pm.Deterministic("prediction_PM_Rap1KD", PM_Rap1KD/PM_norm) 
+
         # assume a normal model for the data
         # sigma specified by the data_sigma param to this function
         llike_CYTO = pm.Normal("llike_CYTO", mu=prediction_CYTO, sigma=data_std_CYTO, observed=data_CYTO)
@@ -391,26 +402,35 @@ def Orton_2009_p90RsKSoS_Rap1_diff(prior_param_dict, sol_op, sol_op_Rap1KD, data
 def Shin_2014_Rap1_diff(prior_param_dict, sol_op, sol_op_Rap1KD, data_CYTO, data_PM, data_std_CYTO, data_std_PM,
              data_CYTO_Rap1KD, data_PM_Rap1KD, data_std_CYTO_Rap1KD, data_std_PM_Rap1KD):
     # index of the parameter to change
-    kRap1Act = list(prior_param_dict.keys()).index('kRap1Act')
+    kRap1_RafAct = list(prior_param_dict.keys()).index('kRap1_RafAct')
     model = pm.Model()
     with model:
         # loop over free params and construct the priors
         priors = []
         for key, value in prior_param_dict.items():
             # create PyMC variables for each parameters in the model
-            if key != 'kRap1Act':
+            if key != 'kRap1_RafAct':
                 prior = eval(value)
                 priors.append(prior)
-            else:
-                priors.append(None)
-                kRap1Act_CYTO = pm.LogNormal("kRap1Act_CYTO",sigma=0.3902194510262181, mu=0.0)
-                kRap1Act_PM = pm.LogNormal("kRap1Act_PM",sigma=0.3902194510262181, mu=0.0)
+
+        kRap1_RafAct_CYTO = pm.LogNormal("kRap1_RafAct_CYTO",sigma=2.79, mu=0.0)
+        kRap1_RafAct_PM = pm.LogNormal("kRap1_RafAct_PM",sigma=2.79, mu=0.0)
     
         # predict dose response
-        prediction_CYTO = sol_op(*priors[0:kRap1Act], kRap1Act_CYTO, *priors[kRap1Act+1:])
-        prediction_PM = sol_op(*priors[0:kRap1Act], kRap1Act_PM, *priors[kRap1Act+1:])
-        prediction_CYTO_Rap1KD = sol_op_Rap1KD(*priors[0:kRap1Act], kRap1Act_CYTO, *priors[kRap1Act+1:])
-        prediction_PM_Rap1KD = sol_op_Rap1KD(*priors[0:kRap1Act], kRap1Act_PM, *priors[kRap1Act+1:])
+        CYTO = sol_op(*priors, kRap1_RafAct_CYTO)
+        PM = sol_op(*priors, kRap1_RafAct_PM)
+        CYTO_Rap1KD = sol_op_Rap1KD(*priors, kRap1_RafAct_CYTO)
+        PM_Rap1KD = sol_op_Rap1KD(*priors, kRap1_RafAct_PM)
+
+        # normalization factors
+        CYTO_norm = pm.Deterministic("CYTO_norm", pt_max(CYTO))
+        PM_norm = pm.Deterministic("PM_norm", pt_max(PM))
+
+        # normalized predictions are the actual predictions divided by the max value
+        prediction_CYTO = pm.Deterministic("prediction_CYTO", CYTO/CYTO_norm)
+        prediction_PM = pm.Deterministic("prediction_PM", PM/PM_norm)
+        prediction_CYTO_Rap1KD = pm.Deterministic("prediction_CYTO_Rap1KD", CYTO_Rap1KD/CYTO_norm)
+        prediction_PM_Rap1KD = pm.Deterministic("prediction_PM_Rap1KD", PM_Rap1KD/PM_norm) 
 
         # assume a normal model for the data
         # sigma specified by the data_sigma param to this function
@@ -435,18 +455,27 @@ def Shin_2014_Sos_diff(prior_param_dict, sol_op, sol_op_Rap1KD, data_CYTO, data_
                 prior = eval(value)
                 priors.append(prior)
             else:
-                print(key)
                 priors.append(None)
             
-        ki39_CYTO = pm.LogNormal("ki39_CYTO",sigma=0.3902194510262181, mu=0.0)
-        ki39_PM = pm.LogNormal("ki39_PM",sigma=0.3902194510262181, mu=0.0)
+        ki39_CYTO = pm.LogNormal("ki39_CYTO",sigma=3.5244297004803578, mu=-7.1670442769327005)
+        ki39_PM = pm.LogNormal("ki39_PM",sigma=3.5244297004803578, mu=-7.1670442769327005)
     
         # predict dose response
-        prediction_CYTO = sol_op(*priors[0:ki39_idx], ki39_CYTO, *priors[ki39_idx+1:])
-        prediction_PM = sol_op(*priors[0:ki39_idx], ki39_PM, *priors[ki39_idx+1:])
-        prediction_CYTO_Rap1KD = sol_op_Rap1KD(*priors[0:ki39_idx], ki39_CYTO, *priors[ki39_idx+1:])
-        prediction_PM_Rap1KD = sol_op_Rap1KD(*priors[0:ki39_idx], ki39_PM, *priors[ki39_idx+1:])
+        CYTO = sol_op(*priors[0:ki39_idx], ki39_CYTO, *priors[ki39_idx+1:])
+        PM = sol_op(*priors[0:ki39_idx], ki39_PM, *priors[ki39_idx+1:])
+        CYTO_Rap1KD = sol_op_Rap1KD(*priors[0:ki39_idx], ki39_CYTO, *priors[ki39_idx+1:])
+        PM_Rap1KD = sol_op_Rap1KD(*priors[0:ki39_idx], ki39_PM, *priors[ki39_idx+1:])
         
+        # normalization factors
+        CYTO_norm = pm.Deterministic("CYTO_norm", pt_max(CYTO))
+        PM_norm = pm.Deterministic("PM_norm", pt_max(PM))
+
+        # normalized predictions are the actual predictions divided by the max value
+        prediction_CYTO = pm.Deterministic("prediction_CYTO", CYTO/CYTO_norm)
+        prediction_PM = pm.Deterministic("prediction_PM", PM/PM_norm)
+        prediction_CYTO_Rap1KD = pm.Deterministic("prediction_CYTO_Rap1KD", CYTO_Rap1KD/CYTO_norm)
+        prediction_PM_Rap1KD = pm.Deterministic("prediction_PM_Rap1KD", PM_Rap1KD/PM_norm) 
+
         # assume a normal model for the data
         # sigma specified by the data_sigma param to this function
         llike_CYTO = pm.Normal("llike_CYTO", mu=prediction_CYTO, sigma=data_std_CYTO, observed=data_CYTO)
@@ -460,31 +489,40 @@ def Shin_2014_Sos_Rap1_diff(prior_param_dict, sol_op, sol_op_Rap1KD, data_CYTO, 
              data_CYTO_Rap1KD, data_PM_Rap1KD, data_std_CYTO_Rap1KD, data_std_PM_Rap1KD):
     # index of the parameter to change
     ki39_idx = list(prior_param_dict.keys()).index('ki39')
-    kRap1Act = list(prior_param_dict.keys()).index('kRap1Act')
+    kRap1_RafAct = list(prior_param_dict.keys()).index('kRap1_RafAct')
     model = pm.Model()
     with model:
         # loop over free params and construct the priors
         priors = []
         for key, value in prior_param_dict.items():
             # create PyMC variables for each parameters in the model
-            if key not in ['ki39', 'kRap1Act']:
+            if key not in ['ki39', 'kRap1_RafAct']:
                 prior = eval(value)
                 priors.append(prior)
-            else:
-                print(key)
+            elif key == 'ki39':
                 priors.append(None)
             
-        ki39_CYTO = pm.LogNormal("ki39_CYTO",sigma=0.3902194510262181, mu=0.0)
-        ki39_PM = pm.LogNormal("ki39_PM",sigma=0.3902194510262181, mu=0.0)
-        kRap1Act_CYTO = pm.LogNormal("kRap1Act_CYTO",sigma=0.3902194510262181, mu=0.0)
-        kRap1Act_PM = pm.LogNormal("kRap1Act_PM",sigma=0.3902194510262181, mu=0.0)
+        ki39_CYTO = pm.LogNormal("ki39_CYTO",sigma=3.5244297004803578, mu=-7.1670442769327005)
+        ki39_PM = pm.LogNormal("ki39_PM",sigma=3.5244297004803578, mu=-7.1670442769327005)
+        kRap1_RafAct_CYTO = pm.LogNormal("kRap1_RafAct_CYTO",sigma=2.79, mu=0.0)
+        kRap1_RafAct_PM = pm.LogNormal("kRap1_RafAct_PM",sigma=2.79, mu=0.0)
     
         # predict dose response
-        prediction_CYTO = sol_op(*priors[0:ki39_idx], ki39_CYTO, *priors[ki39_idx+1:kRap1Act], kRap1Act_CYTO, *priors[kRap1Act+1:])
-        prediction_PM = sol_op(*priors[0:ki39_idx], ki39_PM, *priors[ki39_idx+1:kRap1Act], kRap1Act_PM, *priors[kRap1Act+1:])
-        prediction_CYTO_Rap1KD = sol_op_Rap1KD(*priors[0:ki39_idx], ki39_CYTO, *priors[ki39_idx+1:kRap1Act], kRap1Act_CYTO, *priors[kRap1Act+1:])
-        prediction_PM_Rap1KD = sol_op_Rap1KD(*priors[0:ki39_idx], ki39_PM, *priors[ki39_idx+1:kRap1Act], kRap1Act_PM, *priors[kRap1Act+1:])
+        CYTO = sol_op(*priors[0:ki39_idx], ki39_CYTO, *priors[ki39_idx+1:], kRap1_RafAct_CYTO)
+        PM = sol_op(*priors[0:ki39_idx], ki39_PM, *priors[ki39_idx+1:], kRap1_RafAct_PM)
+        CYTO_Rap1KD = sol_op_Rap1KD(*priors[0:ki39_idx], ki39_CYTO, *priors[ki39_idx+1:], kRap1_RafAct_CYTO)
+        PM_Rap1KD = sol_op_Rap1KD(*priors[0:ki39_idx], ki39_PM, *priors[ki39_idx+1:], kRap1_RafAct_PM)
         
+        # normalization factors
+        CYTO_norm = pm.Deterministic("CYTO_norm", pt_max(CYTO))
+        PM_norm = pm.Deterministic("PM_norm", pt_max(PM))
+
+        # normalized predictions are the actual predictions divided by the max value
+        prediction_CYTO = pm.Deterministic("prediction_CYTO", CYTO/CYTO_norm)
+        prediction_PM = pm.Deterministic("prediction_PM", PM/PM_norm)
+        prediction_CYTO_Rap1KD = pm.Deterministic("prediction_CYTO_Rap1KD", CYTO_Rap1KD/CYTO_norm)
+        prediction_PM_Rap1KD = pm.Deterministic("prediction_PM_Rap1KD", PM_Rap1KD/PM_norm) 
+
         # assume a normal model for the data
         # sigma specified by the data_sigma param to this function
         llike_CYTO = pm.Normal("llike_CYTO", mu=prediction_CYTO, sigma=data_std_CYTO, observed=data_CYTO)
@@ -496,31 +534,37 @@ def Shin_2014_Sos_Rap1_diff(prior_param_dict, sol_op, sol_op_Rap1KD, data_CYTO, 
 
 def Ryu_2015_Rap1_diff(prior_param_dict, sol_op, sol_op_Rap1KD, data_CYTO, data_PM, data_std_CYTO, data_std_PM,
              data_CYTO_Rap1KD, data_PM_Rap1KD, data_std_CYTO_Rap1KD, data_std_PM_Rap1KD):
-    # index of the parameter to change
-    k_Rap1Act_idx = list(prior_param_dict.keys()).index('k_Rap1Act')
-    D_Rap1Act_idx = list(prior_param_dict.keys()).index('D_Rap1Act')
+    
     model = pm.Model()
     with model:
         # loop over free params and construct the priors
         priors = []
         for key, value in prior_param_dict.items():
             # create PyMC variables for each parameters in the model
-            if key != 'k_Rap1Act':
+            if key not in ['k_RafRap1', 'D_RafRap1']:
                 prior = eval(value)
                 priors.append(prior)
-            else:
-                priors.append(None)
         
-        k_Rap1Act_CYTO = pm.LogNormal("k_Rap1Act_CYTO",sigma=0.3902194510262181, mu=-0.6931471805599453)
-        k_Rap1Act_PM = pm.LogNormal("k_Rap1Act_PM",sigma=0.3902194510262181, mu=-0.6931471805599453)
-        D_Rap1Act_CYTO = pm.LogNormal("D_Rap1Act_CYTO",sigma=0.3902194510262181, mu=0.0)
-        D_Rap1Act_PM = pm.LogNormal("D_Rap1Act_PM",sigma=0.3902194510262181, mu=0.0)
+        k_RafRap1_CYTO = pm.LogNormal("k_RafRap1_CYTO",sigma=3.5244297004803578, mu=1.6094379124341003)
+        k_RafRap1_PM = pm.LogNormal("k_RafRap1_PM",sigma=3.5244297004803578, mu=1.6094379124341003)
+        D_RafRap1_CYTO = pm.LogNormal("D_RafRap1_CYTO",sigma=3.5244297004803578, mu=0.0)
+        D_RafRap1_PM = pm.LogNormal("D_RafRap1_PM",sigma=3.5244297004803578, mu=0.0)
     
         # predict dose response
-        prediction_CYTO = sol_op(*priors[0:k_Rap1Act_idx], k_Rap1Act_CYTO, D_Rap1Act_CYTO, *priors[D_Rap1Act_idx+1:])
-        prediction_PM = sol_op(*priors[0:k_Rap1Act_idx], k_Rap1Act_PM, D_Rap1Act_PM, *priors[D_Rap1Act_idx+1:])
-        prediction_CYTO_Rap1KD = sol_op_Rap1KD(*priors[0:k_Rap1Act_idx], k_Rap1Act_CYTO, D_Rap1Act_CYTO, *priors[D_Rap1Act_idx+1:])
-        prediction_PM_Rap1KD = sol_op_Rap1KD(*priors[0:k_Rap1Act_idx], k_Rap1Act_PM, D_Rap1Act_PM, *priors[D_Rap1Act_idx+1:])
+        CYTO = sol_op(*priors, k_RafRap1_CYTO, D_RafRap1_CYTO)
+        PM = sol_op(*priors, k_RafRap1_PM, D_RafRap1_PM)
+        CYTO_Rap1KD = sol_op_Rap1KD(*priors, k_RafRap1_CYTO, D_RafRap1_CYTO)
+        PM_Rap1KD = sol_op_Rap1KD(*priors, k_RafRap1_PM, D_RafRap1_PM)
+
+        # normalization factors
+        CYTO_norm = pm.Deterministic("CYTO_norm", pt_max(CYTO))
+        PM_norm = pm.Deterministic("PM_norm", pt_max(PM))
+
+        # normalized predictions are the actual predictions divided by the max value
+        prediction_CYTO = pm.Deterministic("prediction_CYTO", CYTO/CYTO_norm)
+        prediction_PM = pm.Deterministic("prediction_PM", PM/PM_norm)
+        prediction_CYTO_Rap1KD = pm.Deterministic("prediction_CYTO_Rap1KD", CYTO_Rap1KD/CYTO_norm)
+        prediction_PM_Rap1KD = pm.Deterministic("prediction_PM_Rap1KD", PM_Rap1KD/PM_norm) 
 
         # assume a normal model for the data
         # sigma specified by the data_sigma param to this function
@@ -549,7 +593,6 @@ def Ryu_2015_DUSP_diff(prior_param_dict, sol_op, sol_op_Rap1KD, data_CYTO, data_
                 prior = eval(value)
                 priors.append(prior)
             else:
-                print(key)
                 priors.append(None)
 
         D2_CYTO = pm.LogNormal("D2_CYTO",sigma=0.3902194510262181, mu=-2.3025850929940455)
@@ -562,14 +605,24 @@ def Ryu_2015_DUSP_diff(prior_param_dict, sol_op, sol_op_Rap1KD, data_CYTO, data_
         dusp_ind_PM = pm.LogNormal("dusp_ind_PM",sigma=0.3902194510262181, mu=1.791759469228055)
     
         # predict dose response
-        prediction_CYTO = sol_op(*priors[0:D2_idx], D2_CYTO, *priors[D2_idx+1:dusp_ind_idx], \
+        CYTO = sol_op(*priors[0:D2_idx], D2_CYTO, *priors[D2_idx+1:dusp_ind_idx], \
                 dusp_ind_CYTO, K_dusp_CYTO, T_dusp_CYTO, *priors[T_dusp_idx+1:])
-        prediction_PM = sol_op(*priors[0:D2_idx], D2_PM, *priors[D2_idx+1:dusp_ind_idx], \
+        PM = sol_op(*priors[0:D2_idx], D2_PM, *priors[D2_idx+1:dusp_ind_idx], \
                 dusp_ind_PM, K_dusp_PM, T_dusp_PM, *priors[T_dusp_idx+1:])
-        prediction_CYTO_Rap1KD = sol_op_Rap1KD(*priors[0:D2_idx], D2_CYTO, *priors[D2_idx+1:dusp_ind_idx], \
+        CYTO_Rap1KD = sol_op_Rap1KD(*priors[0:D2_idx], D2_CYTO, *priors[D2_idx+1:dusp_ind_idx], \
                 dusp_ind_CYTO, K_dusp_CYTO, T_dusp_CYTO, *priors[T_dusp_idx+1:])
-        prediction_PM_Rap1KD = sol_op_Rap1KD(*priors[0:D2_idx], D2_PM, *priors[D2_idx+1:dusp_ind_idx], \
+        PM_Rap1KD = sol_op_Rap1KD(*priors[0:D2_idx], D2_PM, *priors[D2_idx+1:dusp_ind_idx], \
                 dusp_ind_PM, K_dusp_PM, T_dusp_PM, *priors[T_dusp_idx+1:])
+
+        # normalization factors
+        CYTO_norm = pm.Deterministic("CYTO_norm", pt_max(CYTO))
+        PM_norm = pm.Deterministic("PM_norm", pt_max(PM))
+
+        # normalized predictions are the actual predictions divided by the max value
+        prediction_CYTO = pm.Deterministic("prediction_CYTO", CYTO/CYTO_norm)
+        prediction_PM = pm.Deterministic("prediction_PM", PM/PM_norm)
+        prediction_CYTO_Rap1KD = pm.Deterministic("prediction_CYTO_Rap1KD", CYTO_Rap1KD/CYTO_norm)
+        prediction_PM_Rap1KD = pm.Deterministic("prediction_PM_Rap1KD", PM_Rap1KD/PM_norm) 
 
         # assume a normal model for the data
         # sigma specified by the data_sigma param to this function
@@ -587,8 +640,6 @@ def Ryu_2015_DUSP_Rap1_diff(prior_param_dict, sol_op, sol_op_Rap1KD, data_CYTO, 
     T_dusp_idx = list(prior_param_dict.keys()).index('T_dusp')
     K_dusp_idx = list(prior_param_dict.keys()).index('K_dusp')
     dusp_ind_idx = list(prior_param_dict.keys()).index('dusp_ind')
-    k_Rap1Act_idx = list(prior_param_dict.keys()).index('k_Rap1Act')
-    D_Rap1Act_idx = list(prior_param_dict.keys()).index('D_Rap1Act')
 
     model = pm.Model()
     with model:
@@ -596,11 +647,10 @@ def Ryu_2015_DUSP_Rap1_diff(prior_param_dict, sol_op, sol_op_Rap1KD, data_CYTO, 
         priors = []
         for key, value in prior_param_dict.items():
             # create PyMC variables for each parameters in the model
-            if key not in ['D2', 'T_dusp', 'K_dusp', 'dusp_ind', 'k_Rap1Act', 'D_Rap1Act']:
+            if key not in ['D2', 'T_dusp', 'K_dusp', 'dusp_ind', 'k_RafRap1', 'D_RafRap1']:
                 prior = eval(value)
                 priors.append(prior)
-            else:
-                print(key)
+            elif key in ['D2', 'T_dusp', 'K_dusp', 'dusp_ind']:
                 priors.append(None)
 
         D2_CYTO = pm.LogNormal("D2_CYTO",sigma=0.3902194510262181, mu=-2.3025850929940455)
@@ -611,20 +661,35 @@ def Ryu_2015_DUSP_Rap1_diff(prior_param_dict, sol_op, sol_op_Rap1KD, data_CYTO, 
         K_dusp_PM = pm.LogNormal("K_dusp_PM",sigma=0.3902194510262181, mu=-2.3025850929940455)
         dusp_ind_CYTO = pm.LogNormal("dusp_ind_CYTO",sigma=0.3902194510262181, mu=1.791759469228055)
         dusp_ind_PM = pm.LogNormal("dusp_ind_PM",sigma=0.3902194510262181, mu=1.791759469228055)
-        k_Rap1Act_CYTO = pm.LogNormal("k_Rap1Act_CYTO",sigma=0.3902194510262181, mu=-0.6931471805599453)
-        k_Rap1Act_PM = pm.LogNormal("k_Rap1Act_PM",sigma=0.3902194510262181, mu=-0.6931471805599453)
-        D_Rap1Act_CYTO = pm.LogNormal("D_Rap1Act_CYTO",sigma=0.3902194510262181, mu=0.0)
-        D_Rap1Act_PM = pm.LogNormal("D_Rap1Act_PM",sigma=0.3902194510262181, mu=0.0)
+        k_RafRap1_CYTO = pm.LogNormal("k_RafRap1_CYTO",sigma=0.3902194510262181, mu=-0.6931471805599453)
+        k_RafRap1_PM = pm.LogNormal("k_RafRap1_PM",sigma=0.3902194510262181, mu=-0.6931471805599453)
+        D_RafRap1_CYTO = pm.LogNormal("D_RafRap1_CYTO",sigma=0.3902194510262181, mu=0.0)
+        D_RafRap1_PM = pm.LogNormal("D_RafRap1_PM",sigma=0.3902194510262181, mu=0.0)
     
+
         # predict dose response
-        prediction_CYTO = sol_op(*priors[0:D2_idx], D2_CYTO, *priors[D2_idx+1:dusp_ind_idx], \
-                dusp_ind_CYTO, K_dusp_CYTO, T_dusp_CYTO, k_Rap1Act_CYTO, D_Rap1Act_CYTO, *priors[D_Rap1Act_idx+1:])
-        prediction_PM = sol_op(*priors[0:D2_idx], D2_PM, *priors[D2_idx+1:dusp_ind_idx], \
-                dusp_ind_PM, K_dusp_PM, T_dusp_PM, k_Rap1Act_PM, D_Rap1Act_PM, *priors[D_Rap1Act_idx+1:])
-        prediction_CYTO_Rap1KD = sol_op_Rap1KD(*priors[0:D2_idx], D2_CYTO, *priors[D2_idx+1:dusp_ind_idx], \
-                dusp_ind_CYTO, K_dusp_CYTO, T_dusp_CYTO, k_Rap1Act_CYTO, D_Rap1Act_CYTO, *priors[D_Rap1Act_idx+1:])
-        prediction_PM_Rap1KD = sol_op_Rap1KD(*priors[0:D2_idx], D2_PM, *priors[D2_idx+1:dusp_ind_idx], \
-                dusp_ind_PM, K_dusp_PM, T_dusp_PM, k_Rap1Act_PM, D_Rap1Act_PM, *priors[D_Rap1Act_idx+1:])
+        CYTO = sol_op(*priors[0:D2_idx], D2_CYTO, *priors[D2_idx+1:dusp_ind_idx], \
+                      dusp_ind_CYTO, K_dusp_CYTO, T_dusp_CYTO, *priors[T_dusp_idx+1:],\
+                    k_RafRap1_CYTO, D_RafRap1_CYTO)
+        PM = sol_op(*priors[0:D2_idx], D2_PM, *priors[D2_idx+1:dusp_ind_idx], \
+                      dusp_ind_PM, K_dusp_PM, T_dusp_PM, *priors[T_dusp_idx+1:],\
+                    k_RafRap1_PM, D_RafRap1_PM)
+        CYTO_Rap1KD = sol_op_Rap1KD(*priors[0:D2_idx], D2_CYTO, *priors[D2_idx+1:dusp_ind_idx], \
+                      dusp_ind_CYTO, K_dusp_CYTO, T_dusp_CYTO, *priors[T_dusp_idx+1:],\
+                    k_RafRap1_CYTO, D_RafRap1_CYTO)
+        PM_Rap1KD = sol_op_Rap1KD(*priors[0:D2_idx], D2_PM, *priors[D2_idx+1:dusp_ind_idx], \
+                      dusp_ind_PM, K_dusp_PM, T_dusp_PM, *priors[T_dusp_idx+1:],\
+                    k_RafRap1_PM, D_RafRap1_PM)
+
+        # normalization factors
+        CYTO_norm = pm.Deterministic("CYTO_norm", pt_max(CYTO))
+        PM_norm = pm.Deterministic("PM_norm", pt_max(PM))
+
+        # normalized predictions are the actual predictions divided by the max value
+        prediction_CYTO = pm.Deterministic("prediction_CYTO", CYTO/CYTO_norm)
+        prediction_PM = pm.Deterministic("prediction_PM", PM/PM_norm)
+        prediction_CYTO_Rap1KD = pm.Deterministic("prediction_CYTO_Rap1KD", CYTO_Rap1KD/CYTO_norm)
+        prediction_PM_Rap1KD = pm.Deterministic("prediction_PM_Rap1KD", PM_Rap1KD/PM_norm) 
 
         # assume a normal model for the data
         # sigma specified by the data_sigma param to this function
@@ -634,6 +699,7 @@ def Ryu_2015_DUSP_Rap1_diff(prior_param_dict, sol_op, sol_op_Rap1KD, data_CYTO, 
         llike_PM_Rap1KD = pm.Normal("llike_PM_Rap1KD", mu=prediction_PM_Rap1KD, sigma=data_std_PM_Rap1KD, observed=data_PM_Rap1KD)
 
     return model
+
 ##############################
 # def arg parsers to take inputs from the command line
 ##############################
@@ -650,8 +716,6 @@ def parse_args(raw_args=None):
     parser.add_argument("-input_state", type=str, default='EGF', help="Name of EGF input in the state vector. Defaults to EGF.")
     parser.add_argument("-EGF_conversion_factor", type=float, default=1.0, help="Conversion factor to convert EGF from nM to other units. Defaults to 1.")
     parser.add_argument("-ERK_states", type=str, default=None, help="Names of ERK species to use for inference. Defaults to None.")
-    parser.add_argument("-ERK_all_states", type=str, default=None, help="Names of ERK species to use for inference. Defaults to None.")
-    parser.add_argument("-total_ERK_idx", type=int, default=None)
     parser.add_argument("-time_conversion_factor", type=float, default=1.0, help="Conversion factor to convert from seconds by division. Default is 1. Mins would be 60")
     parser.add_argument("-prior_family", type=str, default="[['Gamma()',['alpha', 'beta']]]", help="Prior family to use. Defaults to uniform.")
     parser.add_argument("-ncores", type=int, default=1, help="Number of cores to use for multiprocessing. Defaults to None which will use all available cores.")
@@ -660,8 +724,8 @@ def parse_args(raw_args=None):
     parser.add_argument("--skip_prior_sample", action='store_false',default=True)
     parser.add_argument("-rtol", type=float,default=1e-6)
     parser.add_argument("-atol", type=float,default=1e-6)
-    parser.add_argument("-upper_prior_mult", type=float,default=1e2)
-    parser.add_argument("-lower_prior_mult", type=float,default=1e-2)
+    parser.add_argument("-upper_prior_mult", type=float,default=1e3)
+    parser.add_argument("-lower_prior_mult", type=float,default=1e-3)
 
     args=parser.parse_args(raw_args)
     return args
@@ -669,6 +733,7 @@ def parse_args(raw_args=None):
 def main(raw_args=None):
     """ main function to execute command line script functionality.
     """
+    seed = np.random.default_rng(seed=123)
     args = parse_args(raw_args)
 
     print('Processing model {}.'.format(args.model))
@@ -693,14 +758,14 @@ def main(raw_args=None):
 
     inputs_CYTO, data_CYTO, data_std_CYTO, times_CYTO \
         = load_data_json(data_file+'CYTO_CYTOmax.json', data_std=True, time=True)
-    inputs_PM, data_PM, data_std_PM, times_PM \
+    _, data_PM, data_std_PM, times_PM \
         = load_data_json(data_file+'PM_PMmax.json', data_std=True, time=True)
 
     data_file = '../../../results/MAPK/Keyes_et_al_2020-fig3-data1-v2-'
-    inputs_CYTO_RAP1i, data_CYTO_RAP1i, data_std_CYTO_RAP1i, \
+    _, data_CYTO_RAP1i, data_std_CYTO_RAP1i, \
         times_CYTO_RAP1i = load_data_json(data_file+'CYTO_RAP1inhib_CYTOmax.json', \
         data_std=True, time=True)
-    inputs_PM_RAP1i, data_PM_RAP1i, data_std_PM_RAP1i, times_PM_RAP1i \
+    _, data_PM_RAP1i, data_std_PM_RAP1i, times_PM_RAP1i \
         = load_data_json(data_file+'PM_RAP1inhib_PMmax.json', \
         data_std=True, time=True)
 
@@ -749,30 +814,16 @@ def main(raw_args=None):
     state_names = list(y0_dict.keys())
     EGF_idx = state_names.index(args.input_state)
     ERK_indices = [state_names.index(s) for s in args.ERK_states.split(',')]
-    ERK_all_indices = [state_names.index(s) for s in args.ERK_all_states.split(',')]
 
     # construct the strings to make priors and constants
     prior_param_dict = set_prior_params(args.model, list(p_dict.keys()), plist, free_param_idxs, upper_mult=args.upper_prior_mult, lower_mult=args.lower_prior_mult, prior_family=args.prior_family, savedir=args.savedir, saveplot=False)
 
-    # make simulator lambda function that solves at correct times with the time conversion factor taken into account
-    def ERK_stim_traj_total_state(p, model, max_time, y0, output_states):
-        traj = solve_traj_local(model, y0, p, max_time, times/args.time_conversion_factor, args.rtol, args.atol)
+    # make simulator lambda function that solves at correct times with the time conversion factor taken into account]
+    # NOTE: use times[1:] to avoind issues associated with included t=0 point
+    def ERK_stim_traj(p, model, max_time, y0, output_states):
+        traj = solve_traj(model, y0, p, max_time, ERK_indices, times[1:]/args.time_conversion_factor, args.rtol, args.atol)
 
-        # return normalized trajectory
-        total_ERK = np.sum(np.array(y0)[ERK_all_indices])
-        return [np.sum(traj[output_states,:], axis=0) / total_ERK], traj
-    
-    def ERK_stim_traj_total_param(p, model, max_time, y0, output_states):
-        traj = solve_traj_local(model, y0, p, max_time, times/args.time_conversion_factor, args.rtol, args.atol)
-
-        # return normalized trajectory
-        total_ERK = p[args.total_ERK_idx]
-        return [np.sum(traj[output_states,:], axis=0) / total_ERK], traj
-    
-    if args.total_ERK_idx != None:
-        ERK_stim_traj = ERK_stim_traj_total_param
-    else:
-        ERK_stim_traj = ERK_stim_traj_total_state
+        return [traj], traj
 
     # make initial conditions that reflect the inputs
     y0_EGF_ins = construct_y0_EGF_inputs(inputs_native_units, np.array([y0]), EGF_idx)
@@ -786,12 +837,13 @@ def main(raw_args=None):
     # construct the pymc model
     # Note: We do not use the build_pymc_model function, because we need to 
     #   build a model that runs the simulator three times for each input level
+    # NOTE: use data_CYTO[1:], etc to avoid issues associated with included t=0 point
     try:
         model_func = lambda prior_param_dict, sol_op, sol_op_Rap1KD, data, \
             data_std: eval(args.pymc_model)(prior_param_dict, sol_op, \
-            sol_op_Rap1KD, [data_CYTO], [data_PM], [data_std_CYTO], \
-                [data_std_PM],  [data_CYTO_RAP1i], [data_PM_RAP1i], \
-                [data_std_CYTO_RAP1i], [data_std_PM_RAP1i])
+            sol_op_Rap1KD, [data_CYTO[1:]], [data_PM[1:]], [data_std_CYTO[1:]], \
+                [data_std_PM[1:]],  [data_CYTO_RAP1i[1:]], [data_PM_RAP1i[1:]], \
+                [data_std_CYTO_RAP1i[1:]], [data_std_PM_RAP1i[1:]])
     except OSError as e:
         print('Warning Pymc model {} not found'.format(args.pymc_model))
         raise
@@ -802,15 +854,27 @@ def main(raw_args=None):
                     simulator=ERK_stim_traj, data_sigma=None, model_func=model_func,)
 
     if args.skip_prior_sample:
-        create_prior_predictive_local(pymc_model, args.model, data_CYTO, \
-            data_PM, data_std_CYTO, data_std_PM, data_CYTO_RAP1i, data_PM_RAP1i, \
-            data_std_CYTO_RAP1i, data_std_PM_RAP1i, times/data_time_to_mins, \
-            inputs_CYTO, args.savedir)
+        # sample from the posterior predictive
+        with pymc_model:
+            prior_predictive = pm.sample_prior_predictive(samples=500, random_seed=seed)
+        
+        prior_predictive.to_json(args.savedir + args.model + '_prior_samples.json')
+
+        # extract llike values
+        prior_llike_CYTO = np.squeeze(prior_predictive.prior_predictive['llike_CYTO'].values)
+        prior_llike_PM = np.squeeze(prior_predictive.prior_predictive['llike_PM'].values)
+        prior_llike_CYTO_Rap1KD = np.squeeze(prior_predictive.prior_predictive['llike_CYTO_Rap1KD'].values)
+        prior_llike_PM_Rap1KD = np.squeeze(prior_predictive.prior_predictive['llike_PM_Rap1KD'].values)
+
+        plot_trajectories(args.model, times/60, inputs_CYTO, args.savedir, 'prior',
+        prior_llike_CYTO, prior_llike_PM, prior_llike_CYTO_Rap1KD, prior_llike_PM_Rap1KD, data_CYTO, 
+        data_PM, data_CYTO_RAP1i, data_PM_RAP1i, data_std_CYTO, data_std_PM, 
+        data_std_CYTO_RAP1i, data_std_PM_RAP1i)
 
     # SMC sampling
     if args.skip_sample:
         posterior_idata = smc_pymc(pymc_model, args.model, args.savedir, 
-                    nsamples=args.nsamples, ncores=args.ncores, threshold=0.5, chains=args.nchains,)
+                    nsamples=args.nsamples, ncores=args.ncores, chains=args.nchains,seed=seed)
     else:
         posterior_idata, _ = load_smc_samples_to_idata(args.savedir + args.model + '_smc_samples.json')
     
@@ -818,7 +882,23 @@ def main(raw_args=None):
     plot_sampling_trace_diagnoses(posterior_idata, args.savedir, args.model)
 
     # posterior predictive samples
-    create_posterior_predictive_local(pymc_model, posterior_idata, args.model, data_CYTO, data_PM, data_std_CYTO, data_std_PM, times/data_time_to_mins, inputs_CYTO, args.savedir)
+    with pymc_model:
+        # sample from the posterior predictive
+        posterior_predictive = pm.sample_posterior_predictive(posterior_idata,random_seed=seed)
+        
+    posterior_predictive.to_json(args.savedir + args.model + '_posterior_samples.json')
+    
+    # extract llike values
+    llike_CYTO = np.squeeze(posterior_predictive.posterior_predictive['llike_CYTO'].values)
+    llike_PM = np.squeeze(posterior_predictive.posterior_predictive['llike_PM'].values)
+    llike_CYTO_Rap1KD = np.squeeze(posterior_predictive.posterior_predictive['llike_CYTO_Rap1KD'].values)
+    llike_PM_Rap1KD = np.squeeze(posterior_predictive.posterior_predictive['llike_PM_Rap1KD'].values)
+
+    # make the plots
+    plot_trajectories(args.model, times/60, inputs_CYTO, args.savedir, 'posterior',
+        llike_CYTO, llike_PM, llike_CYTO_Rap1KD, llike_PM_Rap1KD, data_CYTO, 
+        data_PM, data_CYTO_RAP1i, data_PM_RAP1i, data_std_CYTO, data_std_PM, 
+        data_std_CYTO_RAP1i, data_std_PM_RAP1i)
     
     print('Completed {}'.format(args.model))
 
