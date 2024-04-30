@@ -7,7 +7,7 @@ from SALib.analyze import hdmr
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 
-plt.style.use('~/.matplotlib/custom.mplstyle')
+plt.style.use('custom')
 mpl.rc('xtick', labelsize=8) 
 mpl.rc('ytick', labelsize=8)
 mpl.rc('axes', labelsize=10) 
@@ -176,7 +176,7 @@ def write_sensitivity_results(model_name, sensitive_params, filename):
 
 def plot_morris_scatter(morris_results, param_names, model_name, savedir, threshold=0.1):
 
-    fig, ax = plt_func.get_sized_fig_ax(2.0,2.0)
+    fig, ax = plt_func.get_sized_fig_ax(1.25,1.25)
 
     sensitive_params = []
     annotations = []
@@ -196,8 +196,8 @@ def plot_morris_scatter(morris_results, param_names, model_name, savedir, thresh
     ax.set_ylim(ylim)
     ax.set_xlim(xlim)
     
-    ax.set_xlabel(r'$\mu^*$')
-    ax.set_ylabel(r'$\sigma$')
+    ax.set_xlabel(r'$\mu^*$', fontsize=11)
+    ax.set_ylabel(r'$\sigma$', fontsize=11)
 
     # move the annotations around so they don't overlap
     adjust_text(annotations, ax=ax)
@@ -323,7 +323,7 @@ def main():
     model_name = 'kochanczyk_2017'
     qoi_lambda = lambda x: x[:,-1]
     params_to_analyze = ['k3','q1','q3','q2','u3','d1','q6','u2b','u1a','d2','u2a','q5','u1b','q4']
-    # run_analysis(model_name, qoi_lambda, params_to_analyze, loaddir, savedir, lower=1e-2, upper=1e2)
+    run_analysis(model_name, qoi_lambda, params_to_analyze, loaddir, savedir, lower=1e-2, upper=1e2)
 
     # BIRTWISTLE 2007
     model_name = 'birtwistle_2007'
