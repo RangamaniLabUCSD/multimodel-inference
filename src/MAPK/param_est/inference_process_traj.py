@@ -133,7 +133,11 @@ def main(raw_args=None):
     # construct the pymc model
     # Note: We do not use the build_pymc_model function, because we need to 
     #   build a model that runs the simulator three times for each input level
-    pymc_model = build_pymc_model(prior_param_dict, [data], y0_EGF_ins[0], 
+    if len(inputs) > 1:
+        y0_use = y0_EGF_ins
+    else:
+        y0_use = y0_EGF_ins[0]
+    pymc_model = build_pymc_model(prior_param_dict, [data], y0_use, 
                     ERK_indices, np.max(times/args.time_conversion_factor), diffrax.ODETerm(model), 
                     simulator=ERK_stim_traj, data_sigma=[data_std])
     
