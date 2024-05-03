@@ -15,7 +15,7 @@ class shin_2014_Rap1(eqx.Module):
         # unpack parameters
         EGFR_tot, SOS_tot, Grb2_tot, Ras_tot, Raf_tot, MEK_tot, ERK_tot, ka38, \
             kd38, ka39a, ki39, kd39, kc40, kc41, kc42, kc43, kc44, kc45, kc46, \
-            kc47, kRap1Act, kRap1deAct, kRap1_RafAct = args
+            kc47, alpha, kRap1Act, kRap1deAct, kRap1_RafAct = args
 
         # define algebraic equations
         EGFR = EGFR_tot - RE
@@ -39,7 +39,7 @@ class shin_2014_Rap1(eqx.Module):
         # RE
         d_RE_dt = ka38*EGF*EGFR - kd38*RE
         # GS
-        d_GS_dt = ka39a*RE*SOS*Grb2/(1 + (pp_ERK/ki39)**3) - kd39*GS
+        d_GS_dt = ka39a*RE*SOS*Grb2/(1 + alpha*((pp_ERK/ki39)**3)) - kd39*GS
         # Ras_GTP
         d_Ras_GTP_dt = kc40*GS*Ras_GDP - kc41*Ras_GTP
         # act_Raf
@@ -101,6 +101,7 @@ class shin_2014_Rap1(eqx.Module):
             'kc46': 7.821, # 1/(uM*min)
             'kc47': 3.905e-1, # 1/min
             # new params
+            'alpha': 1.0, # unitless controls the strength of the feedback (set to 0 or 1)
             'kRap1Act': 1.0, # 1/min
             'kRap1deAct': 1.0, # 1/min
             'kRap1_RafAct': 10.0, # 1/min
