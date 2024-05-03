@@ -722,6 +722,9 @@ def parse_args(raw_args=None):
     parser.add_argument("-nchains", type=int, default=4, help="Number of chains to run. Defaults to 4.")
     parser.add_argument("--skip_sample", action='store_false',default=True)
     parser.add_argument("--skip_prior_sample", action='store_false',default=True)
+    parser.add_argument("--negFeedback_KD", action='store_true',default=False)
+    parser.add_argument("-negFeedback_state", type=str, default=None)
+    parser.add_argument("-negFeedback_param", type=str, default=None)
     parser.add_argument("-rtol", type=float,default=1e-6)
     parser.add_argument("-atol", type=float,default=1e-6)
     parser.add_argument("-upper_prior_mult", type=float,default=1e3)
@@ -899,6 +902,79 @@ def main(raw_args=None):
         llike_CYTO, llike_PM, llike_CYTO_Rap1KD, llike_PM_Rap1KD, data_CYTO, 
         data_PM, data_CYTO_RAP1i, data_PM_RAP1i, data_std_CYTO, data_std_PM, 
         data_std_CYTO_RAP1i, data_std_PM_RAP1i)
+    
+    # Run posterior predictive simulaitons w/o neg feed back and w/o neg feedback and Rap1KD
+    if args.negFeedback_KD and ((args.negFeedback_state is not None) or (args.negFeedback_param is not None)):
+        print('Running posterior predictive simulations w/o negative feedback...')
+
+        if args.negFeedback_state is not None: # knockdown the negative feedback by setting an initial condition to 0
+            # constuct initial condition with nedFeedBack kockdown % Rap1 KD
+            y0_negFeedback_knockdown = y0_dict.copy()
+            y0_negFeedback_knockdown[args.negFeedback_state] = 0.0
+            y0_negFeedbackKD = tuple(y0_negFeedback_knockdown.values())
+            y0_EGF_ins_negFeedback_KD = construct_y0_EGF_inputs(inputs_native_units, np.array([y0_negFeedbackKD]), EGF_idx)
+
+            y0_negFeedback_Rap1_knockdown = y0_dict.copy()
+            y0_negFeedback_knockdown[args.negFeedback_state] = 0.0
+            y0_negFeedback_Rap1_knockdown[args.Rap1_state] = 0.0
+            y0_negFeedback_Rap1KD = tuple(y0_negFeedback_Rap1_knockdown.values())
+            y0_EGF_ins_negFeedback_Rap1_KD = construct_y0_EGF_inputs(inputs_native_units, np.array([y0_negFeedback_Rap1KD]), EGF_idx)
+        elif args.negFeedback_param is not None: # knockdown the negative feedback by setting a constant param 0
+            # first copy ics (these are the same as not knocking down the negative feedback)
+            y0_EGF_ins_negFeedback_KD = y0_EGF_ins.copy()
+            y0_EGF_ins_negFeedback_Rap1_KD = y0_EGF_ins_Rap1_KD.copy()
+
+            # now construct a new prior dict with the negative feedback param set to 0
+            p_dict_negFeedback = p_dict.copy()
+            p_dict_negFeedback[args.negFeedback_param] = 0.0 # set the desired parameter to zero
+            plist_negFeedback = [p_dict_negFeedback[p] for p in list(p_dict_negFeedback.keys())]
+            prior_param_dict = set_prior_params(args.model, list(p_dict_negFeedback.keys()), plist_negFeedback, free_param_idxs, upper_mult=args.upper_prior_mult, lower_mult=args.lower_prior_mult, prior_family=args.prior_family, savedir=args.savedir, saveplot=False)
+
+            print(prior_param_dict)
+
+        # construct the pymc model
+        # here we slightly abuse the notation within the model function to pass the negative feedback state
+        # the llike for the negFeedback knockdown is 'llike_CYTO' and 'llike_PM' whereas
+        # that for the negFeedback and Rap1KD is 'llike_CYTO_Rap1KD' and 'llike_PM_Rap1KD'
+        pymc_model_negFeedbackKD = build_pymc_model_local(prior_param_dict, None, y0_EGF_ins_negFeedback_KD[0], 
+                    y0_EGF_ins_negFeedback_Rap1_KD[0], ERK_indices, 
+                    np.max(times/args.time_conversion_factor), diffrax.ODETerm(model), 
+                    simulator=ERK_stim_traj, data_sigma=None, model_func=model_func,)
+        
+        # create new idata without log_loglikelihood 
+        posterior_idata_negFeedbackKD = posterior_idata.copy()
+        del posterior_idata_negFeedbackKD.log_likelihood
+        del posterior_idata_negFeedbackKD.posterior['prediction_CYTO']
+        del posterior_idata_negFeedbackKD.posterior['prediction_PM']
+        del posterior_idata_negFeedbackKD.posterior['prediction_CYTO_Rap1KD']
+        del posterior_idata_negFeedbackKD.posterior['prediction_PM_Rap1KD']
+        del posterior_idata_negFeedbackKD.posterior['CYTO_norm']
+        del posterior_idata_negFeedbackKD.posterior['PM_norm']
+
+        # run posterior predictive simulations
+        with pymc_model_negFeedbackKD:
+            # sample from the posterior predictive
+            posterior_predictive_negFeedbackKD = pm.sample_posterior_predictive(posterior_idata,random_seed=seed, predictions=True, var_names=['llike_CYTO', 'llike_PM', 'llike_CYTO_Rap1KD', 'llike_PM_Rap1KD', 'prediction_CYTO', 'prediction_PM', 'prediction_CYTO_Rap1KD', 'prediction_PM_Rap1KD', 'CYTO_norm', 'PM_norm'])
+        
+        posterior_predictive_negFeedbackKD.to_json(args.savedir + args.model + '_posterior_nedFeedBackKD_samples.json')
+
+        # extract llike values
+        llike_CYTO_negFeedbackKD = np.squeeze(posterior_predictive_negFeedbackKD.predictions['llike_CYTO'].values)
+        llike_PM_negFeedbackKD = np.squeeze(posterior_predictive_negFeedbackKD.predictions['llike_PM'].values)
+        llike_CYTO_Rap1KD_negFeedbackKD = np.squeeze(posterior_predictive_negFeedbackKD.predictions['llike_CYTO_Rap1KD'].values)
+        llike_PM_Rap1KD_negFeedbackKD = np.squeeze(posterior_predictive_negFeedbackKD.predictions['llike_PM_Rap1KD'].values)
+
+        # make the plots we dont want to show the data so we pass nan
+        plot_trajectories(args.model, times/60, inputs_CYTO, args.savedir, 'posterior_negFeedbackKD',
+            llike_CYTO_negFeedbackKD, llike_PM_negFeedbackKD, 
+            llike_CYTO_Rap1KD_negFeedbackKD, llike_PM_Rap1KD_negFeedbackKD, 
+            np.nan*np.ones_like(data_CYTO), np.nan*np.ones_like(data_PM), 
+            np.nan*np.ones_like(data_CYTO_RAP1i), np.nan*np.ones_like(data_PM_RAP1i), 
+            np.nan*np.ones_like(data_std_CYTO), np.nan*np.ones_like(data_std_PM), 
+            np.nan*np.ones_like(data_std_CYTO_RAP1i), np.nan*np.ones_like(data_std_PM_RAP1i))
+
+    elif args.negFeedback_KD and args.negFeedback_state==None:
+        print('Warning: Please provide the name of the negative feedback state')
     
     print('Completed {}'.format(args.model))
 
