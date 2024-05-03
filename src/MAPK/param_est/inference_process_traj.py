@@ -68,6 +68,7 @@ def parse_args(raw_args=None):
     parser.add_argument('-pcoeff', type=float, default=0, help='pcoeff for PID time stepper')
     parser.add_argument('-dcoeff', type=float, default=0, help='dcoeff for PID time stepper')
     parser.add_argument('-icoeff', type=float, default=1.0, help='icoeff for PID time stepper')
+    parser.add_argument('-smc_threshold', type=float, default=0.85, help='Threshold for SMC sampling')
 
     args=parser.parse_args(raw_args)
     return args
@@ -143,7 +144,7 @@ def main(raw_args=None):
     # SMC sampling
     if args.skip_sample:
         posterior_idata = smc_pymc(pymc_model, args.model, args.savedir, 
-                    nsamples=args.nsamples, ncores=args.ncores, threshold=0.85, chains=args.nchains,)
+                    nsamples=args.nsamples, ncores=args.ncores, threshold=args.smc_threshold, chains=args.nchains,)
     else:
         posterior_idata, _ = load_smc_samples_to_idata(args.savedir + args.model + '_smc_samples.json')
     
