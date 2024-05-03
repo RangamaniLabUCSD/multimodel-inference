@@ -106,8 +106,7 @@ mymap = LinearSegmentedColormap.from_list('mycolors', list(zip(nodes, colors)))
 mpl.colormaps.register(cmap=mymap)
 colors = mymap(np.linspace(0, 1, 12))
 
-# colors = ['#d9f0d3','#a6dba0','#5aae61',]
-# colors = sns.color_palette('colorblind', 12, desat=0.55)
+
 color_idx = 0
 
 for idx, model in enumerate(model_names.keys()):
@@ -197,3 +196,50 @@ with open(savedir + 'RMSE.json', 'w') as f:
 # save uncertainty
 with open(savedir + 'uncertainty.json', 'w') as f:
     json.dump(uncertainty95, f)
+
+
+######## Make additional posterior predictive plots of the (-)feedback KD ########
+models_to_plot = ['orton_2009', 'shin_2014']
+submodels = ['p90RsKSoS_Rap1_diff', 'Sos_Rap1_diff']
+color_idxs = [3,7]
+
+for color_idx, model, submodel in zip(color_idxs, models_to_plot, submodels):
+    name = savedir + model + '/' + submodel + '/'
+
+    if model=='shin_2014':
+            model_ = model + '_Rap1'
+    else:
+        model_ = model
+
+    llike_samples = {
+        'CYTO': np.load(name + submodel + '_' + model_ + '_CYTO_posterior_negFeedbackKD_predictive_samples.npy'),
+        'PM': np.load(name + submodel + '_' + model_ + '_PM_posterior_negFeedbackKD_predictive_samples.npy'),
+        'CYTO_Rap1KD': np.load(name + submodel + '_' + model_ + \
+                                     '_CYTO_Rap1KD_posterior_negFeedbackKD_predictive_samples.npy'),
+        'PM_Rap1KD': np.load(name + submodel + '_' + model_ + \
+                                     '_PM_Rap1KD_posterior_negFeedbackKD_predictive_samples.npy')}
+    
+    for comp in ['CYTO', 'PM']:
+            # plot the posterior predictive trajectories
+            samples_ = np.stack([llike_samples[comp], llike_samples[comp+'_Rap1KD']])
+            # add additional zeros to each sample for the ICs (this is just to make plotting easier, we know the ICs are zero)
+            zer_col = np.zeros((samples_.shape[0], samples_.shape[1], 1))
+            samples_ = np.concatenate([zer_col, samples_], axis=2)
+            # reshape the samples_ martix so that it is n_traj x n_comp x n_times
+            samples_ = np.swapaxes(samples_, 0, 1)
+
+            # set data to nan so that it doesn't plot
+            data_ = np.nan*np.ones_like(np.stack([data[comp], data[comp+'_Rap1KD']]))
+            data_std_ = np.nan*np.ones_like(np.stack([data_std[comp], data_std[comp+'_Rap1KD']]))
+
+            plot_posterior_trajectories(samples_, data_, data_std_, times,
+                colors[color_idx], ['', '_Rap1KD'], 
+                name + submodel + '_' + model_ + '_' + comp + '_posterior_negFeedbackKD_predictive', '',
+                fname='',
+                data_time_to_mins=60,
+                width=1., height=0.5, 
+                data_downsample=10,
+                ylim=[[0.0, 1.5],[0.0, 1.5]],
+                y_ticks=[[0.0, 1.0],[0.0, 1.0]],
+                labels=False,)
+    
