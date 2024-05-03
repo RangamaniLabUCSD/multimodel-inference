@@ -117,7 +117,7 @@ def main(raw_args=None):
     
     # make simulator lambda function that solves at correct times with the time conversion factor taken into account
     if len(inputs) > 1:
-        ERK_stim_traj = lambda p,model, max_time, y0, output_states: ERK_stim_trajectory_set(p, model, max_time, y0, output_states, times/args.time_conversion_factor, max_input_idx, rtol=args.rtol, atol=args.atol)
+        ERK_stim_traj = lambda p,model, max_time, y0, output_states: ERK_stim_trajectory_set(p, model, max_time, y0, output_states, times/args.time_conversion_factor, max_input_index=max_input_idx, rtol=args.rtol, atol=args.atol)
     else:
         print('Using single input traj func.')
         def ERK_stim_traj(p, model, max_time, y0, output_states):
