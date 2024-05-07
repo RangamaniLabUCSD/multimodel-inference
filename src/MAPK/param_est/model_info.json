@@ -1,4 +1,16 @@
 {
+    "huang_ferrell_1996":{
+        "display_name": "H' 1996",
+        "model_name": "huang_ferrell_1996",
+        "model": "huang_ferrell_1996.py",
+        "free_params":"MKK_tot,a3,k7,a4,d3,d6,a8,a1,E2_tot,a7,a9,a6,k8,d8,k4,k6,k9,k3,d7,a10,MAPK_tot,a5,MKKK_tot,k10,MKKPase_tot,k1",
+        "input_state":"E1",
+        "ERK_states":"MAPK_PP,MAPK_PP_MAPKPase",
+        "EGF_conversion_factor":"1.0",
+        "prior_family":"[['LogNormal(mu=0.1823215567939546)', ['sigma']], ['LogNormal(mu=4.31748811353631)', ['sigma']], ['LogNormal(mu=3.079613757534693)', ['sigma']], ['LogNormal(mu=4.31748811353631)', ['sigma']], ['LogNormal(mu=-0.2876820724517809)', ['sigma']], ['LogNormal(mu=-0.2876820724517809)', ['sigma']], ['LogNormal(mu=4.31748811353631)', ['sigma']], ['LogNormal(mu=4.31748811353631)', ['sigma']], ['LogNormal(mu=-8.111728083308073)', ['sigma']], ['LogNormal(mu=4.31748811353631)', ['sigma']], ['LogNormal(mu=4.31748811353631)', ['sigma']], ['LogNormal(mu=4.31748811353631)', ['sigma']], ['LogNormal(mu=3.079613757534693)', ['sigma']], ['LogNormal(mu=-0.2876820724517809)', ['sigma']], ['LogNormal(mu=3.079613757534693)', ['sigma']], ['LogNormal(mu=3.079613757534693)', ['sigma']], ['LogNormal(mu=3.079613757534693)', ['sigma']], ['LogNormal(mu=3.079613757534693)', ['sigma']], ['LogNormal(mu=-0.2876820724517809)', ['sigma']], ['LogNormal(mu=4.31748811353631)', ['sigma']], ['LogNormal(mu=0.1823215567939546)', ['sigma']], ['LogNormal(mu=4.31748811353631)', ['sigma']], ['LogNormal(mu=-5.809142990314028)', ['sigma']], ['LogNormal(mu=3.079613757534693)', ['sigma']], ['LogNormal(mu=-8.111728083308073)', ['sigma']], ['LogNormal(mu=3.079613757534693)', ['sigma']]]",
+        "time_conversion":"1.0"
+    },
+
     "kholodenko_2000":{
         "display_name": "K' 2000",
         "model_name": "kholodenko_2000",
