@@ -24,8 +24,7 @@ rng = np.random.default_rng(seed=1234)
 
 model_info = json.load(open('../param_est/model_info.json', 'r'))
 model_names = list(model_info.keys())
-model_names.remove('hatakeyama_2003')
-model_names.remove('vonKriegsheim_2009')
+
 display_names = [model_info[model]['display_name'] for model in model_names]
 
 # load in the full data
@@ -227,6 +226,7 @@ for time_len in ['', '_30min', '_20min', '_10min']:
         loo_stack_combined[compartment] = np.zeros_like(posterior_samples[compartment]['kholodenko_2000'])
         loo_bma_combined[compartment] = np.zeros_like(posterior_samples[compartment]['kholodenko_2000'])
         for i, name in enumerate(model_names):
+            print(name, time_len)
             loo_pbma_combined[compartment] += compare_data_loo_pbma[compartment].loc[name]['weight']*posterior_samples[compartment][name]
             loo_stack_combined[compartment] += compare_data_loo_stack[compartment].loc[name]['weight']*posterior_samples[compartment][name]
             loo_bma_combined[compartment] += m_probs[compartment][i]*posterior_samples[compartment][name]

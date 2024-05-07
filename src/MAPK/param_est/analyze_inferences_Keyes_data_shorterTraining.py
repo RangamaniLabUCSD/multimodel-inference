@@ -55,8 +55,7 @@ for train_len in [10, 20, 30]:
     # load in the model info 
     model_info = json.load(open('model_info.json', 'r'))
     model_names = list(model_info.keys())
-    model_names.remove('hatakeyama_2003')
-    model_names.remove('vonKriegsheim_2009')
+    
     display_names = [model_info[model]['display_name'] for model in model_names]
 
     idata = {'CYTO':{},'PM':{}}
@@ -126,7 +125,7 @@ for train_len in [10, 20, 30]:
     colors = ['#40004b','#762a83','#9970ab','#c2a5cf','#e7d4e8','#f7f7f7','#d9f0d3','#a6dba0','#5aae61','#1b7837','#363737','#929591','#d8dcd6']
     orange = '#de8f05'
 
-    colors = ['#762a83','#9970ab','#c2a5cf','#e7d4e8','#d9f0d3','#a6dba0','#5aae61','#1b7837','#363737','#929591','#d8dcd6']
+    colors = ['#40004b','#762a83','#9970ab','#c2a5cf','#e7d4e8','#f7f7f7','#d9f0d3','#a6dba0','#5aae61','#1b7837']
 
     ################ Write sampling times to a file ################
     with open(savedir + 'SMC_runtimes.txt', 'w') as f:
@@ -174,15 +173,17 @@ for train_len in [10, 20, 30]:
                 plot_p = plotting_params
 
                 # # predict trajectories
-                # traj = predict_traj_response(model, idata[compartment][model], dat_full[compartment]['inputs'],
-                #                             dat_full[compartment]['times'], this_model_info['input_state'], this_model_info['ERK_states'],
-                #                             float(this_model_info['time_conversion']),
-                #                                     EGF_conversion_factor=float(this_model_info['EGF_conversion_factor']),
-                #                                     nsamples=n_traj)
-                # traj = np.squeeze(traj)
-                # # save
-                # np.save(savedir+compartment+'/' + model + '/traj_predict.npy', traj)
-                traj = np.load(savedir+compartment+'/' + model + '/traj_predict.npy')
+                if not os.path.exists(savedir+compartment+'/' + model + '/traj_predict.npy'):
+                    traj = predict_traj_response(model, idata[compartment][model], dat_full[compartment]['inputs'],
+                                                dat_full[compartment]['times'], this_model_info['input_state'], this_model_info['ERK_states'],
+                                                float(this_model_info['time_conversion']),
+                                                        EGF_conversion_factor=float(this_model_info['EGF_conversion_factor']),
+                                                        nsamples=n_traj)
+                    traj = np.squeeze(traj)
+                    # save
+                    np.save(savedir+compartment+'/' + model + '/traj_predict.npy', traj)
+                else:
+                    traj = np.load(savedir+compartment+'/' + model + '/traj_predict.npy')
                
                 # plot
                 plot_posterior_trajectories(traj, dat_full[compartment]['data'], dat_full[compartment]['data_std'], 

@@ -46,7 +46,7 @@ savedir = '../../../results/MAPK/param_est/Keyes_2020_data/'
 model_info = json.load(open('model_info.json', 'r'))
 model_names = list(model_info.keys())
 
-model_names.remove('vonKriegsheim_2009')
+# model_names.remove('vonKriegsheim_2009')
 display_names = [model_info[model]['display_name'] for model in model_names]
 
 idata = {'CYTO':{},'PM':{}}
@@ -78,7 +78,7 @@ colors = ['#40004b','#762a83','#9970ab','#c2a5cf','#e7d4e8','#f7f7f7','#d9f0d3',
 colors = ['#40004b','#762a83','#9970ab','#c2a5cf','#e7d4e8','#f7f7f7','#d9f0d3','#a6dba0','#5aae61','#1b7837','#363737','#929591','#d8dcd6']
 orange = '#de8f05'
 
-colors = ['#762a83','#9970ab','#c2a5cf','#e7d4e8','#d9f0d3','#a6dba0','#5aae61','#1b7837','#363737','#929591','#d8dcd6']
+colors = ['#40004b','#762a83','#9970ab','#c2a5cf','#e7d4e8','#f7f7f7','#d9f0d3','#a6dba0','#5aae61','#1b7837']
 
 ################ Write sampling times to a file ################
 with open(savedir + 'SMC_runtimes.txt', 'w') as f:
@@ -115,46 +115,7 @@ for idx, model in enumerate(model_names):
 
 # save SAM40 predictions
 with open(savedir + 'SAM40_post_pred.json', 'w') as f:
-    json.dump(SAM40_post_pred, f)
-
-# ################ Make posterior dose-response curves ################
-# # Now we want to use posterior draws to simulate dose-response curve predictions
-# inputs_dose_response = np.array([1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 1.0, 10.0, 100.0])*dat['CYTO']['inputs'][0]
-# data_dose_response = np.ones_like(inputs_dose_response)*np.nan
-
-# plotting_params = {
-#     'kholodenko_2000':[False,False,False,False],'levchenko_2000':[False,False,False,False],'hatakeyama_2003':[False,False,False,False],'hornberg_2005':[False,False,False,False],'birtwistle_2007':[False,False,False,False],'orton_2009':[False,False,False,False],'vonKriegsheim_2009':[False,False,False,False],'shin_2014':[False,False,False,False],'ryu_2015':[False,False,False,False],'kochanczyk_2017':[False,False,False,False]
-# }
-
-# skip_idxs = [0,1,3,4,5,6,7]
-# for idx,model in enumerate(model_names):
-#     if idx in skip_idxs:
-#         print('skipping', model)
-#         continue
-#     else:
-#         for compartment in ['CYTO','PM']:
-#             print('plotting', model)
-#             this_model_info = model_info[model]
-
-#             plot_p = plotting_params[model]
-
-#             # create dose-response curve prediction
-#             dose_response = predict_dose_response(model, idata[compartment][model], inputs_dose_response,   
-#                                     this_model_info['input_state'], this_model_info['ERK_states'], 
-#                                     float(this_model_info['max_time']), EGF_conversion_factor=float(this_model_info['EGF_conversion_factor']), 
-#                                     nsamples=400, timeout=30)
-#             print(dose_response.shape)
-#             # save
-#             np.save(savedir+compartment+'/' + model + '/dose_response_predict.npy', dose_response)
-
-#             fig, ax = plot_stimulus_response_curve(dose_response, data_dose_response, inputs_dose_response, input_name='EGF stimulus (nM)', output_name='% maximal ERK \n activity', box_color='w', data_color='r',
-#                                             data_std=0.1, width=1.1, height=1.1, data_marker_size=5.0, scatter_marker_size=0,
-#                                             title=None, xlabel=plot_p[0],xticklabels=plot_p[1],ylabel=plot_p[2], yticklabels=plot_p[3],
-#                                             xticks = [1e-1, 1e0, 1e1, 1e2, 1e3, 1e4])
-#             ax.set_title(ax.get_title(), fontsize=12.0)
-#             fig.savefig(savedir+compartment+'/' + model + '/'+model+'_dose_response_predict.pdf', transparent=True)
-
-# plt.close('all')
+    json.dump(SAM40_post_pred, f)   
 
 ################ Make posterior trajectories and compute errors ################
 # First we predict the entire data with posterior samples
@@ -183,21 +144,24 @@ for idx,model in enumerate(model_names):
         continue
     else:
         for compartment in ['CYTO','PM']:
-            print('plotting', model)
             this_model_info = model_info[model]
 
             plot_p = plotting_params
 
-            # # predict trajectories
-            # traj = predict_traj_response(model, idata[compartment][model], dat[compartment]['inputs'],
-            #                             dat[compartment]['times'], this_model_info['input_state'], this_model_info['ERK_states'],
-            #                             float(this_model_info['time_conversion']),
-            #                                     EGF_conversion_factor=float(this_model_info['EGF_conversion_factor']),
-            #                                     nsamples=n_traj)
-            # traj = np.squeeze(traj)
-            # # save
-            # np.save(savedir+compartment+'/' + model + '/traj_predict.npy', traj)
-            traj = np.load(savedir+compartment+'/' + model + '/traj_predict.npy')
+            # run posterior predictions if they do not already exist
+            if not os.path.exists(savedir+compartment+'/' + model + '/traj_predict.npy'):
+                # predict trajectories
+                traj = predict_traj_response(model, idata[compartment][model], dat[compartment]['inputs'],
+                                            dat[compartment]['times'], this_model_info['input_state'], this_model_info['ERK_states'],
+                                            float(this_model_info['time_conversion']),
+                                                    EGF_conversion_factor=float(this_model_info['EGF_conversion_factor']),
+                                                    nsamples=n_traj)
+                traj = np.squeeze(traj)
+                # save
+                np.save(savedir+compartment+'/' + model + '/traj_predict.npy', traj)
+            else:
+                 traj = np.load(savedir+compartment+'/' + model + '/traj_predict.npy')
+            
             
             # plot
             plot_posterior_trajectories(traj, dat[compartment]['data'], dat[compartment]['data_std'], 
