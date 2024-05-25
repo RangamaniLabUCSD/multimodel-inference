@@ -202,6 +202,13 @@ def get_param_subsample(idata, n_traj, p_dict,rng=np.random.default_rng(seed=123
  
     return np.array(param_samples)
 
+def get_color_pallette(n_colors=11, append_colors=['#363737','#929591','#d8dcd6']):
+    """Function to get standard colors for the project.
+    
+    Uses a desaturated version of the seaborn colorblind pallette.
+    """
+    colors = sns.color_palette("colorblind", n_colors, desat=0.65)
+    return colors + append_colors
 ###############################################################################
 #### Solving ODEs ####
 ###############################################################################
@@ -393,7 +400,7 @@ def predict_dose_response(model, posterior_idata, inputs, input_state,
 def predict_traj_response(model, posterior_idata, inputs, times, input_state, 
                           ERK_states, time_conversion_factor=1, 
                           EGF_conversion_factor=1, nsamples=None,
-                          max_input_index=-1):
+                          max_input_index=-1, rtol=1e-6, atol=1e-6):
     """ function to predict trajectories for a given model and many posterior samples"""
     # load model
     try:
@@ -433,7 +440,7 @@ def predict_traj_response(model, posterior_idata, inputs, times, input_state,
                                                         y0_EGF_ins, ERK_indices, times/time_conversion_factor, max_input_index)[0])
     else:
         def ERK_stim_traj(p, model, times, y0, output_states, time_conversion_factor=1):
-            traj = solve_traj(model, y0, p, jnp.max(times)/time_conversion_factor, output_states, times/time_conversion_factor)
+            traj = solve_traj(model, y0, p, jnp.max(times)/time_conversion_factor, output_states, times/time_conversion_factor, rtol, atol)
             # return normalized trajectory
             return [(traj - np.min(traj)) / (np.max(traj) - np.min(traj))], traj
         for param in tqdm(param_samples):
@@ -779,7 +786,7 @@ def plot_posterior_trajectories(post_preds, data, data_std, times, color,
                         alpha=1.0,
                         errorbar=('pi', 95), # percentile interval form 2.5th to 97.5th
                         ax=ax,
-                        err_kws={'alpha':0.75,'edgecolor':'k','linewidth':0.5})
+                        err_kws={'alpha':0.4,'edgecolor':'k','linewidth':0.5})
                 
                 # set xlims
                 if xlim is None:
