@@ -10,7 +10,6 @@
         "prior_family":"[['LogNormal(mu=0.1823215567939546)', ['sigma']], ['LogNormal(mu=4.31748811353631)', ['sigma']], ['LogNormal(mu=3.079613757534693)', ['sigma']], ['LogNormal(mu=4.31748811353631)', ['sigma']], ['LogNormal(mu=-0.2876820724517809)', ['sigma']], ['LogNormal(mu=-0.2876820724517809)', ['sigma']], ['LogNormal(mu=4.31748811353631)', ['sigma']], ['LogNormal(mu=4.31748811353631)', ['sigma']], ['LogNormal(mu=-8.111728083308073)', ['sigma']], ['LogNormal(mu=4.31748811353631)', ['sigma']], ['LogNormal(mu=4.31748811353631)', ['sigma']], ['LogNormal(mu=4.31748811353631)', ['sigma']], ['LogNormal(mu=3.079613757534693)', ['sigma']], ['LogNormal(mu=-0.2876820724517809)', ['sigma']], ['LogNormal(mu=3.079613757534693)', ['sigma']], ['LogNormal(mu=3.079613757534693)', ['sigma']], ['LogNormal(mu=3.079613757534693)', ['sigma']], ['LogNormal(mu=3.079613757534693)', ['sigma']], ['LogNormal(mu=-0.2876820724517809)', ['sigma']], ['LogNormal(mu=4.31748811353631)', ['sigma']], ['LogNormal(mu=0.1823215567939546)', ['sigma']], ['LogNormal(mu=4.31748811353631)', ['sigma']], ['LogNormal(mu=-5.809142990314028)', ['sigma']], ['LogNormal(mu=3.079613757534693)', ['sigma']], ['LogNormal(mu=-8.111728083308073)', ['sigma']], ['LogNormal(mu=3.079613757534693)', ['sigma']]]",
         "time_conversion":"1.0"
     },
-
     "kholodenko_2000":{
         "display_name": "K' 2000",
         "model_name": "kholodenko_2000",
@@ -37,7 +36,7 @@
         "ERK_states":"MAPKstarstar",
         "EGF_conversion_factor":"0.001",
         "prior_family":"[['LogNormal(mu=-0.6931471805599453)',['sigma']],['LogNormal(mu=-2.3025850929940455)',['sigma']],['LogNormal(mu=-1.2039728043259361)',['sigma']],['LogNormal(mu=-2.3025850929940455)',['sigma']],['LogNormal(mu=-2.3025850929940455)',['sigma']],['LogNormal(mu=2.302585092994046)',['sigma']],['LogNormal(mu=-2.3025850929940455)',['sigma']],['LogNormal(mu=1.6094379124341003)',['sigma']],['LogNormal(mu=-2.995732273553991)',['sigma']],['LogNormal(mu=-2.3025850929940455)',['sigma']],['LogNormal(mu=2.995732273553991)',['sigma']],['LogNormal(mu=1.6094379124341003)',['sigma']],['LogNormal(mu=2.302585092994046)',['sigma']],['LogNormal(mu=-0.6931471805599453)',['sigma']],['LogNormal(mu=2.995732273553991)',['sigma']],['LogNormal(mu=-0.916290731874155)',['sigma']],['LogNormal(mu=0.0)',['sigma']],['LogNormal(mu=-2.3025850929940455)',['sigma']],['LogNormal(mu=-2.3025850929940455)',['sigma']],['LogNormal(mu=-0.916290731874155)',['sigma']],['LogNormal(mu=-2.3025850929940455)',['sigma']],['LogNormal(mu=-1.6094379124341005)',['sigma']],['LogNormal(mu=-2.995732273553991)',['sigma']],['LogNormal(mu=-1.2039728043259361)',['sigma']],['LogNormal(mu=-2.3025850929940455)',['sigma']]]",
-        "max_time":"jnp.inf",
+        "max_time":"100000",
         "time_conversion":"1.0",
         "ss_method":"ode",
         "event_rtol":"1e-10",
@@ -90,8 +89,8 @@
         "prior_family":"[['LogNormal(mu=13.822823751258499)',['sigma']],['LogNormal(mu=0.9162907318741551)',['sigma']],['LogNormal(mu=15.067270166119108)',['sigma']],['LogNormal(mu=-5.298317366548036)',['sigma']],['LogNormal(mu=0.9162907318741551)',['sigma']]]",
         "max_time":"2000",
         "time_conversion":"60.0",
-        "rtol":"1e-10",
-        "atol":"1e-10",
+        "rtol":"1e-6",
+        "atol":"1e-6",
         "ss_method":"ode",
         "event_rtol":"1e-6",
         "event_atol":"1e-5"
@@ -106,7 +105,7 @@
         "EGF_conversion_factor":"6.048",
         "prior_family":"[['LogNormal(mu=-2.3025850929940455)',['sigma']],['LogNormal(mu=0.0)',['sigma']],['LogNormal(mu=-4.615220521841593)',['sigma']],['LogNormal(mu=-2.3025850929940455)',['sigma']],['LogNormal(mu=-4.605170185988091)',['sigma']],['LogNormal(mu=-8.517193191416238)',['sigma']],['LogNormal(mu=-2.3025850929940455)',['sigma']],['LogNormal(mu=-7.600902459542082)',['sigma']],['LogNormal(mu=-1.760260802168684)',['sigma']],['LogNormal(mu=-4.605170185988091)',['sigma']],['LogNormal(mu=-3.218875824868201)',['sigma']],['LogNormal(mu=-2.6621212692138103)',['sigma']],['LogNormal(mu=-2.1386266695649785)',['sigma']],['LogNormal(mu=-4.731867839034049)',['sigma']],['LogNormal(mu=0.22298353851284428)',['sigma']],['LogNormal(mu=-0.4177907577988013)',['sigma']],['LogNormal(mu=-1.458479730351939)',['sigma']],['LogNormal(mu=-4.605170185988091)',['sigma']]]",
         "max_time":"5400",
-        "time_conversion":"60.0",
+        "time_conversion":"1.0",
         "ss_method":"ode",
         "event_rtol":"1e-6",
         "event_atol":"1e-5",

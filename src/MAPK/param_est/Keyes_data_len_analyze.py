@@ -127,6 +127,9 @@ for train_len in [10, 20, 30]:
 
     colors = ['#40004b','#762a83','#9970ab','#c2a5cf','#e7d4e8','#f7f7f7','#d9f0d3','#a6dba0','#5aae61','#1b7837']
 
+    colors = get_color_pallette()
+    colors.remove(colors[-4]) # remove the second to last color, because we only have 10 models
+
     ################ Write sampling times to a file ################
     with open(savedir + 'SMC_runtimes.txt', 'w') as f:
         for model in model_names:
@@ -160,7 +163,7 @@ for train_len in [10, 20, 30]:
 
     plotting_params = [False,False,False,False]
 
-    skip_idxs = []
+    skip_idxs = [0,1,2,3,4,5,7,8,9]
     for idx,model in enumerate(model_names):
         if idx in skip_idxs:
             print('skipping', model)
