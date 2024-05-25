@@ -45,6 +45,7 @@ savedir = '../../../results/MAPK/param_est/HF96_traj_synthetic_data/'
 # load in the model info 
 model_info = json.load(open('model_info.json', 'r'))
 model_names = list(model_info.keys())
+model_names.remove('huang_ferrell_1996')
 display_names = [model_info[model]['display_name'] for model in model_names]
 
 idata = {}
@@ -67,12 +68,17 @@ inputs_dose_response, data_dose_response = load_data('../../../results/MAPK/HF_9
 
 # set up a color palette
 # this is the ColorBrewer purple-green with 11 colors + three greys https://colorbrewer2.org/#type=diverging&scheme=PRGn&n=11
-colors = ['#40004b','#762a83','#9970ab','#c2a5cf','#e7d4e8','#f7f7f7','#d9f0d3','#a6dba0','#5aae61','#1b7837','#00441b','#363737','#929591','#d8dcd6']
-# this one gets to 10 colors by removing the darkest green
-colors = ['#40004b','#762a83','#9970ab','#c2a5cf','#e7d4e8','#f7f7f7','#d9f0d3','#a6dba0','#5aae61','#1b7837','#363737','#929591','#d8dcd6']
-orange = '#de8f05'
+# colors = ['#40004b','#762a83','#9970ab','#c2a5cf','#e7d4e8','#f7f7f7','#d9f0d3','#a6dba0','#5aae61','#1b7837','#00441b','#363737','#929591','#d8dcd6']
+# # this one gets to 10 colors by removing the darkest green
+# colors = ['#40004b','#762a83','#9970ab','#c2a5cf','#e7d4e8','#f7f7f7','#d9f0d3','#a6dba0','#5aae61','#1b7837','#363737','#929591','#d8dcd6']
+# orange = '#de8f05'
 
+# get the standard color pallette
+colors = get_color_pallette()
 
+# remove 0th and 4th to last colors bc we onl have 9 models
+colors = colors[1:]
+colors.remove(colors[-4])
 ################ Write sampling times to a file ################
 with open(savedir + 'SMC_runtimes.txt', 'w') as f:
     for model in model_names:
@@ -92,53 +98,14 @@ for idx, model in enumerate(model_names):
                                         ylim=[[0.0, 1.2], [0.0, 1.2], [0.0, 1.2]],
                                         y_ticks=[[0.0, 1.0], [0.0, 1.0], [0.0, 1.0]],
                                         labels=False)
-        
-################ Make pretty posterior trajectories ################
-## We also need to plot and analyze trajectories that are not posterior predictive, 
-#           but simply use posterior samples to compute them
 
-# parameters for plotting that control the x and y labels
-plotting_params = {
-    'kholodenko_2000':[False,False,False,False],'levchenko_2000':[False,False,False,False],'hatakeyama_2003':[False,False,False,False],'hornberg_2005':[False,False,False,False],'birtwistle_2007':[False,False,False,False],'orton_2009':[False,False,False,False],'vonKriegsheim_2009':[False,False,False,False],'shin_2014':[False,False,False,False],'ryu_2015':[False,False,False,False],'kochanczyk_2017':[False,False,False,False]
-}
 
-n_traj = 400
-
-skip_idxs = []
-for idx,model in enumerate(model_names):
-    if idx in skip_idxs:
-        print('skipping', model)
-        continue
-    else:
-        print('plotting', model)
-        this_model_info = model_info[model]
-
-        plot_p = plotting_params[model]
-
-     
-        # # predict trajectories
-        # traj = predict_traj_response(model, idata[model], inputs, times, 
-        #                                       this_model_info['input_state'], this_model_info['ERK_states'],
-        #                                       float(this_model_info['time_conversion']),
-        #                                       EGF_conversion_factor=float(this_model_info['EGF_conversion_factor']),
-        #                                       nsamples=400)
-        # save
-        # np.save(savedir+model+'/traj_predict.npy', traj)
-        traj = np.load(savedir+model+'/traj_predict.npy')
-
-        # plot
-        plot_posterior_trajectories(traj, data, data_std, times, colors[idx], 
-                                        inputs, savedir+''+model+'/',
-                                        model, data_time_to_mins=60,
-                                        width=1.1, height=0.5, 
-                                        data_downsample=10,
-                                        ylim=[[0.0, 1.2], [0.0, 1.2], [0.0, 1.2]],
-                                        y_ticks=[[0.0, 1.0], [0.0, 1.0], [0.0, 1.0]],
-                                        fname='_pred_traj_', labels=False)
-plt.close('all')
-
-################ Make posterior dose-response curves ################
-## Now we want to use posterior draws to simulate dose-response curve predictions
+# ################ Make posterior dose-response curves ################
+# ## Now we want to use posterior draws to simulate dose-response curve predictions
+# # parameters for plotting that control the x and y labels
+# plotting_params = {
+#     'kholodenko_2000':[False,False,False,False],'levchenko_2000':[False,False,False,False],'hatakeyama_2003':[False,False,False,False],'hornberg_2005':[False,False,False,False],'birtwistle_2007':[False,False,False,False],'orton_2009':[False,False,False,False],'vonKriegsheim_2009':[False,False,False,False],'shin_2014':[False,False,False,False],'ryu_2015':[False,False,False,False],'kochanczyk_2017':[False,False,False,False]
+# }
 
 # skip_idxs = []
 # for idx,model in enumerate(model_names):
@@ -151,10 +118,16 @@ plt.close('all')
 
 #         plot_p = plotting_params[model]
 
+#         if this_model_info['max_time'] == 'jnp.inf':
+#             t1 = np.inf
+#         else:
+#             t1 = float(this_model_info['max_time'])
+
+
 #         # create dose-response curve prediction
 #         dose_response = predict_dose_response(model, idata[model], inputs_dose_response,   
 #                                 this_model_info['input_state'], this_model_info['ERK_states'], 
-#                                 float(this_model_info['max_time']), EGF_conversion_factor=float(this_model_info['EGF_conversion_factor']), 
+#                                 t1, EGF_conversion_factor=float(this_model_info['EGF_conversion_factor']), 
 #                                 nsamples=400, timeout=30)
 #         print(dose_response.shape)
 #         # save
@@ -166,4 +139,4 @@ plt.close('all')
 #         ax.set_title(ax.get_title(), fontsize=12.0)
 #         fig.savefig(savedir+model+'/'+model+'_dose_response_predict.pdf', transparent=True)
 
-plt.close('all')
+# plt.close('all')

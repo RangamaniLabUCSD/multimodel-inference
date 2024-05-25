@@ -13,7 +13,7 @@ import jax
 import sys
 from scipy.stats import mode
 from tqdm import tqdm
-
+import colorcet as cc
 
 sys.path.append("../models/")
 from orton_2009 import *
@@ -95,17 +95,15 @@ rel_error = {model:{submodel:{} for submodel in model_names[model]} for model in
 uncertainty95 = {model:{submodel:{} for submodel in model_names[model]} for model in model_names.keys()}
 
 # set up a color palette
-# this is the ColorBrewer purple-green with 11 colors + three greys https://colorbrewer2.org/#type=diverging&scheme=PRGn&n=11
-# colors = ['#40004b','#762a83','#9970ab','#c2a5cf','#e7d4e8','#f7f7f7','#d9f0d3','#a6dba0','#5aae61','#1b7837','#00441b','#363737','#929591','#d8dcd6']
-# # this one gets to 10 colors by removing the darkest green
-# colors = ['#40004b','#762a83','#9970ab','#c2a5cf','#e7d4e8','#f7f7f7','#d9f0d3','#a6dba0','#5aae61','#1b7837','#363737','#929591','#d8dcd6']
+# OLD
+# colors = ["#40004b","#762a83","#9970ab","#c2a5cf","#e7d4e8","#f7f7f7","#d9f0d3","#a6dba0","#5aae61","#1b7837"]
+# nodes = np.linspace(0, 1, len(colors))
+# mymap = LinearSegmentedColormap.from_list('mycolors', list(zip(nodes, colors)))
+# mpl.colormaps.register(cmap=mymap)
+# colors = mymap(np.linspace(0, 1, 12))
 
-colors = ["#40004b","#762a83","#9970ab","#c2a5cf","#e7d4e8","#f7f7f7","#d9f0d3","#a6dba0","#5aae61","#1b7837"]
-nodes = np.linspace(0, 1, len(colors))
-mymap = LinearSegmentedColormap.from_list('mycolors', list(zip(nodes, colors)))
-mpl.colormaps.register(cmap=mymap)
-colors = mymap(np.linspace(0, 1, 12))
-
+# get standard color palette
+colors = get_color_pallette()
 
 color_idx = 0
 
