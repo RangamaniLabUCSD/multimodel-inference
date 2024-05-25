@@ -27,8 +27,6 @@ from func_timeout import func_timeout, FunctionTimedOut
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-import modified_pymc_smc_sample as pm_smc
-
 jax.config.update("jax_enable_x64", True)
 rng = np.random.default_rng(seed=1234)
 
