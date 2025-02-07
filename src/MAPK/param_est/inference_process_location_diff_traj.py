@@ -370,8 +370,11 @@ def main(raw_args=None):
 
     # get the params to sample
     analyze_params = args.free_params.split(',')
-    diff_params = args.diff_params.split(',')
     free_param_idxs = [list(p_dict.keys()).index(p) for p in analyze_params]
+
+    diff_params = args.diff_params.split(',')
+    # for some reason \r is getting added, so remove it
+    diff_params = [p.strip('\r') for p in diff_params]
 
     # get the EGF index and ERK indices
     state_names = list(y0_dict.keys())
@@ -420,6 +423,8 @@ def main(raw_args=None):
                                         np.max(times/args.time_conversion_factor), 
                                         diffrax.ODETerm(model), 
                                         simulator=ERK_stim_traj)
+    
+    pm.model_to_graphviz(pymc_model).render('./model', format='png')
     
     if args.skip_prior_sample:
         # sample from the posterior predictive
@@ -494,8 +499,6 @@ def main(raw_args=None):
             p_dict_negFeedback[args.negFeedback_param] = 0.0 # set the desired parameter to zero
             plist_negFeedback = [p_dict_negFeedback[p] for p in list(p_dict_negFeedback.keys())]
             prior_param_dict = set_prior_params(args.model, list(p_dict_negFeedback.keys()), plist_negFeedback, free_param_idxs, upper_mult=args.upper_prior_mult, lower_mult=args.lower_prior_mult, prior_family=args.prior_family, savedir=args.savedir, saveplot=False)
-
-            print(prior_param_dict)
 
         # construct the pymc model
         # here we slightly abuse the notation within the model function to pass the negative feedback state
