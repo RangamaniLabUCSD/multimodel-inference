@@ -1,0 +1,15 @@
+﻿Rap1.k1_C3G_Deactivation
+negFB."k1_P90Rsk_Deactivation,k1_Sos_Deactivation"
+ppMEK-ERK.km_Erk_Activation
+ppERK-pASE.km_Erk_Deactivation
+Rap1_negFB."k1_C3G_Deactivation,k1_P90Rsk_Deactivation,k1_Sos_Deactivation"
+Rap1_ppMEK-ERK."k1_C3G_Deactivation,km_Erk_Activation"
+Rap1_ppERK-pASE."k1_C3G_Deactivation,km_Erk_Deactivation"
+negFB_ppMEK-ERK."k1_P90Rsk_Deactivation,k1_Sos_Deactivation,km_Erk_Activation"
+negFB_ppERK-pASE."k1_P90Rsk_Deactivation,k1_Sos_Deactivation,km_Erk_Deactivation"
+ppMEK-ERK_ppERK-pASE."km_Erk_Activation,km_Erk_Deactivation"
+Rap1_negFB_ppMEK-ERK."k1_C3G_Deactivation,k1_P90Rsk_Deactivation,k1_Sos_Deactivation,km_Erk_Activation"
+Rap1_negFB_ppERK-pASE."k1_C3G_Deactivation,k1_P90Rsk_Deactivation,k1_Sos_Deactivation,km_Erk_Deactivation"
+Rap1_ppMEK-ERK_ppERK-pASE."k1_C3G_Deactivation,km_Erk_Activation,km_Erk_Deactivation"
+negFB_ppMEK-ERK_ppERK-pASE."k1_P90Rsk_Deactivation,k1_Sos_Deactivation,km_Erk_Activation,km_Erk_Deactivation"
+all_diff."k1_C3G_Deactivation,k1_P90Rsk_Deactivation,k1_Sos_Deactivation,km_Erk_Activation,km_Erk_Deactivation"
