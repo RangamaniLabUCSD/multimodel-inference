@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # Define the CSV file path
-CSV_FILE="../../../mmi_old_code/loc-dff.csv"
+CSV_FILE="./orton_2009_loc_diff_models_params.csv"
 
 # number of models to process
-n_models=$(wc -l < ../../../mmi_old_code/loc-dff.csv)
+n_models=$(wc -l < ./orton_2009_loc_diff_models_params.csv)
 
 # Initialize counter
 counter=0
