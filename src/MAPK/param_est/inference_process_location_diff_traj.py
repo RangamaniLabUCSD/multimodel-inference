@@ -424,8 +424,6 @@ def main(raw_args=None):
                                         diffrax.ODETerm(model), 
                                         simulator=ERK_stim_traj)
     
-    pm.model_to_graphviz(pymc_model).render('./model', format='png')
-    
     if args.skip_prior_sample:
         # sample from the posterior predictive
         with pymc_model:
