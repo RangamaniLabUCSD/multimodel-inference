@@ -2,7 +2,7 @@ import pdb
 from os import environ
 environ['OMP_NUM_THREADS'] = '1'
 #environ['CUDA_VISIBLE_DEVICES'] = '0'
-
+import multiprocessing
 import jax
 import jax.numpy as jnp
 import numpy as np
@@ -545,4 +545,5 @@ def main(raw_args=None):
     print('Completed {}'.format(args.model))
 
 if __name__ == '__main__':
+    multiprocessing.set_start_method('spawn')
     main()
