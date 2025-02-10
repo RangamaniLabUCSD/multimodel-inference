@@ -386,6 +386,7 @@ def main(raw_args=None):
 
     # make simulator lambda function that solves at correct times with the time conversion factor taken into account]
     # NOTE: use times[1:] to avoind issues associated with included t=0 point
+    @jax.jit
     def ERK_stim_traj(p, model, max_time, y0, output_states):
         traj = solve_traj(model, y0, p, max_time, ERK_indices, times[1:]/args.time_conversion_factor, args.rtol, args.atol)
 
