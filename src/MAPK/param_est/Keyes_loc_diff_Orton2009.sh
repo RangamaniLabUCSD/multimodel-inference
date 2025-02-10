@@ -7,10 +7,10 @@ CSV_FILE="./orton_2009_loc_diff_models_params.csv"
 n_models=$(wc -l < ./orton_2009_loc_diff_models_params.csv)
 
 # Initialize counter
-counter=0
+counter=4
 
 # Read the CSV file line by line, skipping the header
-tail -n +1 "$CSV_FILE" | while IFS='.' read -r loc_diff_case diff_params _; do
+tail -n +5 "$CSV_FILE" | while IFS='.' read -r loc_diff_case diff_params _; do
     ((counter++))  # Increment counter
     savedir="../../../results/MAPK/param_est/Keyes_2020_data_locDiffs/orton_2009/$loc_diff_case"
     diff_params=$(echo "$diff_params" | tr -d '"') # remove leading and trailing quotes
