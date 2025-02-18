@@ -337,7 +337,8 @@ def ERK_stim_trajectory_set(params, model_dfrx_ode, max_time, y0_EGF_inputs,
     return traj/traj[max_input_index,-1], traj
 
 def predict_dose_response(model, posterior_idata, inputs, input_state, 
-                          ERK_states, max_time, EGF_conversion_factor=1, nsamples=None, timeout=10., event_rtol=1e-6, event_atol=1e-5):
+                          ERK_states, max_time, EGF_conversion_factor=1, nsamples=None, timeout=10., event_rtol=1e-6, event_atol=1e-5,
+                          ss_method='ode'):
     """ function to predict dose response curves for a given model and many posterior samples"""
     # try calling the model
     try:
@@ -370,7 +371,9 @@ def predict_dose_response(model, posterior_idata, inputs, input_state,
     param_samples = get_param_subsample(posterior_idata, nsamples, p_dict)
 
     def dr_func(param):
-        return ERK_stim_response(param, diffrax.ODETerm(model), max_time, y0_EGF_ins, ERK_indices, event_rtol=event_rtol,event_atol=event_atol )[0]
+        return ERK_stim_response(param, diffrax.ODETerm(model), max_time, y0_EGF_ins, 
+                                 ERK_indices, event_rtol=event_rtol,event_atol=event_atol,
+                                 ode_or_newton=ss_method)[0]
 
     dose_response = []
     skipped = False
@@ -440,7 +443,7 @@ def predict_traj_response(model, posterior_idata, inputs, times, input_state,
         def ERK_stim_traj(p, model, times, y0, output_states, time_conversion_factor=1):
             traj = solve_traj(model, y0, p, jnp.max(times)/time_conversion_factor, output_states, times/time_conversion_factor, rtol, atol)
             # return normalized trajectory
-            return [(traj - np.min(traj)) / (np.max(traj) - np.min(traj))], traj
+            return [(traj - np.nanmin(traj)) / (np.nanmax(traj) - np.nanmin(traj))], traj
         for param in tqdm(param_samples):
             trajectories.append(ERK_stim_traj(param, diffrax.ODETerm(model), times, y0_EGF_ins[0], ERK_indices, time_conversion_factor)[0])
 
@@ -484,15 +487,18 @@ def set_prior_params(model_name, param_names, nominal_params, free_param_idxs, p
                 # get the upper and lower bounds
                 upper = nominal_val*upper_mult
                 lower = nominal_val*lower_mult
-                
-                print(param, upper, lower)
 
             # use preliz.maxent to find the prior parameters for the specified family
             prior_fam = prior_family_list[free_param_idxs.index(i)]
            
             dist_family = eval('pz.' + prior_fam[0])
-            fig, ax = get_sized_fig_ax(2.0,2.0)
-            val = pz.maxent(dist_family, lower, upper, prob_mass_bounds, plot=saveplot, ax=ax)
+
+            if 'sigma' not in prior_fam[0]:
+                fig, ax = get_sized_fig_ax(2.0,2.0)
+                val = pz.maxent(dist_family, lower, upper, prob_mass_bounds, plot=saveplot, ax=ax)
+            else: # if both prior params are specified, just use those and dont elicit
+                saveplot = False
+                val = dist_family
 
             # save the plot
             if saveplot:
@@ -502,6 +508,8 @@ def set_prior_params(model_name, param_names, nominal_params, free_param_idxs, p
                 fig.savefig(savedir + model_name + param + '_prior.pdf', bbox_inches='tight', transparent=True)
             else:
                 result = val
+
+            print(param, result)
 
             result_dict = {result.param_names[i]: result.params[i] for i in range(len(result.params))}
             # set the prior parameters
@@ -516,8 +524,7 @@ def set_prior_params(model_name, param_names, nominal_params, free_param_idxs, p
                 if len(fixed_param) > 0:
                     tmp += (fixed_param + ', ')
             prior_param_dict[param] = tmp + ')'
-            print(prior_param_dict[param])
-        else:
+        else:   
             # set the prior parameters to the nominal value
             prior_param_dict[param] = 'pm.ConstantData("' + param + '", ' + str(nominal_params[i]) + ')'
 
