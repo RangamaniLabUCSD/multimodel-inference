@@ -369,7 +369,8 @@ def predict_dose_response(model, posterior_idata, inputs, input_state,
         nsamples = posterior_idata.posterior.dims['draw']*posterior_idata.posterior.dims['chain']
 
     param_samples = get_param_subsample(posterior_idata, nsamples, p_dict)
-
+    
+    @jax.jit
     def dr_func(param):
         return ERK_stim_response(param, diffrax.ODETerm(model), max_time, y0_EGF_ins, 
                                  ERK_indices, event_rtol=event_rtol,event_atol=event_atol,
@@ -380,7 +381,7 @@ def predict_dose_response(model, posterior_idata, inputs, input_state,
     for param in tqdm(param_samples):
         # print(param)
         try: # try to run the function
-            dr = func_timeout(timeout, dr_func, args=(param,))
+            dr = func_timeout(timeout, dr_func, args=(jnp.array(param),))
             dose_response.append(dr)
             skipped = False
         except FunctionTimedOut: # the function timed out
