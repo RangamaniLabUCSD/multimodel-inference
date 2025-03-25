@@ -50,13 +50,13 @@ posterior_samples = {}
 sample_times = {}
 
 for model in model_names:
+    print(model)
     idata[model], _, sample_times[model] = load_smc_samples_to_idata(savedir+model+'/'+model+'_smc_samples.json', sample_time=True)
     posterior_samples[model] = np.load(savedir+model+'/'+model+'_posterior_predictive_samples.npy')
 
 # shin has 16000 so downsample to 4000
 idxs = rng.choice(np.arange(16000), size=4000, replace=False)
 posterior_samples['shin_2014'] = posterior_samples['shin_2014'][idxs]
-
 
 # get training and testing data
 inputs, data = load_data('../../../results/MAPK/HF_96_synthetic_data.csv')
@@ -76,46 +76,45 @@ with open(savedir + 'SMC_runtimes.txt', 'w') as f:
     for model in model_names:
         f.write(f'{model}: {sample_times[model]/3600} hr\n')
 
-
 plotting_params = {
     'kholodenko_2000':[False,False,False,False],'levchenko_2000':[False,False,False,False],'hatakeyama_2003':[False,False,False,False],'hornberg_2005':[False,False,False,False],'birtwistle_2007':[False,False,False,False],'orton_2009':[False,False,False,False],'vonKriegsheim_2009':[False,False,False,False],'shin_2014':[False,False,False,False],'ryu_2015':[False,False,False,False],'kochanczyk_2017':[False,False,False,False]
 }
 
-################ Make pretty posterior predictive dose-response curves ################
-skip_idxs = []
-for idx,model in enumerate(model_names):
-    if idx in skip_idxs:
-        print('skipping', model)
-        continue
-    else:
-        print('plotting', model)
+# ################ Make pretty posterior predictive dose-response curves ################
+# skip_idxs = []
+# for idx,model in enumerate(model_names):
+#     if idx in skip_idxs:
+#         print('skipping', model)
+#         continue
+#     else:
+#         print('plotting', model)
 
-        plot_p = plotting_params[model]
+#         plot_p = plotting_params[model]
 
-        fig, ax = plot_stimulus_response_curve(posterior_samples[model], data, inputs, input_name='EGF stimulus (nM)', output_name='% maximal ERK \n activity', box_color='w', data_color='#5aae61',
-                                        data_std=0.1, width=1.1, height=1.1, data_marker_size=5.0, scatter_marker_size=0,
-                                        title=None, xlabel=plot_p[0],xticklabels=plot_p[1],ylabel=plot_p[2], yticklabels=plot_p[3])
-        ax.set_title(ax.get_title(), fontsize=12.0)
-        fig.savefig(savedir+model+'/'+model+'_posterior_predictive.pdf', transparent=True)
+#         fig, ax = plot_stimulus_response_curve(posterior_samples[model], data, inputs, input_name='EGF stimulus (nM)', output_name='% maximal ERK \n activity', box_color='w', data_color='#5aae61',
+#                                         data_std=0.1, width=1.1, height=1.1, data_marker_size=5.0, scatter_marker_size=0,
+#                                         title=None, xlabel=plot_p[0],xticklabels=plot_p[1],ylabel=plot_p[2], yticklabels=plot_p[3])
+#         ax.set_title(ax.get_title(), fontsize=12.0)
+#         fig.savefig(savedir+model+'/'+model+'_posterior_predictive.pdf', transparent=True)
 
-plt.close('all')
+# plt.close('all')
 
-########################### Make plot of the data ##############################
-# use the pretty posterior predictive dose-response function
-fig, ax = plot_stimulus_response_curve(-100*np.ones_like(posterior_samples['shin_2014']), data, inputs, input_name='EGF stimulus (nM)', output_name='% maximal ERK \n activity', box_color='w', data_color='#5aae61',
-                                        data_std=0.1, width=1.1, height=1.1, data_marker_size=5.0, scatter_marker_size=0,
-                                        title=None, xlabel=False,xticklabels=False,ylabel=False, yticklabels=False)
-ax.set_title(ax.get_title(), fontsize=12.0)
+# ########################### Make plot of the data ##############################
+# # use the pretty posterior predictive dose-response function
+# fig, ax = plot_stimulus_response_curve(-100*np.ones_like(posterior_samples['shin_2014']), data, inputs, input_name='EGF stimulus (nM)', output_name='% maximal ERK \n activity', box_color='w', data_color='#5aae61',
+#                                         data_std=0.1, width=1.1, height=1.1, data_marker_size=5.0, scatter_marker_size=0,
+#                                         title=None, xlabel=False,xticklabels=False,ylabel=False, yticklabels=False)
+# ax.set_title(ax.get_title(), fontsize=12.0)
 
-fig.savefig(savedir+'dose_response_training_data.pdf', transparent=True)
+# fig.savefig(savedir+'dose_response_training_data.pdf', transparent=True)
 
-# make a legend
-fig, ax = plt.subplots()
-ax.errorbar(-100, -100, yerr=0.1, color='red', fmt='x', markersize=5.0, label='training data')
-leg = ax.legend(bbox_to_anchor=(2.0, 1.0), numpoints=1, fontsize=8.0)
-export_legend(leg, savedir+'dose_response_training_data_leg.pdf')
-leg.remove()
-plt.close('fig')
+# # make a legend
+# fig, ax = plt.subplots()
+# ax.errorbar(-100, -100, yerr=0.1, color='red', fmt='x', markersize=5.0, label='training data')
+# leg = ax.legend(bbox_to_anchor=(2.0, 1.0), numpoints=1, fontsize=8.0)
+# export_legend(leg, savedir+'dose_response_training_data_leg.pdf')
+# leg.remove()
+# plt.close('fig')
  
 
 # ################ Make pretty posterior dose-response curves ################
@@ -128,24 +127,46 @@ plt.close('fig')
 #         print('skipping', model)
 #         continue
 #     else:
-# #         print('plotting', model)
+#         print('plotting', model)
 #         this_model_info = model_info[model]
 
 #         plot_p = plotting_params[model]
 
-#         max_time = this_model_info['max_time']
-#         if max_time == 'jnp.inf':
-#             max_time = np.inf
+#         fname = savedir+model+'/dose_response_predict.npy'
+#         if os.path.exists(fname):
+#             dose_response = np.load(fname)
 #         else:
-#             max_time = float(max_time)
+#             max_time = this_model_info['max_time']
+#             if max_time == 'jnp.inf':
+#                 max_time = np.inf
+#             else:
+#                 max_time = float(max_time)
 
-#         # create dose-response curve prediction
-#         dose_response = predict_dose_response(model, idata[model], inputs,   
-#                                 this_model_info['input_state'], this_model_info['ERK_states'], 
-#                                 max_time, EGF_conversion_factor=float(this_model_info['EGF_conversion_factor']),nsamples=400, timeout=30)
-#         # save
-#         np.save(savedir+model+'/dose_response_predict.npy', dose_response)
-#         # dose_response = np.load(savedir+model+'/dose_response_predict.npy')
+#             ss_method = this_model_info['ss_method']
+#             if ss_method == 'newton':
+#                 event_rtol = float(this_model_info['newton_event_rtol'])
+#                 event_atol = float(this_model_info['newton_event_atol'])
+#             else:
+#                 event_rtol = float(this_model_info['event_rtol'])
+#                 event_atol = float(this_model_info['event_atol'])
+
+#             # create dose-response curve prediction
+#             dose_response = predict_dose_response(model, idata[model], inputs,   
+#                                     this_model_info['input_state'], this_model_info['ERK_states'], 
+#                                     max_time, EGF_conversion_factor=float(this_model_info['EGF_conversion_factor']),nsamples=400, timeout=30,
+#                                     ss_method=ss_method,event_atol=event_atol, event_rtol=event_rtol,)
+#             # # save
+#             np.save(fname, dose_response)
+
+#         fig, ax = plot_stimulus_response_curve(dose_response, data, 
+#                                                inputs, input_name='EGF stimulus (nM)', 
+#                                                output_name='% maximal ERK \n activity', 
+#                                                box_color='w', data_color='#5aae61',
+#                                         data_std=0.1, width=1.1, height=1.1, 
+#                                         data_marker_size=5.0, scatter_marker_size=0,
+#                                         title=None, xlabel=plot_p[0],xticklabels=plot_p[1],ylabel=plot_p[2], yticklabels=plot_p[3])
+#         ax.set_title(ax.get_title(), fontsize=12.0)
+#         fig.savefig(savedir+model+'/'+model+'_posterior.pdf', transparent=True)
 
 #         fig, ax = plot_stimulus_response_curve(dose_response, data, inputs, input_name='EGF stimulus (nM)', output_name='% maximal ERK \n activity', box_color='w', data_color='red',
 #                                         data_std=0.1, width=1.1, height=1.1, data_marker_size=5.0, scatter_marker_size=0,
@@ -171,15 +192,17 @@ for idx,model in enumerate(model_names):
 
      
         # predict trajectories
-        traj = predict_traj_response(model, idata[model], inputs_traj, times_traj, 
-                                              this_model_info['input_state'], this_model_info['ERK_states'],
-                                              float(this_model_info['time_conversion']),
-                                              EGF_conversion_factor=float(this_model_info['EGF_conversion_factor']),
-                                              nsamples=400)
-        # save
-        np.save(savedir+model+'/traj_predict.npy', traj)
-        # print(model)
-        traj = np.load(savedir+model+'/traj_predict.npy')
+        fname = savedir+model+'/traj_predict.npy'
+        if os.path.exists(fname):
+            traj = np.load(fname)
+        else:
+            traj = predict_traj_response(model, idata[model], inputs_traj, times_traj, 
+                                                this_model_info['input_state'], this_model_info['ERK_states'],
+                                                float(this_model_info['time_conversion']),
+                                                EGF_conversion_factor=float(this_model_info['EGF_conversion_factor']),
+                                                nsamples=400)
+            # save
+            np.save(savedir+model+'/traj_predict.npy', traj)
 
         # plot
         plot_posterior_trajectories(traj, data_traj, data_std_traj, times_traj, colors[idx], 
