@@ -187,6 +187,8 @@ def build_pymc_model_local(prior_param_dict, diff_params, data, data_sigma, y0,
     # upack data
     data_CYTO, data_PM, data_CYTO_Rap1KD, data_PM_Rap1KD = data
     data_std_CYTO, data_std_PM, data_std_CYTO_Rap1KD, data_std_PM_Rap1KD = data_sigma
+
+    print(prior_param_dict)
     
     # Construct the PyMC model # 
     model = construct_pm_model(prior_param_dict, diff_params, sol_op, sol_op_Rap1KD,
@@ -383,7 +385,7 @@ def main(raw_args=None):
 
     # construct the strings to make priors and constants
     prior_param_dict = set_prior_params(args.model, list(p_dict.keys()), plist, free_param_idxs, upper_mult=args.upper_prior_mult, lower_mult=args.lower_prior_mult, prior_family=args.prior_family, savedir=args.savedir, saveplot=False)
-
+    
     # make simulator lambda function that solves at correct times with the time conversion factor taken into account]
     # NOTE: use times[1:] to avoind issues associated with included t=0 point
     @jax.jit
@@ -424,6 +426,8 @@ def main(raw_args=None):
                                         np.max(times/args.time_conversion_factor), 
                                         diffrax.ODETerm(model), 
                                         simulator=ERK_stim_traj)
+    
+
     
     if args.skip_prior_sample:
         # sample from the posterior predictive
@@ -546,5 +550,6 @@ def main(raw_args=None):
     print('Completed {}'.format(args.model))
 
 if __name__ == '__main__':
-    multiprocessing.set_start_method('spawn')
+    if multiprocessing.get_start_method() != 'spawn':
+        multiprocessing.set_start_method('spawn')
     main()

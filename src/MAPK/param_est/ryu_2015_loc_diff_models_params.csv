@@ -1,7 +1,7 @@
 ﻿Rap1."k_RafRap1,D_RafRap1"
 negFB."T_dusp,K_dusp,dusp_ind"
-ppMEK-ERK,K2
-ppERK-pASE,D2
+ppMEK-ERK.K2
+ppERK-pASE.D2
 Rap1_negFB."k_RafRap1,D_RafRap1,T_dusp,K_dusp,dusp_ind"
 Rap1_ppMEK-ERK."k_RafRap1,D_RafRap1,K2"
 Rap1_ppERK-pASE."k_RafRap1,D_RafRap1,D2"
@@ -12,4 +12,4 @@ Rap1_negFB_ppMEK-ERK."k_RafRap1,D_RafRap1,T_dusp,K_dusp,dusp_ind,K2"
 Rap1_negFB_ppERK-pASE."k_RafRap1,D_RafRap1,T_dusp,K_dusp,dusp_ind,D2"
 Rap1_ppMEK-ERK_ppERK-pASE."k_RafRap1,D_RafRap1,K2,D2"
 negFB_ppMEK-ERK_ppERK-pASE."T_dusp,K_dusp,dusp_ind,K2,D2"
-Rap1_negFB_ppMEK-ERK_ppERK-pASE."k_RafRap1,D_RafRap1,T_dusp,K_dusp,dusp_ind,K2,D2"
+all."k_RafRap1,D_RafRap1,T_dusp,K_dusp,dusp_ind,K2,D2"  

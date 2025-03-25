@@ -12,4 +12,4 @@ Rap1_negFB_ppMEK-ERK."k1_C3G_Deactivation,k1_P90Rsk_Deactivation,k1_Sos_Deactiva
 Rap1_negFB_ppERK-pASE."k1_C3G_Deactivation,k1_P90Rsk_Deactivation,k1_Sos_Deactivation,km_Erk_Deactivation"
 Rap1_ppMEK-ERK_ppERK-pASE."k1_C3G_Deactivation,km_Erk_Activation,km_Erk_Deactivation"
 negFB_ppMEK-ERK_ppERK-pASE."k1_P90Rsk_Deactivation,k1_Sos_Deactivation,km_Erk_Activation,km_Erk_Deactivation"
-all_diff."k1_C3G_Deactivation,k1_P90Rsk_Deactivation,k1_Sos_Deactivation,km_Erk_Activation,km_Erk_Deactivation"
+all."k1_C3G_Deactivation,k1_P90Rsk_Deactivation,k1_Sos_Deactivation,km_Erk_Activation,km_Erk_Deactivation"
