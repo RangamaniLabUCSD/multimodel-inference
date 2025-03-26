@@ -510,8 +510,8 @@ def main(raw_args=None):
         pymc_model_negFeedbackKD = build_pymc_model_local(prior_param_dict, None, y0_EGF_ins_negFeedback_KD[0], 
                     y0_EGF_ins_negFeedback_Rap1_KD[0], ERK_indices, 
                     np.max(times/args.time_conversion_factor), diffrax.ODETerm(model), 
-                    simulator=ERK_stim_traj, data_sigma=None, model_func=model_func,)
-        
+                    simulator=ERK_stim_traj, data_sigma=1e-14, model_func=model_func,)
+    
         # create new idata without log_loglikelihood 
         posterior_idata_negFeedbackKD = posterior_idata.copy()
         del posterior_idata_negFeedbackKD.log_likelihood
