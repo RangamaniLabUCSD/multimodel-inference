@@ -15,12 +15,8 @@ from tqdm import tqdm
 
 sys.path.append("../models/")
 from huang_ferrell_1996 import *
-from bhalla_iyengar_1999 import *
 from kholodenko_2000 import *
 from levchenko_2000 import *
-from brightman_fell_2000 import *
-from schoeberl_2002 import *
-from hatakeyama_2003 import *
 from hornberg_2005 import *
 from birtwistle_2007 import *
 from orton_2009 import *
@@ -28,7 +24,6 @@ from vonKriegsheim_2009 import *
 from shin_2014 import *
 from ryu_2015 import *
 from kochanczyk_2017 import *
-from dessauges_2022 import *
 
 jax.config.update("jax_enable_x64", True)
 
@@ -40,7 +35,6 @@ rng = np.random.default_rng(seed=1234)
 
 ################ LOAD in DATA ################
 savedir = '../../../results/MAPK/param_est/Keyes_2020_data/'
-
 
 # load in the model info 
 model_info = json.load(open('model_info.json', 'r'))
@@ -176,6 +170,13 @@ for idx,model in enumerate(model_names):
                                         y_ticks=[[0.0, 1.0], [0.0, 1.0], [0.0, 1.0]],
                                         fname='_pred_traj_', labels=False, train_times=dat[compartment]['times']/data_time_to_mins)
             plt.close('all')
+
+            post_df = pd.DataFrame({'Time (min)': dat[compartment]['times']/data_time_to_mins, 
+                                    'Mean Response': np.mean(traj, axis=0), 
+                                    '2.5th':np.percentile(traj, 2.5, axis=0), 
+                                    '97.5th':np.percentile(traj, 97.5, axis=0)})
+            post_df.to_csv(savedir+compartment+'/' + model + '/' + model + '_' + compartment 
+                           + '_posterior_data_summary.csv', index=False)
             
             # compute training error and testing error with RMSE and relative error
             # error posterior samples
