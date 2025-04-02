@@ -21,12 +21,8 @@ from adjustText import adjust_text
 
 sys.path.append("../models/")
 from huang_ferrell_1996 import *
-from bhalla_iyengar_1999 import *
 from kholodenko_2000 import *
 from levchenko_2000 import *
-from brightman_fell_2000 import *
-from schoeberl_2002 import *
-from hatakeyama_2003 import *
 from hornberg_2005 import *
 from birtwistle_2007 import *
 from orton_2009 import *
@@ -34,7 +30,7 @@ from vonKriegsheim_2009 import *
 from shin_2014 import *
 from ryu_2015 import *
 from kochanczyk_2017 import *
-from dessauges_2022 import *
+
 
 sys.path.append("../")
 from utils import *
@@ -256,10 +252,10 @@ def run_analysis(model_name, qoi_lambda, params_to_analyze, loaddir, savedir, lo
     sensitive_params = plot_morris_scatter(morris_results, params_to_analyze, model_name, savedir)
     write_sensitivity_results(model_name, sensitive_params,  './sensitive_params_Morris.txt')
 
-    # run HDMR GSA and plot
-    # hdmr_results = analyze_HDMR(model_name, params_to_analyze, qoi, param_samples, lower=lower,upper=upper)
-    # sensitive_params = plot_HDMR_bar(hdmr_results, params_to_analyze, model_name, savedir,threshold=0.01,figsize=(4.0,2.0))
-    # write_sensitivity_results(model_name, sensitive_params,  './sensitive_params_HDMR.txt')
+    # export data to csv for use in the source_data.xlsx file
+    moris_df = pd.DataFrame({key:morris_results[key].tolist() for key in ['names', 'mu_star', 'sigma']})
+    moris_df.to_csv(savedir + '{}_morris_results.csv'.format(model_name), index=False)
+
     print('Completed {}'.format(model_name))
     
 
