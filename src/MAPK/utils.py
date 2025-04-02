@@ -44,13 +44,8 @@ from diffrax_ODE_PyTensor import *
 # import models
 sys.path.insert(0, '../models/')
 from huang_ferrell_1996 import *
-#from huang_ferrell_1996_EGF_param import *
-from bhalla_iyengar_1999 import *
 from kholodenko_2000 import *
 from levchenko_2000 import *
-from brightman_fell_2000 import *
-from schoeberl_2002 import *
-from hatakeyama_2003 import *
 from hornberg_2005 import *
 from birtwistle_2007 import *
 from orton_2009 import *
@@ -58,7 +53,6 @@ from vonKriegsheim_2009 import *
 from shin_2014 import *
 from ryu_2015 import *
 from kochanczyk_2017 import *
-from dessauges_2022 import *
 
 ###############################################################################
 #### General Utils ####
