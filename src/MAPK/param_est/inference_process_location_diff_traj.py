@@ -498,19 +498,20 @@ def main(raw_args=None):
             y0_EGF_ins_negFeedback_Rap1_KD = y0_EGF_ins_Rap1_KD.copy()
 
             # now construct a new prior dict with the negative feedback param set to 0
-            p_dict_negFeedback = p_dict.copy()
-            p_dict_negFeedback[args.negFeedback_param] = 0.0 # set the desired parameter to zero
-            plist_negFeedback = [p_dict_negFeedback[p] for p in list(p_dict_negFeedback.keys())]
-            prior_param_dict = set_prior_params(args.model, list(p_dict_negFeedback.keys()), plist_negFeedback, free_param_idxs, upper_mult=args.upper_prior_mult, lower_mult=args.lower_prior_mult, prior_family=args.prior_family, savedir=args.savedir, saveplot=False)
-
+            # p_dict_negFeedback = p_dict.copy()
+            # p_dict_negFeedback[args.negFeedback_param] = 0.0 # set the desired parameter to zero
+            # plist_negFeedback = [p_dict_negFeedback[p] for p in list(p_dict_negFeedback.keys())]
+            # prior_param_dict = set_prior_params(args.model, list(p_dict_negFeedback.keys()), plist_negFeedback, free_param_idxs, upper_mult=args.upper_prior_mult, lower_mult=args.lower_prior_mult, prior_family=args.prior_family, savedir=args.savedir, saveplot=False)
+            prior_param_dict[args.negFeedback_param] = 'pm.ConstantData("' + args.negFeedback_param + '", 0.0)'
+             
         # construct the pymc model
         # here we slightly abuse the notation within the model function to pass the negative feedback state
         # the llike for the negFeedback knockdown is 'llike_CYTO' and 'llike_PM' whereas
         # that for the negFeedback and Rap1KD is 'llike_CYTO_Rap1KD' and 'llike_PM_Rap1KD'
-        pymc_model_negFeedbackKD = build_pymc_model_local(prior_param_dict, None, y0_EGF_ins_negFeedback_KD[0], 
-                    y0_EGF_ins_negFeedback_Rap1_KD[0], ERK_indices, 
-                    np.max(times/args.time_conversion_factor), diffrax.ODETerm(model), 
-                    simulator=ERK_stim_traj, data_sigma=1e-14, model_func=model_func,)
+        pymc_model_negFeedbackKD = build_pymc_model_local(prior_param_dict, diff_params, data, [1e-14,1e-14,1e-14,1e-14], 
+                                    y0_EGF_ins_negFeedback_KD[0], y0_EGF_ins_negFeedback_Rap1_KD[0], 
+                                    ERK_indices, np.max(times/args.time_conversion_factor), 
+                                    diffrax.ODETerm(model), simulator=ERK_stim_traj)
     
         # create new idata without log_loglikelihood 
         posterior_idata_negFeedbackKD = posterior_idata.copy()

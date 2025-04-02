@@ -119,7 +119,6 @@ for idx, model in enumerate(model_names.keys()):
             'PM_Rap1KD': prediction_PM_Rap1KD
         }
 
-
         for comp in ['CYTO', 'PM']:
             # plot the posterior predictive trajectories
             samples_ = np.stack([llike_samples[comp], llike_samples[comp+'_Rap1KD']])
@@ -143,3 +142,56 @@ for idx, model in enumerate(model_names.keys()):
                 ylim=[[0.0, 1.5],[0.0, 1.5]],
                 y_ticks=[[0.0, 1.0],[0.0, 1.0]],
                 labels=False,)
+
+# plot posterior trajectories for Orton 2009 and Ryu 2015 with negFB KD
+submodel = 'Rap1_negFB'
+colors = {
+    'orton_2009':(0.7423529411764707, 0.5282352941176469, 0.7015686274509803),
+    'ryu_2015':(0.6891176470588235, 0.3857843137254902, 0.14617647058823535)
+}
+
+for model in ['orton_2009', 'ryu_2015']:
+    name = savedir + model + '/' + submodel + '/'
+
+    if model == 'ryu_2015':
+        model_ = model + '_Rap1'
+    else:
+        model_ = model
+
+    rap1KD_negFBKD_CYTO = np.load(name + submodel + model_ + '_CYTO_Rap1KD_posterior_negFeedbackKD_predictive_samples.npy')
+    rap1KD_negFBKD_PM = np.load(name + submodel + model_ + '_PM_Rap1KD_posterior_negFeedbackKD_predictive_samples.npy')
+    negFBKD_CYTO = np.load(name + submodel + model_ + '_CYTO_posterior_negFeedbackKD_predictive_samples.npy')
+    negFBKD_PM = np.load(name + submodel + model_ + '_PM_posterior_negFeedbackKD_predictive_samples.npy')
+
+    print(rap1KD_negFBKD_CYTO.shape, rap1KD_negFBKD_PM.shape, negFBKD_CYTO.shape, negFBKD_PM.shape)
+    
+    KD_samples = {
+        'CYTO_negFBKD': negFBKD_CYTO,
+        'PM_negFBKD': negFBKD_PM,
+        'CYTO_Rap1KD_negFBKD': rap1KD_negFBKD_CYTO,
+        'PM_Rap1KD_negFBKD': rap1KD_negFBKD_PM
+    }
+
+    for comp in ['CYTO', 'PM']:
+        # plot the posterior predictive trajectories
+        samples_ = np.stack([KD_samples[comp+'_negFBKD'], KD_samples[comp+'_Rap1KD_negFBKD']])
+        # add additional zeros to each sample for the ICs (this is just to make plotting easier, we know the ICs are zero)
+        zer_col = np.zeros((samples_.shape[0], samples_.shape[1], 1))
+        samples_ = np.concatenate([zer_col, samples_], axis=2)
+        # reshape the samples_ martix so that it is n_traj x n_comp x n_times
+        samples_ = np.swapaxes(samples_, 0, 1)
+
+        data_ = np.nan*np.ones_like(np.stack([data[comp], data[comp+'_Rap1KD']]))
+        data_std_ = np.stack([data_std[comp], data_std[comp+'_Rap1KD']])
+        data_std_nan = np.nan*np.ones_like(data_std_)
+
+        plot_posterior_trajectories(samples_, data_, data_std_nan, times,
+            colors[model], ['_negFBKD', '_Rap1KD_negFBKD'], 
+            name + submodel + '_' + model_ + '_' + comp + '_post_sims', '',
+            fname='',
+            data_time_to_mins=60,
+            width=1., height=0.5, 
+            data_downsample=10,
+            ylim=[[0.0, 1.5],[0.0, 1.5]],
+            y_ticks=[[0.0, 1.0],[0.0, 1.0]],
+            labels=False,)
