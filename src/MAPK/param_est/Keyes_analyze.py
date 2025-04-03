@@ -171,13 +171,13 @@ for idx,model in enumerate(model_names):
                                         fname='_pred_traj_', labels=False, train_times=dat[compartment]['times']/data_time_to_mins)
             plt.close('all')
 
+            
             post_df = pd.DataFrame({'Time (min)': dat[compartment]['times']/data_time_to_mins, 
                                     'Mean Response': np.mean(traj, axis=0), 
                                     '2.5th':np.percentile(traj, 2.5, axis=0), 
                                     '97.5th':np.percentile(traj, 97.5, axis=0)})
             post_df.to_csv(savedir+compartment+'/' + model + '/' + model + '_' + compartment 
                            + '_posterior_data_summary.csv', index=False)
-            
             # compute training error and testing error with RMSE and relative error
             # error posterior samples
             RMSE = np.sqrt(np.nanmean((np.nanmean(traj,axis=0) - dat[compartment]['data'])**2))
