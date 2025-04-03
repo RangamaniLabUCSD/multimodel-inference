@@ -142,6 +142,17 @@ for idx, model in enumerate(model_names.keys()):
                 ylim=[[0.0, 1.5],[0.0, 1.5]],
                 y_ticks=[[0.0, 1.0],[0.0, 1.0]],
                 labels=False,)
+            
+            post_df = pd.DataFrame({'Time (min)': times, 
+                                    'Mean Response': np.mean(samples_[:,0,:], axis=0), 
+                                    '2.5th':np.percentile(samples_[:,0,:], 2.5, axis=0), 
+                                    '97.5th':np.percentile(samples_[:,0,:], 97.5, axis=0)})
+            post_df.to_csv(name + submodel + '_' + model_ + '_' + comp + '_posterior_predictive.csv', index=False)
+            post_df = pd.DataFrame({'Time (min)': times, 
+                                    'Mean Response': np.mean(samples_[:,1,:], axis=0), 
+                                    '2.5th':np.percentile(samples_[:,1,:], 2.5, axis=0), 
+                                    '97.5th':np.percentile(samples_[:,1,:], 97.5, axis=0)})
+            post_df.to_csv(name + submodel + '_' + model_ + '_' + comp + '_posterior_predictive_Rap1KD.csv', index=False)
 
 # plot posterior trajectories for Orton 2009 and Ryu 2015 with negFB KD
 submodel = 'Rap1_negFB'
@@ -195,3 +206,14 @@ for model in ['orton_2009', 'ryu_2015']:
             ylim=[[0.0, 1.5],[0.0, 1.5]],
             y_ticks=[[0.0, 1.0],[0.0, 1.0]],
             labels=False,)
+        
+        post_df = pd.DataFrame({'Time (min)': times, 
+                                    'Mean Response': np.mean(samples_[:,0,:], axis=0), 
+                                    '2.5th':np.percentile(samples_[:,0,:], 2.5, axis=0), 
+                                    '97.5th':np.percentile(samples_[:,0,:], 97.5, axis=0)})
+        post_df.to_csv(name + submodel + '_' + model_ + '_' + comp + '_posterior_predictive_negFBKD.csv', index=False)
+        post_df = pd.DataFrame({'Time (min)': times, 
+                                'Mean Response': np.mean(samples_[:,1,:], axis=0), 
+                                '2.5th':np.percentile(samples_[:,1,:], 2.5, axis=0), 
+                                '97.5th':np.percentile(samples_[:,1,:], 97.5, axis=0)})
+        post_df.to_csv(name + submodel + '_' + model_ + '_' + comp + '_posterior_predictive_Rap1KD_negFBKD.csv', index=False)
