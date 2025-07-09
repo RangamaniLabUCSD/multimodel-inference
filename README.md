@@ -1,4 +1,4 @@
-[![Zenodo](https://zenodo.org/badge/DOI/10.5281/zenodo.15129141.svg)]
+![Zenodo](https://zenodo.org/badge/DOI/10.5281/zenodo.15129141.svg)
 
 Nathaniel Linden-Santangeli
 
