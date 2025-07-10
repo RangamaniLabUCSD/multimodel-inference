@@ -8,10 +8,14 @@ Authors: Nathaniel Linden-Santangeli, Jin Zhang, Boris Kramer, Padmini Rangamani
 
 Date: June 2024
 
-This repository provides all code and data that is necessary to reproduce all results shown in the manuscript available at [URL GOES HERE].
+This repository provides all code and data that is necessary to reproduce all results shown in the manuscript. 
+ <!-- available at [URL GOES HERE]. -->
 
 ## Instructions to reproduce results and figures
 Source code is located in the `src/MAPK/` directory and results and data are located in the `results/` directory.
+
+The excel file `source_data.xlsx` contains all results reported in the figures and tables of the manuscript.
+Each associated script has code to generate the figure panels and tables in the manuscript and export the source data to the `results/` directory.
 
 #### Local Identifiability analysis
 The Julia code to run identifiability analysis for each model is located in `src/MAPK/identifiability/`. Each script runs the analysis for every model independently.
@@ -25,19 +29,26 @@ The Julia code to run identifiability analysis for each model is located in `src
 
 All synthetic data generation and preprocessing occurs in `src/MAPK/process_data.ipynb`.
 
-#### **Figure 2, 3; Supplemental Figures S2 and S5** (Synthetic dose-response data)
+#### **Figure 3 and Supplemental Figures S2, S3** (Keyes et al. *eLife*. 2020. data inference/MMI)
 
-*Figure 2*
+0. (optional to rerun SMC) Run `src/MAPK/param_est/Keyes_CYTO_inference.sh` and `src/MAPK/param_est/Keyes_PM_inference.sh` without the `--skip_sample` flag on each call. Rerunning with this flag enabled regenerates posterior predictive samples from previous SMC results
+1. Run `src/MAPK/param_est/Keyes_analyze.py` and `src/MAPK/param_est/Keyes_data_len_analyze.py` to plot posterior predictive trajectories
+2. Run `src/MAPK/multimodel_inference/Keyes_MMI.ipynb` to perform MMI, run error analysis, and make plots
+3. Run `src/MAPK/param_est/Keyes_data_params_compDiff_analyze.ipynb` to plot marginal eCDFs
+
+#### **Supplemental Figures S4, S6** (Synthetic dose-response data)
+
+*Figure S4*
 
 0. (optional to rerun SMC) Run `src/MAPK/param_est/HF96_DR_inference.sh` without the `--skip_sample` flag on each call. Rerunning with this flag enabled regenerates posterior predictive samples from previous SMC results
-1. Run `src/MAPK/param_est/HF96_DR_analyze.py` to plot posterior predictive trajectories
+1. Run `src/MAPK/param_est/HF96_DR_analyze.py` to plot posteriors
 2. Run `src/MAPK/multimodel_inference/HF96_DR_MMI.ipynb` to perform MMI, run error analysis, and make plots
 
-*Figure 3*
-1. Run `src/MAPK/multimodel_inference/HF95_DR_model_perturb.ipynb` for panels X, Y, Z
-2. Run `src/MAPK/multimodel_inference/HF95_DR_model_combinatorics.ipynb` for panels X, Y, Z
+*Figure S6*
+1. Run `src/MAPK/multimodel_inference/HF95_DR_model_perturb.ipynb` for panels A-E
+2. Run `src/MAPK/multimodel_inference/HF95_DR_model_combinatorics.ipynb` for panels F,G
 
-#### **Supplemental Figures S3, S4, and S6** (Synthetic trajectory data)
+<!-- #### **Supplemental Figures S3, S4, and S6** (Synthetic trajectory data)
 
 *Supplemental Figure S3, S4*
 
@@ -47,7 +58,7 @@ All synthetic data generation and preprocessing occurs in `src/MAPK/process_data
 
 *Supplemental Figure S6*
 1. Run `src/MAPK/multimodel_inference/HF95_traj_model_perturb.ipynb` for panels X, Y, Z
-2. Run `src/MAPK/multimodel_inference/HF95_traj_model_combinatorics.ipynb` for panels X, Y, Z
+2. Run `src/MAPK/multimodel_inference/HF95_traj_model_combinatorics.ipynb` for panels X, Y, Z -->
 
 
 #### **Figure 4 and Supplemental Figure S7 and S8** (Keyes et al.  *eLife*. 2020. data shortening and quality reduction
@@ -62,13 +73,6 @@ All synthetic data generation and preprocessing occurs in `src/MAPK/process_data
 
 1. [Requires SMC rerun--possible long runtime] Run `src/MAPK/param_est/Keyes_data_quality_inference.py`
 2. Run `src/MAPK/multimodel_inference/Keyes_data_quality_MMI.ipynb`
-
-#### **Supplemental Figures S9** (Keyes et al. *eLife*. 2020. data inference/MMI)
-
-0. (optional to rerun SMC) Run `src/MAPK/param_est/Keyes_CYTO_inference.sh` and `src/MAPK/param_est/Keyes_PM_inference.sh` without the `--skip_sample` flag on each call. Rerunning with this flag enabled regenerates posterior predictive samples from previous SMC results
-1. Run `src/MAPK/param_est/Keyes_analyze.py` and `src/MAPK/param_est/Keyes_data_len_analyze.py` to plot posterior predictive trajectories
-2. Run `src/MAPK/multimodel_inference/Keyes_MMI.ipynb` to perform MMI, run error analysis, and make plots
-3. Run `src/MAPK/param_est/Keyes_data_params_compDiff_analyze.ipynb` to plot marginal eCDFs
 
 #### **Figure 5 and Supplemental Figure S10** (Keyes et al.  *eLife*. 2020. Rap1/ERK negative feedback modifications)
 
